@@ -1,0 +1,18 @@
+# ↓ 아래 값들을 본인 환경에 맞게 채워서 application.properties로 복사해서 사용
+server.port=8080
+
+spring.datasource.url=jdbc:mysql://localhost:3306/recommendai?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+spring.datasource.username=root
+spring.datasource.password=여기에_본인_MySQL_비밀번호_입력
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.open-in-view=false
+
+jwt.secret=여기에_32자_이상_아무_문자열_입력
+jwt.expiration=86400000
+
+# Python AI 서버 주소
+ai.server.url=http://localhost:8000
