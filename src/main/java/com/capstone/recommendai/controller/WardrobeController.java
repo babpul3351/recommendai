@@ -1,9 +1,13 @@
 package com.capstone.recommendai.controller;
 
+import com.capstone.recommendai.dto.RecommendationResponse;
 import com.capstone.recommendai.dto.WardrobeItemResponse;
 import com.capstone.recommendai.entity.User;
+import com.capstone.recommendai.entity.UserStyle;
 import com.capstone.recommendai.repository.UserRepository;
+import com.capstone.recommendai.repository.UserStyleRepository;
 import com.capstone.recommendai.service.AIService;
+import com.capstone.recommendai.service.RecommendationService;
 import com.capstone.recommendai.service.WardrobeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +24,9 @@ public class WardrobeController {
 
     private final WardrobeService wardrobeService;
     private final AIService aiService;
+    private final RecommendationService recommendationService;
     private final UserRepository userRepository;
+    private final UserStyleRepository userStyleRepository;
 
     // 내 옷장 전체 조회
     @GetMapping
@@ -39,18 +45,25 @@ public class WardrobeController {
 
         String imageB64 = body.get("imageB64");
 
-        // Python AI 서버에서 이미지 분석
-        Map<String, String> analyzed = aiService.analyzeImage(imageB64);
+        // 디버그용 로그
+        System.out.println("=== 받은 imageB64 길이: " +
+                (imageB64 != null ? imageB64.length() : "null"));
+        System.out.println("=== Body 키 목록: " + body.keySet());
 
-        // 분석 결과를 DB에 저장
+        if (imageB64 == null || imageB64.isEmpty()) {
+            throw new IllegalArgumentException("imageB64가 비어있습니다");
+        }
+
+        Map analyzed = aiService.analyzeImage(imageB64);
+
         WardrobeItemResponse response = wardrobeService.addItem(
                 userDetails.getUsername(),
-                analyzed.get("imageB64"),   // 썸네일 이미지
-                analyzed.get("category"),
-                analyzed.get("type"),
-                analyzed.get("color"),
-                analyzed.get("material"),
-                ""                          // embedding은 별도 처리
+                (String) analyzed.get("imageB64"),
+                (String) analyzed.get("category"),
+                (String) analyzed.get("type"),
+                (String) analyzed.get("color"),
+                (String) analyzed.get("material"),
+                ""
         );
         return ResponseEntity.ok(response);
     }
@@ -61,9 +74,10 @@ public class WardrobeController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody Map<String, Object> body) {
 
-        String email = userDetails.getUsername();
-        String tpo   = (String) body.getOrDefault("tpo", "일상·캐주얼");
-        String mode  = (String) body.getOrDefault("mode", "rag");
+        String userId = userDetails.getUsername();
+        String tpo    = (String) body.getOrDefault("tpo", "일상·캐주얼");
+        String mode   = (String) body.getOrDefault("mode", "rag");
+        String eventId = (String) body.get("eventId");
 
         // 날씨 정보
         Map<String, Object> weather = (Map<String, Object>) body.getOrDefault(
@@ -71,24 +85,29 @@ public class WardrobeController {
         );
 
         // 사용자 프로필 조회
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
+
+        List<String> styleCodes = userStyleRepository.findByUser(user).stream()
+                .map(us -> us.getStyle().getStyleCode())
+                .collect(Collectors.toList());
+
         Map<String, Object> profile = new HashMap<>();
         profile.put("ageGroup", user.getAgeGroup());
         profile.put("gender",   user.getGender());
-        profile.put("style",    user.getStyle());
+        profile.put("styles",   styleCodes);
 
-        // 내 옷장 전체 조회
-        List<WardrobeItemResponse> wardrobeItems = wardrobeService.getWardrobe(email);
+        // 내 옷장 조회
+        List<WardrobeItemResponse> wardrobeItems = wardrobeService.getWardrobe(userId);
         List<Map<String, Object>> itemList = wardrobeItems.stream()
                 .map(item -> {
                     Map<String, Object> m = new HashMap<>();
-                    m.put("id",       item.getId());
-                    m.put("category", item.getCategory()  != null ? item.getCategory()  : "");
-                    m.put("type",     item.getType()      != null ? item.getType()      : "");
-                    m.put("color",    item.getColor()     != null ? item.getColor()     : "");
-                    m.put("material", item.getMaterial()  != null ? item.getMaterial()  : "");
-                    m.put("imageB64", item.getImageB64()  != null ? item.getImageB64()  : "");
+                    m.put("id",        item.getId());
+                    m.put("category",  item.getCategory() != null ? item.getCategory() : "");
+                    m.put("type",      item.getType()     != null ? item.getType()     : "");
+                    m.put("color",     item.getColor()    != null ? item.getColor()    : "");
+                    m.put("material",  item.getMaterial() != null ? item.getMaterial() : "");
+                    m.put("imageB64",  item.getImageB64() != null ? item.getImageB64() : "");
                     m.put("embedding", "");
                     return m;
                 })
@@ -99,18 +118,39 @@ public class WardrobeController {
                 (List<Map<String, Object>>) body.getOrDefault("linkedEvents", new ArrayList<>());
 
         // Python AI 서버에 추천 요청
-        Map<String, Object> result = aiService.recommend(
+        Map<String, Object> aiResult = aiService.recommend(
                 tpo, mode, weather, profile, itemList, linkedEvents
         );
 
-        return ResponseEntity.ok(result);
+        // 추천 결과 DB 저장
+        List<Map<String, Object>> matchedItems =
+                (List<Map<String, Object>>) aiResult.getOrDefault("matched_items", new ArrayList<>());
+
+        Map<String, Object> outfit =
+                (Map<String, Object>) aiResult.getOrDefault("outfit", new HashMap<>());
+
+        RecommendationResponse saved = recommendationService.saveRecommendation(
+                userId,
+                tpo,
+                (String) outfit.getOrDefault("style", ""),
+                (String) outfit.getOrDefault("description", ""),
+                weather.get("temp") != null
+                        ? Integer.parseInt(weather.get("temp").toString()) : null,
+                (String) weather.getOrDefault("desc", ""),
+                eventId,
+                matchedItems
+        );
+
+        // AI 결과 + 저장된 추천 ID 함께 반환
+        aiResult.put("recId", saved.getRecId());
+        return ResponseEntity.ok(aiResult);
     }
 
     // 옷장 아이템 삭제
     @DeleteMapping("/{itemId}")
     public ResponseEntity<String> deleteItem(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long itemId) {
+            @PathVariable String itemId) {
         wardrobeService.deleteItem(userDetails.getUsername(), itemId);
         return ResponseEntity.ok("삭제되었습니다");
     }
