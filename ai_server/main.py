@@ -16,19 +16,19 @@ app.add_middleware(
 # 요청 모델
 # ─────────────────────────────────────────────
 class WardrobeItemData(BaseModel):
-    id: int
+    id: Optional[str] = None        # UUID(VARCHAR 36)로 변경
     category: Optional[str] = ""
     type: Optional[str] = ""
     color: Optional[str] = ""
     material: Optional[str] = ""
     imageB64: Optional[str] = ""
-    embedding: Optional[str] = ""
+    embedding: Optional[str] = ""   # 없을 수 있음
 
 class RecommendRequest(BaseModel):
     tpo: str
     mode: str = "rag"
     weather: dict
-    profile: dict
+    profile: dict          # styles가 List로 변경됨
     wardrobeItems: List[WardrobeItemData] = []
     linkedEvents: List[dict] = []
 

@@ -89,6 +89,13 @@ def get_outfit_recommendation(tpo, weather, profile, mode, wardrobe_items, linke
     zone = get_temp_zone(temp)
     needs_outer = zone in ["mild", "cool", "cold", "freeze"]
 
+    # styles가 List로 변경됨
+    styles = profile.get("styles", [])
+    if isinstance(styles, list):
+        style_str = ", ".join(styles) if styles else "캐주얼"
+    else:
+        style_str = str(styles)
+
     # 연동된 일정 컨텍스트
     event_context = ""
     if linked_events:
@@ -96,7 +103,6 @@ def get_outfit_recommendation(tpo, weather, profile, mode, wardrobe_items, linke
         event_context = f"\n연동된 일정: {', '.join(event_titles)}"
 
     if mode == "rag" and wardrobe_items:
-        # 기온 기준 후보 필터링
         allowed = TEMP_ZONE_MAP[zone]
         candidates = {cat: [] for cat in allowed}
         for item in wardrobe_items:
@@ -117,7 +123,7 @@ def get_outfit_recommendation(tpo, weather, profile, mode, wardrobe_items, linke
 - 성별: {profile.get('gender', '여성')}
 - TPO: {tpo}
 - 날씨: {temp}도, {weather.get('desc', '맑음')}
-- 선호 스타일: {profile.get('style', '캐주얼')}
+- 선호 스타일: {style_str}
 {event_context}
 
 === 사용자 옷장 후보 ===
@@ -130,9 +136,9 @@ def get_outfit_recommendation(tpo, weather, profile, mode, wardrobe_items, linke
 
 === 출력 형식 (순수 JSON만) ===
 {{
-  "top":    {{"id":숫자또는null,"color":"색상","type":"아이템명","search_query":"English query"}},
-  "bottom": {{"id":숫자또는null,"color":"색상","type":"아이템명","search_query":"English query"}},
-  "outer":  {{"id":숫자또는null,"color":"색상","type":"아이템명","search_query":"English query"}} 또는 null,
+  "top":    {{"id":"문자열또는null","color":"색상","type":"아이템명","search_query":"English query"}},
+  "bottom": {{"id":"문자열또는null","color":"색상","type":"아이템명","search_query":"English query"}},
+  "outer":  {{"id":"문자열또는null","color":"색상","type":"아이템명","search_query":"English query"}} 또는 null,
   "style":  "스타일명",
   "description": "한 줄 코디 설명"
 }}"""
@@ -144,7 +150,7 @@ def get_outfit_recommendation(tpo, weather, profile, mode, wardrobe_items, linke
 - 성별: {profile.get('gender', '여성')}
 - TPO: {tpo}
 - 날씨: {temp}도, {weather.get('desc', '맑음')}
-- 선호 스타일: {profile.get('style', '캐주얼')}
+- 선호 스타일: {style_str}
 {event_context}
 
 === 출력 형식 (순수 JSON만) ===

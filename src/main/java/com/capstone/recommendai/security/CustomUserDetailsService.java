@@ -14,13 +14,15 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        return userRepository.findByEmail(email)
+    public UserDetails loadUserByUsername(String userId)
+            throws UsernameNotFoundException {
+        return userRepository.findByUserId(userId)
                 .map(user -> org.springframework.security.core.userdetails.User
-                        .withUsername(user.getEmail())
+                        .withUsername(user.getUserId())
                         .password(user.getPassword())
                         .authorities("ROLE_USER")
                         .build())
-                .orElseThrow(() -> new UsernameNotFoundException("사용자 없음: " + email));
+                .orElseThrow(() ->
+                        new UsernameNotFoundException("사용자 없음: " + userId));
     }
 }

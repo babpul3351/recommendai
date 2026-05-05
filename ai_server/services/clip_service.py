@@ -50,7 +50,7 @@ def match_wardrobe(outfit: dict, wardrobe_items: list) -> list:
         # RAG 방식: AI가 직접 id 선택한 경우
         if item_id is not None:
             found = next(
-                (w for w in wardrobe_items if w["id"] == item_id), None
+                (w for w in wardrobe_items if str(w.get("id", "")) == str(item_id)), None
             )
             if found:
                 matched.append({

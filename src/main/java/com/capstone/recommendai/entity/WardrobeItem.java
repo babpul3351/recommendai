@@ -3,38 +3,50 @@ package com.capstone.recommendai.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "wardrobe_items")
+@Table(name = "wardrobe_item")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Builder
 public class WardrobeItem {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "item_id", length = 36)
+    private String itemId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    private String category;   // 상의, 하의, 아우터, 원피스
-    private String type;       // 티셔츠, 청바지 등
+    @Column(nullable = false, length = 10)
+    private String category;
+
+    @Column(name = "item_type", nullable = false, length = 50)
+    private String itemType;
+
+    @Column(nullable = false, length = 20)
     private String color;
+
+    @Column(length = 30)
     private String material;
 
-    @Column(columnDefinition = "LONGTEXT")
-    private String imageB64;   // base64 이미지
+    @Column(name = "image_thumbnail", columnDefinition = "TEXT")
+    private String imageThumbnail;
 
-    @Column(columnDefinition = "LONGTEXT")
-    private String embedding;  // CLIP 임베딩 JSON
-
-    @Column(updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @OneToOne(mappedBy = "wardrobeItem",
+            cascade = CascadeType.ALL, orphanRemoval = true)
+    private WardrobeEmbedding embedding;
 
     @PrePersist
     public void prePersist() {
+        if (this.itemId == null) {
+            this.itemId = UUID.randomUUID().toString();
+        }
         this.createdAt = LocalDateTime.now();
     }
 }
