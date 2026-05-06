@@ -1,0 +1,54 @@
+import axios from 'axios';
+
+const BASE_URL = 'http://localhost:8080/api';
+
+const api = axios.create({
+    baseURL: BASE_URL,
+    headers: {
+        'Content-Type': 'application/json'
+    }
+});
+
+api.interceptors.request.use(config => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
+api.interceptors.response.use(
+    response => response,
+    error => {
+        if (error.response?.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userId');
+            window.location.href = '/login';
+        }
+        return Promise.reject(error);
+    }
+);
+
+export const authAPI = {
+    signup: (data) => api.post('/auth/signup', data),
+    login: (data) => api.post('/auth/login', data)
+};
+
+export const weatherAPI = {
+    getWeather: () => api.get('/weather')
+};
+
+export const wardrobeAPI = {
+    getWardrobe: () => api.get('/wardrobe'),
+    uploadItem: (imageB64) => api.post('/wardrobe/upload', { imageB64 }),
+    deleteItem: (itemId) => api.delete(`/wardrobe/${itemId}`),
+    recommend: (data) => api.post('/wardrobe/recommend', data)
+};
+
+export const calendarAPI = {
+    getEvents: () => api.get('/calendar'),
+    addEvent: (data) => api.post('/calendar', data),
+    deleteEvent: (eventId) => api.delete(`/calendar/${eventId}`)
+};
+
+export default api;
