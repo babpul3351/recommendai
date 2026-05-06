@@ -9,6 +9,7 @@ import com.capstone.recommendai.repository.UserStyleRepository;
 import com.capstone.recommendai.service.AIService;
 import com.capstone.recommendai.service.RecommendationService;
 import com.capstone.recommendai.service.WardrobeService;
+import com.capstone.recommendai.service.WeatherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,6 +28,7 @@ public class WardrobeController {
     private final RecommendationService recommendationService;
     private final UserRepository userRepository;
     private final UserStyleRepository userStyleRepository;
+    private final WeatherService weatherService;
 
     // 내 옷장 전체 조회
     @GetMapping
@@ -79,10 +81,13 @@ public class WardrobeController {
         String mode   = (String) body.getOrDefault("mode", "rag");
         String eventId = (String) body.get("eventId");
 
-        // 날씨 정보
-        Map<String, Object> weather = (Map<String, Object>) body.getOrDefault(
-                "weather", Map.of("temp", 18, "desc", "맑음")
-        );
+        // 날씨 정보 — 요청에 없으면 OpenWeather API로 자동 조회
+        Map<String, Object> weather;
+        if (body.containsKey("weather")) {
+            weather = (Map<String, Object>) body.get("weather");
+        } else {
+            weather = weatherService.getCurrentWeather("Seoul", "KR");
+        }
 
         // 사용자 프로필 조회
         User user = userRepository.findByUserId(userId)
