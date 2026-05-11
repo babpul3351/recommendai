@@ -84,78 +84,108 @@ def get_temp_zone(temp: int) -> str:
 # ─────────────────────────────────────────────
 # 코디 추천
 # ─────────────────────────────────────────────
-def get_outfit_recommendation(tpo, weather, profile, mode, wardrobe_items, linked_events):
-    temp = weather.get("temp", 18)
-    zone = get_temp_zone(temp)
-    needs_outer = zone in ["mild", "cool", "cold", "freeze"]
+def get_outfit_recommendation(tpo, weather, profile, mode="rag", wardrobe_items=None, linked_events=None):
+    if wardrobe_items is None:
+        wardrobe_items = []
+    if linked_events is None:
+        linked_events = []
 
-    # 연동된 일정 컨텍스트
-    event_context = ""
+    temp = weather.get("temp", 18) if weather else 18
+    desc = weather.get("desc", "맑음") if weather else "맑음"
+    age_group = profile.get("ageGroup", "20대") if profile else "20대"
+    gender = profile.get("gender", "여성") if profile else "여성"
+    styles = profile.get("styles", []) if profile else []
+    style_str = ", ".join(styles) if styles else "캐주얼"
+    temp_zone = get_temp_zone(temp)
+
+    # 일정 정보 텍스트 구성
+    event_text = ""
     if linked_events:
-        event_titles = [e.get("title", "") for e in linked_events]
-        event_context = f"\n연동된 일정: {', '.join(event_titles)}"
+        event_text = "\n[오늘의 일정]\n"
+        for ev in linked_events:
+            event_text += f"- {ev.get('eventName', '')} ({ev.get('tpoKeyword', '')})\n"
 
     if mode == "rag" and wardrobe_items:
-        # 기온 기준 후보 필터링
-        allowed = TEMP_ZONE_MAP[zone]
-        candidates = {cat: [] for cat in allowed}
-        for item in wardrobe_items:
-            cat = item.get("category", "")
-            if cat in candidates:
-                candidates[cat].append(
-                    f"[{item['id']}] {item['color']} {item['type']} ({item['material']})"
-                )
+        # RAG 방식: 옷장 후보 필터링
+        allowed = TEMP_ZONE_MAP.get(temp_zone, [])
+        candidates = [
+            w for w in wardrobe_items
+            if any(a in str(w.get("category", "")) or a in str(w.get("type", ""))
+                   for a in allowed)
+        ]
+        if not candidates:
+            candidates = wardrobe_items
 
-        candidates_text = ""
-        for cat, items in candidates.items():
-            if items:
-                candidates_text += f"\n[{cat}]\n" + "\n".join(f"  - {i}" for i in items)
+        candidates_text = "\n".join([
+            f"- id:{w.get('id','없음')} | {w.get('category','')} | {w.get('type','')} | {w.get('color','')} | {w.get('material','')}"
+            for w in candidates[:20]
+        ])
 
-        prompt = f"""
-=== 사용자 조건 ===
-- 연령대: {profile.get('ageGroup', '20대')}
-- 성별: {profile.get('gender', '여성')}
-- TPO: {tpo}
-- 날씨: {temp}도, {weather.get('desc', '맑음')}
-- 선호 스타일: {profile.get('style', '캐주얼')}
-{event_context}
+        prompt = f"""당신은 전문 패션 스타일리스트입니다.
+아래 정보를 바탕으로 최적의 코디를 추천해주세요.
 
-=== 사용자 옷장 후보 ===
-{candidates_text if candidates_text else '(등록된 옷 없음)'}
+[사용자 정보]
+- 연령대: {age_group}
+- 성별: {gender}
+- 선호 스타일: {style_str}
 
-=== 지시 ===
-후보 중에서 TPO와 스타일에 맞는 아이템을 골라 코디를 구성하세요.
-후보가 있으면 반드시 후보에서 선택하고 id를 기록하세요.
-아우터 필요 여부: {"필요" if needs_outer else "불필요"}
+[날씨 정보]
+- 기온: {temp}°C ({temp_zone})
+- 날씨: {desc}
 
-=== 출력 형식 (순수 JSON만) ===
+[TPO]
+- {tpo}
+{event_text}
+[보유 옷장 후보]
+{candidates_text}
+
+위 옷장에서 id가 있는 아이템을 최대한 활용하여 코디를 구성하세요.
+옷장에 없는 아이템은 id를 null로 설정하세요.
+
+아래 JSON 형식으로만 응답하세요 (다른 텍스트 없이):
 {{
-  "top":    {{"id":숫자또는null,"color":"색상","type":"아이템명","search_query":"English query"}},
-  "bottom": {{"id":숫자또는null,"color":"색상","type":"아이템명","search_query":"English query"}},
-  "outer":  {{"id":숫자또는null,"color":"색상","type":"아이템명","search_query":"English query"}} 또는 null,
-  "style":  "스타일명",
-  "description": "한 줄 코디 설명"
+  "top": {{"id": "uuid또는null", "color": "색상", "type": "종류", "search_query": "영문검색어"}},
+  "bottom": {{"id": "uuid또는null", "color": "색상", "type": "종류", "search_query": "영문검색어"}},
+  "outer": null또는{{"id": "uuid또는null", "color": "색상", "type": "종류", "search_query": "영문검색어"}},
+  "style": "스타일태그",
+  "description": "한국어로 코디 설명 2-3문장"
 }}"""
 
     else:
-        prompt = f"""
-=== 사용자 조건 ===
-- 연령대: {profile.get('ageGroup', '20대')}
-- 성별: {profile.get('gender', '여성')}
-- TPO: {tpo}
-- 날씨: {temp}도, {weather.get('desc', '맑음')}
-- 선호 스타일: {profile.get('style', '캐주얼')}
-{event_context}
+        # AI 독립 방식
+        prompt = f"""당신은 전문 패션 스타일리스트입니다.
 
-=== 출력 형식 (순수 JSON만) ===
+[사용자 정보]
+- 연령대: {age_group}
+- 성별: {gender}
+- 선호 스타일: {style_str}
+
+[날씨 정보]
+- 기온: {temp}°C ({temp_zone})
+- 날씨: {desc}
+
+[TPO]
+- {tpo}
+{event_text}
+아래 JSON 형식으로만 응답하세요:
 {{
-  "top":    {{"id":null,"color":"색상","type":"아이템명","search_query":"English query"}},
-  "bottom": {{"id":null,"color":"색상","type":"아이템명","search_query":"English query"}},
-  "outer":  {{"id":null,"color":"색상","type":"아이템명","search_query":"English query"}} 또는 null,
-  "style":  "스타일명",
-  "description": "한 줄 코디 설명"
+  "top": {{"id": null, "color": "색상", "type": "종류", "search_query": "영문검색어"}},
+  "bottom": {{"id": null, "color": "색상", "type": "종류", "search_query": "영문검색어"}},
+  "outer": null,
+  "style": "스타일태그",
+  "description": "한국어로 코디 설명 2-3문장"
 }}"""
 
-    raw = gemini_text(prompt)
-    clean = raw.replace("```json", "").replace("```", "").strip()
-    return json.loads(clean)
+    try:
+        raw = gemini_text(prompt)
+        clean = raw.replace("```json", "").replace("```", "").strip()
+        return json.loads(clean)
+    except Exception as e:
+        print(f"Gemini 파싱 오류: {e}")
+        return {
+            "top": {"id": None, "color": "화이트", "type": "티셔츠", "search_query": "white t-shirt"},
+            "bottom": {"id": None, "color": "블랙", "type": "팬츠", "search_query": "black pants"},
+            "outer": None,
+            "style": "casual",
+            "description": "기본 캐주얼 코디입니다."
+        }
