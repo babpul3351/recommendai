@@ -134,7 +134,7 @@ public class WardrobeController {
                     map.put("type", item.getType());
                     map.put("color", item.getColor());
                     map.put("material", item.getMaterial());
-                    map.put("imageB64", item.getImageB64());
+                    map.put("imageB64", item.getImageUrl());
                     return map;
                 }).collect(Collectors.toList()),
                 linkedEvents);

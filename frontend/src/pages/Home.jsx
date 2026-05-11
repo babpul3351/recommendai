@@ -188,8 +188,8 @@ function Home() {
                                 <div style={styles.matchedRow}>
                                     {recommendation.matched_items.map((item, i) => (
                                         <div key={i} style={styles.matchedItem}>
-                                            {item.imageB64 && (
-                                                <img src={item.imageB64} alt={item.type} style={styles.matchedImg} />
+                                            {item.imageUrl && (
+                                                <img src={item.imageUrl} alt={item.type} style={styles.matchedImg} />
                                             )}
                                             <p style={styles.matchedType}>{item.type}</p>
                                         </div>

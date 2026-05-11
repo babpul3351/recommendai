@@ -32,7 +32,7 @@ public class WardrobeItem {
     @Column(length = 30)
     private String material;
 
-    @Column(name = "image_thumbnail", columnDefinition = "TEXT")
+    @Column(name = "image_thumbnail", length = 500)
     private String imageThumbnail;
 
     @Column(name = "created_at", nullable = false, updatable = false)

@@ -156,8 +156,8 @@ function Wardrobe() {
                                 style={styles.card}
                                 onClick={() => setSelectedItem(item)}
                             >
-                                {item.imageB64 ? (
-                                    <img src={item.imageB64} alt={item.type} style={styles.image} />
+                                {item.imageUrl ? (
+                                    <img src={item.imageUrl} alt={item.type} style={styles.image} />
                                 ) : (
                                     <div style={styles.imagePlaceholder}>
                                         <p style={{ color: '#ccc', fontSize: '32px' }}>👗</p>
@@ -189,9 +189,9 @@ function Wardrobe() {
 
                         {/* 이미지 */}
                         <div style={styles.popupImageBox}>
-                            {selectedItem.imageB64 ? (
+                            {selectedItem.imageUrl ? (
                                 <img
-                                    src={selectedItem.imageB64}
+                                    src={selectedItem.imageUrl}
                                     alt={selectedItem.type}
                                     style={styles.popupImage}
                                 />
