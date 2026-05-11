@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 function Navbar() {
     const navigate = useNavigate();
     const location = useLocation();
+    const nickname = localStorage.getItem('nickname');
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -43,6 +44,7 @@ function Navbar() {
                 >
                     캘린더
                 </span>
+                <span style={styles.nickname}>👤 {nickname}</span>
                 <span style={{ ...styles.item, color: '#e74c3c' }} onClick={handleLogout}>
                     로그아웃
                 </span>
@@ -84,7 +86,8 @@ const styles = {
         color: '#333',
         borderBottom: '2px solid #333',
         paddingBottom: '2px'
-    }
+    },
+    nickname: { fontSize: '14px', color: '#333', fontWeight: '500' }
 };
 
 export default Navbar;

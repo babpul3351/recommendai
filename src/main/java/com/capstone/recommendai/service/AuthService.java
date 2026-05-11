@@ -29,53 +29,52 @@ public class AuthService {
 
     @Transactional
     public AuthResponse signup(SignupRequest req) {
-
-        List<Style> styles = req.getStyles().stream()
-                .map(code -> styleRepository.findById(code)
-                        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 스타일: " + code)))
-                .collect(Collectors.toList());
+        // 아이디 중복 확인
+        if (userRepository.findByLoginId(req.getLoginId()).isPresent()) {
+            throw new IllegalArgumentException("이미 사용 중인 아이디입니다.");
+        }
 
         User user = User.builder()
+                .loginId(req.getLoginId())
+                .nickname(req.getNickname())
                 .ageGroup(req.getAgeGroup())
                 .gender(req.getGender())
                 .password(passwordEncoder.encode(req.getPassword()))
-                .colorType(req.getColorType())
                 .build();
 
         userRepository.save(user);
 
-        styles.forEach(style -> {
-            UserStyle userStyle = UserStyle.builder()
-                    .user(user)
-                    .style(style)
-                    .build();
+        // 스타일 저장
+        for (String styleCode : req.getStyles()) {
+            Style style = styleRepository.findById(styleCode)
+                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 스타일: " + styleCode));
+            UserStyle userStyle = new UserStyle();
+            userStyle.setUser(user);
+            userStyle.setStyle(style);
             userStyleRepository.save(userStyle);
-        });
-
-        List<String> styleCodes = styles.stream()
-                .map(Style::getStyleCode)
-                .collect(Collectors.toList());
+        }
 
         String token = jwtUtil.generateToken(user.getUserId());
-        return new AuthResponse(token, user.getUserId(),
-                user.getAgeGroup(), user.getGender(), styleCodes);
+        List<String> styles = req.getStyles();
+
+        return new AuthResponse(token, user.getUserId(), user.getLoginId(),
+                user.getNickname(), user.getAgeGroup(), user.getGender(), styles);
     }
 
     public AuthResponse login(LoginRequest req) {
-
-        User user = userRepository.findByUserId(req.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다"));
+        User user = userRepository.findByLoginId(req.getLoginId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 아이디입니다."));
 
         if (!passwordEncoder.matches(req.getPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다");
+            throw new IllegalArgumentException("비밀번호가 올바르지 않습니다.");
         }
 
-        List<String> styleCodes = userStyleRepository.findByUser(user).stream()
-                .map(us -> us.getStyle().getStyleCode())
+        String token = jwtUtil.generateToken(user.getUserId());
+        List<String> styles = userStyleRepository.findByUser(user)
+                .stream().map(us -> us.getStyle().getStyleCode())
                 .collect(Collectors.toList());
 
-        String token = jwtUtil.generateToken(user.getUserId());
-        return new AuthResponse(token, user.getUserId(),
-                user.getAgeGroup(), user.getGender(), styleCodes);
+        return new AuthResponse(token, user.getUserId(), user.getLoginId(),
+                user.getNickname(), user.getAgeGroup(), user.getGender(), styles);
     }
 }
