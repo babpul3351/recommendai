@@ -51,4 +51,13 @@ export const calendarAPI = {
     deleteEvent: (eventId) => api.delete(`/calendar/${eventId}`)
 };
 
+export const userAPI = {
+    getProfile: () => api.get('/user/profile'),
+    updateProfile: (data) => api.put('/user/profile', data)
+};
+
+export const recommendationAPI = {
+    getHistory: () => api.get('/recommendations')
+};
+
 export default api;

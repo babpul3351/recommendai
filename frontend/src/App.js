@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Wardrobe from './pages/Wardrobe';
 import Recommend from './pages/Recommend';
 import Calendar from './pages/Calendar';
+import MyPage from './pages/MyPage';
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -29,6 +30,9 @@ function App() {
           } />
           <Route path="/calendar" element={
             <PrivateRoute><Calendar /></PrivateRoute>
+          } />
+          <Route path="/mypage" element={
+            <PrivateRoute><MyPage /></PrivateRoute>
           } />
         </Routes>
       </BrowserRouter>
