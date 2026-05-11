@@ -36,6 +36,12 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "login_id", nullable = false, unique = true, length = 50)
+    private String loginId;
+
+    @Column(name = "nickname", nullable = false, length = 50)
+    private String nickname;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserStyle> userStyles = new ArrayList<>();
 

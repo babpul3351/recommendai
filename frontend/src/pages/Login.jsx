@@ -4,7 +4,7 @@ import { authAPI } from '../api/api';
 
 function Login() {
     const navigate = useNavigate();
-    const [form, setForm] = useState({ userId: '', password: '' });
+    const [form, setForm] = useState({ loginId: '', password: '' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -20,6 +20,7 @@ function Login() {
             const res = await authAPI.login(form);
             localStorage.setItem('token', res.data.token);
             localStorage.setItem('userId', res.data.userId);
+            localStorage.setItem('nickname', res.data.nickname);
             navigate('/');
         } catch (err) {
             setError('아이디 또는 비밀번호가 올바르지 않습니다.');
@@ -37,9 +38,9 @@ function Login() {
                     <input
                         style={styles.input}
                         type="text"
-                        name="userId"
-                        placeholder="사용자 ID"
-                        value={form.userId}
+                        name="loginId"
+                        placeholder="아이디"
+                        value={form.loginId}
                         onChange={handleChange}
                         required
                     />

@@ -11,7 +11,12 @@ const STYLE_LABELS = {
 function Signup() {
     const navigate = useNavigate();
     const [form, setForm] = useState({
-        ageGroup: '20대', gender: '여성', password: '', styles: []
+        loginId: '',
+        nickname: '',
+        ageGroup: '20대',
+        gender: '여성',
+        password: '',
+        styles: []
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -40,6 +45,7 @@ function Signup() {
             const res = await authAPI.signup(form);
             localStorage.setItem('token', res.data.token);
             localStorage.setItem('userId', res.data.userId);
+            localStorage.setItem('nickname', res.data.nickname);
             navigate('/');
         } catch (err) {
             setError('회원가입에 실패했습니다. 다시 시도해주세요.');
@@ -62,6 +68,28 @@ function Signup() {
                         <option value="여성">여성</option>
                         <option value="남성">남성</option>
                     </select>
+                    <input
+                        style={styles.input}
+                        type="text"
+                        name="loginId"
+                        placeholder="아이디 (4~20자)"
+                        value={form.loginId}
+                        onChange={handleChange}
+                        required
+                        minLength={4}
+                        maxLength={20}
+                    />
+                    <input
+                        style={styles.input}
+                        type="text"
+                        name="nickname"
+                        placeholder="닉네임 (2~20자)"
+                        value={form.nickname}
+                        onChange={handleChange}
+                        required
+                        minLength={2}
+                        maxLength={20}
+                    />
                     <input
                         style={styles.input} type="password" name="password"
                         placeholder="비밀번호 (8자 이상)" value={form.password}
