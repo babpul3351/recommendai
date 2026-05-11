@@ -20,6 +20,7 @@ public class WardrobeService {
     private final WardrobeRepository wardrobeRepository;
     private final WardrobeEmbeddingRepository embeddingRepository;
     private final UserRepository userRepository;
+    private final S3Service s3Service;
 
     // 현재 로그인한 사용자 찾기
     private User getUser(String userId) {
@@ -38,32 +39,37 @@ public class WardrobeService {
 
     // 옷장 아이템 추가
     @Transactional
-    public WardrobeItemResponse addItem(String userId, String imageThumbnail,
-                                        String category, String itemType,
-                                        String color, String material,
-                                        String vectorData) {
-        User user = getUser(userId);
+    public WardrobeItemResponse addItem(String userId, String imageB64,
+                                        String category, String type, String color, String material, String embedding) {
 
-        // 옷장 아이템 저장
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("사용자 없음"));
+
+        // Base64 이미지를 S3에 업로드하고 URL 저장
+        String imageUrl = null;
+        if (imageB64 != null && !imageB64.isEmpty()) {
+            imageUrl = s3Service.uploadBase64Image(imageB64);
+        }
+
         WardrobeItem item = WardrobeItem.builder()
                 .user(user)
-                .imageThumbnail(imageThumbnail)
-                .category(category)
-                .itemType(itemType)
-                .color(color)
+                .category(category != null ? category : "기타")
+                .itemType(type != null ? type : "")
+                .color(color != null ? color : "")
                 .material(material)
+                .imageThumbnail(imageUrl)  // S3 URL 저장
                 .build();
 
         wardrobeRepository.save(item);
 
-        // 임베딩 저장 (벡터 데이터가 있는 경우)
-        if (vectorData != null && !vectorData.isEmpty()) {
-            WardrobeEmbedding embedding = WardrobeEmbedding.builder()
+        // 임베딩 저장
+        if (embedding != null && !embedding.isEmpty()) {
+            WardrobeEmbedding emb = WardrobeEmbedding.builder()
                     .wardrobeItem(item)
-                    .vectorData(vectorData)
-                    .modelName("patrickjohncyh/fashion-clip")
+                    .vectorData(embedding)
+                    .modelName("fashion-clip")
                     .build();
-            embeddingRepository.save(embedding);
+            embeddingRepository.save(emb);
         }
 
         return new WardrobeItemResponse(item);

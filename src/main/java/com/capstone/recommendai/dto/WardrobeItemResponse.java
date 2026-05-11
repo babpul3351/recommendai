@@ -10,14 +10,14 @@ public class WardrobeItemResponse {
     private String type;
     private String color;
     private String material;
-    private String imageB64;
+    private String imageUrl;   // S3로 저장 방식 변경하였으므로 imageB64 → imageUrl로 변경
 
     public WardrobeItemResponse(WardrobeItem item) {
-        this.id       = item.getItemId();
+        this.id = item.getItemId();
         this.category = item.getCategory();
-        this.type     = item.getItemType();
-        this.color    = item.getColor();
+        this.type = item.getItemType();
+        this.color = item.getColor();
         this.material = item.getMaterial();
-        this.imageB64 = item.getImageThumbnail();
+        this.imageUrl = item.getImageThumbnail();  // S3 URL
     }
 }
