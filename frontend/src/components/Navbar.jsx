@@ -44,7 +44,12 @@ function Navbar() {
                 >
                     캘린더
                 </span>
-                <span style={styles.nickname}>👤 {nickname}</span>
+                <span
+                    style={styles.nickname}
+                    onClick={() => navigate('/mypage')}
+                >
+                    👤 {nickname}
+                </span>
                 <span style={{ ...styles.item, color: '#e74c3c' }} onClick={handleLogout}>
                     로그아웃
                 </span>
@@ -87,7 +92,11 @@ const styles = {
         borderBottom: '2px solid #333',
         paddingBottom: '2px'
     },
-    nickname: { fontSize: '14px', color: '#333', fontWeight: '500' }
+    nickname: {
+        fontSize: '14px', color: '#333',
+        fontWeight: '600', marginRight: '8px',
+        cursor: 'pointer'
+    }
 };
 
 export default Navbar;
