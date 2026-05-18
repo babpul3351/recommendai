@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
+from services.daltonization_service import simulate_color_blindness, simulate_only
 
 app = FastAPI()
 
@@ -83,3 +84,19 @@ async def recommend(req: RecommendRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class DaltonizationRequest(BaseModel):
+    imageB64: str
+    colorType: str  # protanopia / deuteranopia / tritanopia
+
+@app.post("/ai/daltonize")
+async def daltonize(req: DaltonizationRequest):
+    """색약 보정 이미지 반환"""
+    corrected = simulate_color_blindness(req.imageB64, req.colorType)
+    simulated = simulate_only(req.imageB64, req.colorType)
+    return {
+        "original": req.imageB64,
+        "simulated": simulated,   # 색각 이상자 시뮬레이션 (보정 전)
+        "corrected": corrected    # Daltonization 보정 후
+    }

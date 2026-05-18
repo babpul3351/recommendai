@@ -44,6 +44,9 @@ public class Recommendation {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "outfit_date")
+    private java.time.LocalDate outfitDate;
+
     @OneToMany(mappedBy = "recommendation",
             cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
@@ -61,7 +64,8 @@ public class Recommendation {
     public Recommendation(String recId, User user, CalendarEvent calendarEvent,
                           Integer temperature, String weatherCondition,
                           String tpo, String style, String description,
-                          LocalDateTime createdAt, List<RecommendationItem> items) {
+                          LocalDateTime createdAt, java.time.LocalDate outfitDate,
+                          List<RecommendationItem> items) {
         this.recId = recId;
         this.user = user;
         this.calendarEvent = calendarEvent;
@@ -71,6 +75,7 @@ public class Recommendation {
         this.style = style;
         this.description = description;
         this.createdAt = createdAt;
+        this.outfitDate = outfitDate;
         this.items = items != null ? items : new ArrayList<>();
     }
 }

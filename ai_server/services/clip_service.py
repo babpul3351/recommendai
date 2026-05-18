@@ -55,16 +55,17 @@ def match_wardrobe(outfit: dict, wardrobe_items: list) -> list:
             if found:
                 matched.append({
                     "id":       found["id"],
-                    "category": found["category"],
-                    "type":     found["type"],
-                    "color":    found["color"],
+                    "category": found.get("category", ""),
+                    "type":     found.get("type", ""),
+                    "color":    found.get("color", ""),
                     "imageB64": found.get("imageB64", ""),
+                    "imageUrl": found.get("imageUrl", ""),
                     "score":    1.0
                 })
                 continue
 
         # 추천 우선 방식: CLIP으로 유사도 검색
-        query = slot.get("search_query", f"{slot['color']} {slot['type']}")
+        query = slot.get("search_query", f"{slot.get('color','')} {slot.get('type','')}")
         candidates = [w for w in wardrobe_items if w.get("category") == cat]
         if not candidates:
             candidates = wardrobe_items
@@ -86,10 +87,11 @@ def match_wardrobe(outfit: dict, wardrobe_items: list) -> list:
         if best_item:
             matched.append({
                 "id":       best_item["id"],
-                "category": best_item["category"],
-                "type":     best_item["type"],
-                "color":    best_item["color"],
+                "category": best_item.get("category", ""),
+                "type":     best_item.get("type", ""),
+                "color":    best_item.get("color", ""),
                 "imageB64": best_item.get("imageB64", ""),
+                "imageUrl": best_item.get("imageUrl", ""),
                 "score":    round(best_score, 3)
             })
 

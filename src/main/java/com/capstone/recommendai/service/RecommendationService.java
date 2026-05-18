@@ -43,17 +43,21 @@ public class RecommendationService {
             Integer temperature,
             String weatherCondition,
             String eventId,
+            String outfitDate,
             List<Map<String, Object>> matchedItems) {
 
         User user = getUser(userId);
 
-        // 일정 연결 (있는 경우)
         CalendarEvent calendarEvent = null;
         if (eventId != null && !eventId.isEmpty()) {
             calendarEvent = calendarEventRepository.findById(eventId).orElse(null);
         }
 
-        // 추천 저장
+        java.time.LocalDate date = null;
+        if (outfitDate != null && !outfitDate.isEmpty()) {
+            date = java.time.LocalDate.parse(outfitDate);
+        }
+
         Recommendation rec = Recommendation.builder()
                 .user(user)
                 .calendarEvent(calendarEvent)
@@ -62,11 +66,11 @@ public class RecommendationService {
                 .description(description)
                 .temperature(temperature)
                 .weatherCondition(weatherCondition)
+                .outfitDate(date)
                 .build();
 
         recommendationRepository.save(rec);
 
-        // 추천 아이템 저장
         int orderNum = 1;
         for (Map<String, Object> matched : matchedItems) {
             String wardrobeItemId = (String) matched.get("id");
@@ -76,7 +80,7 @@ public class RecommendationService {
 
             WardrobeItem wardrobeItem = null;
             if (wardrobeItemId != null) {
-                wardrobeItem = wardrobeRepository.findById(wardrobeItemId).orElse(null);
+                wardrobeRepository.findById(wardrobeItemId).orElse(null);
             }
 
             RecommendationItem recItem = RecommendationItem.builder()

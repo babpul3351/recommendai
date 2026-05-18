@@ -59,4 +59,62 @@ public class WeatherService {
             return fallback;
         }
     }
+
+    // 5일 예보에서 특정 날짜 날씨 조회
+    public Map<String, Object> getWeatherByDate(String city, String country, String targetDate) {
+        try {
+            String url = apiUrl.replace("/weather", "/forecast")
+                    + "?q=" + city + "," + country
+                    + "&appid=" + apiKey
+                    + "&units=metric&lang=kr&cnt=40";
+
+            Map response = restTemplate.getForObject(url, Map.class);
+            if (response == null) return getDefaultWeather();
+
+            List<Map<String, Object>> list = (List<Map<String, Object>>) response.get("list");
+            if (list == null || list.isEmpty()) return getDefaultWeather();
+
+            // targetDate (yyyy-MM-dd)에 해당하는 예보 찾기
+            Map<String, Object> bestMatch = null;
+            for (Map<String, Object> item : list) {
+                String dtTxt = (String) item.get("dt_txt"); // "2026-05-18 12:00:00"
+                if (dtTxt != null && dtTxt.startsWith(targetDate)) {
+                    // 정오(12:00) 데이터 우선 사용
+                    if (dtTxt.contains("12:00")) {
+                        bestMatch = item;
+                        break;
+                    }
+                    if (bestMatch == null) bestMatch = item;
+                }
+            }
+
+            if (bestMatch == null) return getDefaultWeather();
+
+            Map<String, Object> main = (Map<String, Object>) bestMatch.get("main");
+            List<Map<String, Object>> weather = (List<Map<String, Object>>) bestMatch.get("weather");
+            Map<String, Object> cityInfo = (Map<String, Object>) response.get("city");
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("city", cityInfo != null ? cityInfo.get("name") : city);
+            result.put("temp", main != null ? Math.round(((Number) main.get("temp")).doubleValue()) : 18);
+            result.put("feelsLike", main != null ? Math.round(((Number) main.get("feels_like")).doubleValue()) : 18);
+            result.put("humidity", main != null ? main.get("humidity") : 50);
+            result.put("desc", weather != null && !weather.isEmpty() ? weather.get(0).get("description") : "맑음");
+            return result;
+
+        } catch (Exception e) {
+            System.err.println("예보 날씨 조회 실패: " + e.getMessage());
+            return getDefaultWeather();
+        }
+    }
+
+    private Map<String, Object> getDefaultWeather() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("city", "Seoul");
+        result.put("temp", 18);
+        result.put("feelsLike", 18);
+        result.put("humidity", 50);
+        result.put("desc", "맑음");
+        return result;
+    }
 }
