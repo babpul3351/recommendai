@@ -43,4 +43,43 @@ public class RecommendationController {
 
         return ResponseEntity.ok(result);
     }
+
+    // 주간 코디 조회 (홈 화면용)
+    @GetMapping("/week")
+    public ResponseEntity<?> getWeekOutfits(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam String start,
+            @RequestParam String end) {
+
+        User user = userRepository.findByUserId(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("사용자 없음"));
+
+        java.time.LocalDate startDate = java.time.LocalDate.parse(start);
+        java.time.LocalDate endDate = java.time.LocalDate.parse(end);
+
+        List<Recommendation> list = recommendationRepository
+                .findByUserAndOutfitDateBetween(user, startDate, endDate);
+
+        List<Map<String, Object>> result = list.stream().map(rec -> {
+            Map<String, Object> map = new java.util.HashMap<>();
+            map.put("recId", rec.getRecId());
+            map.put("tpo", rec.getTpo());
+            map.put("style", rec.getStyle());
+            map.put("description", rec.getDescription());
+            map.put("outfitDate", rec.getOutfitDate() != null
+                    ? rec.getOutfitDate().toString() : null);
+            map.put("matchedItems", rec.getItems().stream()
+                    .filter(item -> item.getMatchedWardrobeItem() != null)
+                    .map(item -> {
+                        Map<String, Object> m = new java.util.HashMap<>();
+                        m.put("imageUrl", item.getMatchedWardrobeItem().getImageThumbnail());
+                        m.put("type", item.getMatchedWardrobeItem().getItemType());
+                        m.put("color", item.getMatchedWardrobeItem().getColor());
+                        return m;
+                    }).collect(java.util.stream.Collectors.toList()));
+            return map;
+        }).collect(java.util.stream.Collectors.toList());
+
+        return ResponseEntity.ok(result);
+    }
 }

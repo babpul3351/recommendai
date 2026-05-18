@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -87,5 +88,25 @@ public class WardrobeService {
         }
 
         wardrobeRepository.delete(item);
+    }
+
+    @Transactional
+    public void updateItem(String userId, String itemId, Map<String, String> body) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("사용자 없음"));
+
+        WardrobeItem item = wardrobeRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("아이템 없음"));
+
+        if (!item.getUser().getUserId().equals(user.getUserId())) {
+            throw new RuntimeException("권한 없음");
+        }
+
+        if (body.containsKey("category")) item.setCategory(body.get("category"));
+        if (body.containsKey("type")) item.setItemType(body.get("type"));
+        if (body.containsKey("color")) item.setColor(body.get("color"));
+        if (body.containsKey("material")) item.setMaterial(body.get("material"));
+
+        wardrobeRepository.save(item);
     }
 }
