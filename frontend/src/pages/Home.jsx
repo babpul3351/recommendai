@@ -18,6 +18,7 @@ function Home() {
     const [showEventRecommendPrompt, setShowEventRecommendPrompt] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [popup, setPopup] = useState(null);
+    const [weekWeathers, setWeekWeathers] = useState({});
 
     const today = new Date();
     const pad = (n) => String(n).padStart(2, '0');
@@ -30,6 +31,16 @@ function Home() {
         fetchWeather();
         fetchCalendarData();
     }, []);
+
+// 오늘 날씨가 로드되면 weekWeathers에도 오늘 날씨 추가
+    useEffect(() => {
+        if (weather) {
+            setWeekWeathers(prev => ({
+                ...prev,
+                [toDateStr(today)]: weather
+            }));
+        }
+    }, [weather]);
 
     const fetchWeather = async () => {
         try {
@@ -63,6 +74,23 @@ function Home() {
             endDate.setDate(today.getDate() + 6);
             const outfitsRes = await recommendationAPI.getWeekOutfits(startStr, toDateStr(endDate));
             setWeekOutfits(outfitsRes.data || []);
+
+            // 주간 날씨 예보 가져오기 (오늘 포함 최대 6일)
+            const weatherMap = {};
+            // 오늘 날씨는 이미 fetchWeather()로 가져왔으므로 따로 처리
+            for (let i = 1; i <= 5; i++) {
+                const d = new Date(today);
+                d.setDate(today.getDate() + i);
+                const dateStr = toDateStr(d);
+                try {
+                    const wRes = await weatherAPI.getForecast(dateStr);
+                    weatherMap[dateStr] = wRes.data;
+                } catch (err) {
+                    // 가져오지 못한 날은 저장하지 않음
+                }
+            }
+            setWeekWeathers(weatherMap);
+
         } catch (err) { console.error(err); }
     };
 
@@ -283,12 +311,17 @@ function Home() {
 
                                 {/* 날씨 미니 */}
                                 <div style={styles.weekCardWeather}>
-                                    {weather && (
-                                        <>
-                                            <span style={{ fontSize: '20px' }}>{getWeatherEmoji(weather.desc)}</span>
-                                            <span style={styles.weekCardTemp}>{weather.temp}°C</span>
-                                        </>
-                                    )}
+                                    {(() => {
+                                        const dateStr = toDateStr(date);
+                                        const dayWeather = weekWeathers[dateStr];
+                                        if (!dayWeather) return null;  // 날씨 없으면 아예 표시 안 함
+                                        return (
+                                            <>
+                                                <span style={{ fontSize: '18px' }}>{getWeatherEmoji(dayWeather.desc)}</span>
+                                                <span style={styles.weekCardTemp}>{dayWeather.temp}°C</span>
+                                            </>
+                                        );
+                                    })()}
                                 </div>
 
                                 {/* 일정 */}
