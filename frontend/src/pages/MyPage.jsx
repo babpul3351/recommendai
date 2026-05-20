@@ -158,6 +158,13 @@ function MyPage() {
     const [editForm, setEditForm] = useState({});
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(false);
+    const handleLogout = () => {
+        if (window.confirm('로그아웃 하시겠습니까?')) {
+            localStorage.clear();
+            navigate('/login');
+        }
+    };
+
 
     // 색각 테스트 (프로필 탭 내)
     const [showColorTest, setShowColorTest] = useState(false);
@@ -277,11 +284,14 @@ function MyPage() {
                     <div style={styles.avatar}>
                         {profile.nickname?.charAt(0).toUpperCase()}
                     </div>
-                    <div>
+                    <div style={{ flex: 1 }}>
                         <h1 style={styles.nicknameLarge}>{profile.nickname}</h1>
                         <p style={styles.loginIdText}>@{profile.loginId}</p>
                         <p style={styles.joinDate}>{formatDate(profile.createdAt)} 가입</p>
                     </div>
+                    <button style={styles.logoutBtn} onClick={handleLogout}>
+                        로그아웃
+                    </button>
                 </div>
 
                 {/* 탭 */}
@@ -596,6 +606,17 @@ const styles = {
     cancelBtn: {
         padding: '7px 16px', backgroundColor: theme.colors.background, color: theme.colors.textSub,
         border: 'none', borderRadius: theme.radius.full, fontSize: '13px', cursor: 'pointer'
+    },
+    logoutBtn: {
+        padding: '8px 16px',
+        backgroundColor: 'white',
+        color: theme.colors.danger,
+        border: `1px solid ${theme.colors.danger}`,
+        borderRadius: theme.radius.full,
+        fontSize: '13px',
+        cursor: 'pointer',
+        fontWeight: '500',
+        alignSelf: 'flex-start',
     },
     profileInfo: {},
     infoRow: {

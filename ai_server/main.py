@@ -23,7 +23,7 @@ class WardrobeItemData(BaseModel):
     color: Optional[str] = ""
     material: Optional[str] = ""
     imageB64: Optional[str] = ""
-    embedding: Optional[str] = ""   # 없을 수 있음
+    embedding: Optional[str] = ""   # 없을 수 있음 -> 없을 경우 옷장에 없는 데이터
 
 class RecommendRequest(BaseModel):
     tpo: str
