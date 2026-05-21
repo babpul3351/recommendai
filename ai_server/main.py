@@ -1,7 +1,9 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Optional, List
+from services import gemini_service
+from services import clip_service
 
 app = FastAPI()
 
@@ -46,13 +48,15 @@ def health_check():
 # 옷 이미지 분석
 # ─────────────────────────────────────────────
 @app.post("/ai/analyze")
-async def analyze_image(req: AnalyzeImageRequest):
+async def analyze_clothing(req: AnalyzeImageRequest):
     try:
-        from services.gemini_service import analyze_clothing
-        result = analyze_clothing(req.imageB64)
+        result = gemini_service.analyze_clothing(req.imageB64)
         return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        print("=== 오류 발생 ===")
+        print(traceback.format_exc())
+        raise
 
 # ─────────────────────────────────────────────
 # 코디 추천

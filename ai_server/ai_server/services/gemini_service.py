@@ -4,7 +4,7 @@ from PIL import Image
 from io import BytesIO
 import base64, json
 
-API_KEY = "AIzaSyCnKNZO4sGWaLZDvlwaTM8xAQsrb57XBV4"
+API_KEY = "AIzaSyA3jU5M4Z6H73ZH5nhzd0Mhr4gn0eeOWjA"
 
 gemini_client = None
 
