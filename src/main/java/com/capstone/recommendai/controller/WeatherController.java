@@ -29,4 +29,15 @@ public class WeatherController {
                 weatherService.getCurrentWeather(city, "KR")
         );
     }
+
+    // 특정 날짜 날씨 조회 (5일 이내)
+    @GetMapping("/forecast")
+    public ResponseEntity<?> getForecast(@RequestParam String date) {
+        try {
+            Map<String, Object> weather = weatherService.getWeatherByDate("Seoul", "KR", date);
+            return ResponseEntity.ok(weather);
+        } catch (Exception e) {
+            return ResponseEntity.ok(weatherService.getCurrentWeather("Seoul", "KR"));
+        }
+    }
 }

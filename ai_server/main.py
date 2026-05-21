@@ -1,9 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional, List
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import List, Optional
+
 from services import gemini_service
 from services import clip_service
+from services.daltonization_service import simulate_color_blindness, simulate_only
 
 app = FastAPI()
 
@@ -24,7 +29,7 @@ class WardrobeItemData(BaseModel):
     color: Optional[str] = ""
     material: Optional[str] = ""
     imageB64: Optional[str] = ""
-    embedding: Optional[str] = ""   # 없을 수 있음
+    embedding: Optional[str] = ""   # 없을 수 있음 -> 없을 경우 옷장에 없는 데이터
 
 class RecommendRequest(BaseModel):
     tpo: str
@@ -87,3 +92,19 @@ async def recommend(req: RecommendRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class DaltonizationRequest(BaseModel):
+    imageB64: str
+    colorType: str  # protanopia / deuteranopia / tritanopia
+
+@app.post("/ai/daltonize")
+async def daltonize(req: DaltonizationRequest):
+    """색약 보정 이미지 반환"""
+    corrected = simulate_color_blindness(req.imageB64, req.colorType)
+    simulated = simulate_only(req.imageB64, req.colorType)
+    return {
+        "original": req.imageB64,
+        "simulated": simulated,   # 색각 이상자 시뮬레이션 (보정 전)
+        "corrected": corrected    # Daltonization 보정 후
+    }

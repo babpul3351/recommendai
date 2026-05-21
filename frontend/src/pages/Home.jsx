@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { weatherAPI, wardrobeAPI, calendarAPI } from '../api/api';
+import { weatherAPI, wardrobeAPI, calendarAPI, recommendationAPI } from '../api/api';
+import { theme } from '../styles/theme';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -12,16 +13,34 @@ function Home() {
     const [recommendation, setRecommendation] = useState(null);
     const [todayEvents, setTodayEvents] = useState([]);
     const [weekEvents, setWeekEvents] = useState([]);
+    const [weekOutfits, setWeekOutfits] = useState([]);
     const [loading, setLoading] = useState(false);
     const [showEventRecommendPrompt, setShowEventRecommendPrompt] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
+    const [popup, setPopup] = useState(null);
+    const [weekWeathers, setWeekWeathers] = useState({});
 
     const today = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const toDateStr = (date) => {
+        const d = new Date(date);
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    };
 
     useEffect(() => {
         fetchWeather();
         fetchCalendarData();
     }, []);
+
+// 오늘 날씨가 로드되면 weekWeathers에도 오늘 날씨 추가
+    useEffect(() => {
+        if (weather) {
+            setWeekWeathers(prev => ({
+                ...prev,
+                [toDateStr(today)]: weather
+            }));
+        }
+    }, [weather]);
 
     const fetchWeather = async () => {
         try {
@@ -35,7 +54,6 @@ function Home() {
             const res = await calendarAPI.getEvents();
             const allEvents = res.data;
 
-            // 오늘 일정
             const todayEvts = allEvents.filter(e => {
                 const d = new Date(e.eventDatetime);
                 return d.getFullYear() === today.getFullYear() &&
@@ -44,14 +62,35 @@ function Home() {
             });
             setTodayEvents(todayEvts);
 
-            // 이번 주 일정 (오늘 포함 7일)
             const weekEnd = new Date(today);
             weekEnd.setDate(today.getDate() + 6);
-            const weekEvts = allEvents.filter(e => {
+            setWeekEvents(allEvents.filter(e => {
                 const d = new Date(e.eventDatetime);
                 return d >= today && d <= weekEnd;
-            });
-            setWeekEvents(weekEvts);
+            }));
+
+            const startStr = toDateStr(today);
+            const endDate = new Date(today);
+            endDate.setDate(today.getDate() + 6);
+            const outfitsRes = await recommendationAPI.getWeekOutfits(startStr, toDateStr(endDate));
+            setWeekOutfits(outfitsRes.data || []);
+
+            // 주간 날씨 예보 가져오기 (오늘 포함 최대 6일)
+            const weatherMap = {};
+            // 오늘 날씨는 이미 fetchWeather()로 가져왔으므로 따로 처리
+            for (let i = 1; i <= 5; i++) {
+                const d = new Date(today);
+                d.setDate(today.getDate() + i);
+                const dateStr = toDateStr(d);
+                try {
+                    const wRes = await weatherAPI.getForecast(dateStr);
+                    weatherMap[dateStr] = wRes.data;
+                } catch (err) {
+                    // 가져오지 못한 날은 저장하지 않음
+                }
+            }
+            setWeekWeathers(weatherMap);
+
         } catch (err) { console.error(err); }
     };
 
@@ -73,17 +112,16 @@ function Home() {
         if (desc.includes('구름')) return '⛅';
         if (desc.includes('비')) return '🌧️';
         if (desc.includes('눈')) return '❄️';
-        if (desc.includes('흐림')) return '☁️';
         return '🌤️';
     };
 
     const getTpoColor = (tpo) => {
         const map = {
-            '데이트': '#FF6B9D', '직장': '#4A90E2', '캐주얼': '#7ED321',
+            '데이트': '#FF6B9D', '직장': '#4A90D9', '캐주얼': '#7EC8A4',
             '운동': '#F5A623', '파티': '#BD10E0', '여행': '#50E3C2',
             '일상': '#9B9B9B', '격식': '#4A4A4A'
         };
-        return map[tpo] || '#4A90E2';
+        return map[tpo] || theme.colors.primary;
     };
 
     const getTpoEmoji = (tpo) => {
@@ -96,26 +134,19 @@ function Home() {
         return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
     };
 
-    const getDayLabel = (datetime) => {
-        const d = new Date(datetime);
-        const diff = Math.floor((d - today) / (1000 * 60 * 60 * 24));
-        if (diff === 0) return '오늘';
-        if (diff === 1) return '내일';
-        return `${d.getMonth() + 1}/${d.getDate()} (${WEEKDAYS[d.getDay()]})`;
-    };
-
-    // 주간 캘린더 날짜 배열 생성
-    const weekDays = Array.from({ length: 7 }).map((_, i) => {
-        const d = new Date(today);
-        d.setDate(today.getDate() + i);
-        return d;
-    });
-
     const getEventsOnDay = (date) => weekEvents.filter(e => {
         const d = new Date(e.eventDatetime);
         return d.getFullYear() === date.getFullYear() &&
             d.getMonth() === date.getMonth() &&
             d.getDate() === date.getDate();
+    });
+
+    const getOutfitsOnDay = (date) => weekOutfits.filter(o => o.outfitDate === toDateStr(date));
+
+    const weekDays = Array.from({ length: 7 }).map((_, i) => {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        return d;
     });
 
     return (
@@ -124,339 +155,396 @@ function Home() {
             <div style={styles.container}>
 
                 {/* 인사말 */}
-                <div style={styles.greeting}>
-                    <h1 style={styles.greetingText}>
-                        안녕하세요, <span style={styles.greetingName}>{nickname}</span>님 👋
-                    </h1>
-                    <p style={styles.greetingDate}>
-                        {today.getFullYear()}년 {today.getMonth() + 1}월 {today.getDate()}일
-                        ({WEEKDAYS[today.getDay()]})
-                    </p>
-                </div>
+                <p style={styles.greeting}>안녕하세요, <strong>{nickname}</strong>님!</p>
 
                 {/* 날씨 카드 */}
                 <div style={styles.weatherCard}>
                     {weather ? (
-                        <>
-                            <div style={styles.weatherEmoji}>{getWeatherEmoji(weather.desc)}</div>
-                            <div style={styles.weatherInfo}>
-                                <p style={styles.weatherCity}>{weather.city}</p>
+                        <div style={styles.weatherInner}>
+                            <div>
                                 <p style={styles.weatherTemp}>{weather.temp}°C</p>
+                                <p style={styles.weatherCity}>📍 {weather.city}</p>
                                 <p style={styles.weatherDesc}>{weather.desc}</p>
-                                <p style={styles.weatherDetail}>
-                                    체감 {weather.feelsLike}°C · 습도 {weather.humidity}%
-                                </p>
                             </div>
-                        </>
+                            <div style={styles.weatherEmojiBox}>
+                                <span style={styles.weatherEmoji}>{getWeatherEmoji(weather.desc)}</span>
+                            </div>
+                        </div>
                     ) : (
-                        <p style={{ color: '#888' }}>날씨 정보를 불러오는 중...</p>
+                        <p style={{ color: theme.colors.textSub, fontSize: '14px' }}>날씨를 불러오는 중...</p>
                     )}
                 </div>
 
-                {/* 오늘의 추천 코디 */}
-                <div style={styles.section}>
-                    <h2 style={styles.sectionTitle}>오늘의 추천 코디</h2>
+                {/* 오늘의 코디 */}
+                <p style={styles.sectionLabel}>오늘의 코디</p>
+                <div style={styles.outfitCard}>
+                    <div style={styles.outfitCardHeader}>
+                        <span style={styles.outfitCardBadge}>Today's Look !</span>
+                    </div>
 
-                    {/* 추천 결과가 있는 경우 */}
                     {recommendation ? (
-                        <div>
-                            <div style={styles.outfitGrid}>
-                                {recommendation.outfit.top && (
-                                    <div style={styles.outfitItem}>
-                                        <p style={styles.outfitLabel}>상의</p>
-                                        <p style={styles.outfitType}>{recommendation.outfit.top.type}</p>
-                                        <p style={styles.outfitColor}>{recommendation.outfit.top.color}</p>
+                        <div style={styles.outfitContent}>
+                            <div style={styles.outfitItems}>
+                                {recommendation.outfit?.top && (
+                                    <div style={styles.outfitChip}>
+                                        <span style={styles.outfitChipLabel}>상의</span>
+                                        <span style={styles.outfitChipValue}>{recommendation.outfit.top.type}</span>
+                                        <span style={styles.outfitChipColor}>{recommendation.outfit.top.color}</span>
                                     </div>
                                 )}
-                                {recommendation.outfit.bottom && (
-                                    <div style={styles.outfitItem}>
-                                        <p style={styles.outfitLabel}>하의</p>
-                                        <p style={styles.outfitType}>{recommendation.outfit.bottom.type}</p>
-                                        <p style={styles.outfitColor}>{recommendation.outfit.bottom.color}</p>
+                                {recommendation.outfit?.bottom && (
+                                    <div style={styles.outfitChip}>
+                                        <span style={styles.outfitChipLabel}>하의</span>
+                                        <span style={styles.outfitChipValue}>{recommendation.outfit.bottom.type}</span>
+                                        <span style={styles.outfitChipColor}>{recommendation.outfit.bottom.color}</span>
                                     </div>
                                 )}
-                                {recommendation.outfit.outer && (
-                                    <div style={styles.outfitItem}>
-                                        <p style={styles.outfitLabel}>아우터</p>
-                                        <p style={styles.outfitType}>{recommendation.outfit.outer.type}</p>
-                                        <p style={styles.outfitColor}>{recommendation.outfit.outer.color}</p>
+                                {recommendation.outfit?.outer && (
+                                    <div style={styles.outfitChip}>
+                                        <span style={styles.outfitChipLabel}>아우터</span>
+                                        <span style={styles.outfitChipValue}>{recommendation.outfit.outer.type}</span>
+                                        <span style={styles.outfitChipColor}>{recommendation.outfit.outer.color}</span>
                                     </div>
                                 )}
                             </div>
-                            <p style={styles.outfitDesc}>{recommendation.outfit.description}</p>
+                            {recommendation.outfit?.description && (
+                                <p style={styles.outfitDesc}>{recommendation.outfit.description}</p>
+                            )}
                             {recommendation.matched_items?.length > 0 && (
                                 <div style={styles.matchedRow}>
                                     {recommendation.matched_items.map((item, i) => (
                                         <div key={i} style={styles.matchedItem}>
-                                            {item.imageUrl && (
-                                                <img src={item.imageUrl} alt={item.type} style={styles.matchedImg} />
+                                            {(item.imageUrl || item.imageB64) && (
+                                                <img src={item.imageUrl || item.imageB64}
+                                                     alt={item.type} style={styles.matchedImg} />
                                             )}
                                             <p style={styles.matchedType}>{item.type}</p>
                                         </div>
                                     ))}
                                 </div>
                             )}
-                            <button
-                                style={{ ...styles.secondaryBtn, marginTop: '16px' }}
-                                onClick={() => setRecommendation(null)}
-                            >
+                            <button style={styles.retryBtn} onClick={() => setRecommendation(null)}>
                                 다시 추천받기
                             </button>
                         </div>
 
                     ) : loading ? (
-                        <div style={styles.loadingBox}>
-                            <p style={styles.loadingText}>AI가 코디를 분석 중이에요...</p>
+                        <div style={styles.outfitEmpty}>
+                            <p style={styles.outfitEmptyTitle}>AI가 코디를 분석 중이에요...</p>
                         </div>
 
                     ) : showEventRecommendPrompt && selectedEvent ? (
-                        /* 일정 기반 추천 제안 */
-                        <div style={styles.eventPromptBox}>
-                            <p style={styles.eventPromptEmoji}>{getTpoEmoji(selectedEvent.tpoKeyword)}</p>
-                            <p style={styles.eventPromptText}>
-                                오늘 <strong>{selectedEvent.eventName}</strong> 일정이 있어요!
-                            </p>
-                            <p style={styles.eventPromptSub}>
+                        <div style={styles.outfitEmpty}>
+                            <p style={{ fontSize: '28px', marginBottom: '8px' }}>{getTpoEmoji(selectedEvent.tpoKeyword)}</p>
+                            <p style={styles.outfitEmptyTitle}>오늘 <strong>{selectedEvent.eventName}</strong> 일정!</p>
+                            <p style={{ fontSize: '13px', color: theme.colors.textSub, marginBottom: '16px' }}>
                                 이 일정에 맞는 코디를 추천해드릴까요?
                             </p>
-                            <div style={styles.promptBtnRow}>
-                                <button
-                                    style={styles.primaryBtn}
-                                    onClick={() => fetchRecommendation(selectedEvent.tpoKeyword, selectedEvent.eventId)}
-                                >
-                                    {selectedEvent.tpoKeyword} 코디 추천받기
+                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                                <button style={styles.primaryBtn}
+                                        onClick={() => fetchRecommendation(selectedEvent.tpoKeyword, selectedEvent.eventId)}>
+                                    {selectedEvent.tpoKeyword} 코디
                                 </button>
-                                <button
-                                    style={styles.secondaryBtn}
-                                    onClick={() => fetchRecommendation('일상')}
-                                >
-                                    일상 코디로 추천받기
+                                <button style={styles.secondaryBtn} onClick={() => fetchRecommendation('일상')}>
+                                    일상 코디
                                 </button>
                             </div>
                         </div>
 
                     ) : todayEvents.length > 0 ? (
-                        /* 오늘 일정이 있는 경우 */
-                        <div>
-                            <div style={styles.todayEventBox}>
-                                <p style={styles.todayEventTitle}>오늘의 일정</p>
-                                {todayEvents.map(ev => (
-                                    <div key={ev.eventId} style={styles.todayEventItem}>
-                                        <span style={{ fontSize: '20px' }}>{getTpoEmoji(ev.tpoKeyword)}</span>
-                                        <div>
-                                            <p style={styles.todayEventName}>{ev.eventName}</p>
-                                            <p style={styles.todayEventTime}>{formatTime(ev.eventDatetime)}</p>
-                                        </div>
-                                        <button
-                                            style={{
-                                                ...styles.eventRecommendBtn,
-                                                backgroundColor: getTpoColor(ev.tpoKeyword)
-                                            }}
-                                            onClick={() => {
-                                                setSelectedEvent(ev);
-                                                setShowEventRecommendPrompt(true);
-                                            }}
-                                        >
-                                            코디 추천
-                                        </button>
+                        <div style={styles.outfitContent}>
+                            {todayEvents.map(ev => (
+                                <div key={ev.eventId} style={styles.eventItem}>
+                                    <span style={{ fontSize: '20px' }}>{getTpoEmoji(ev.tpoKeyword)}</span>
+                                    <div style={{ flex: 1 }}>
+                                        <p style={styles.eventName}>{ev.eventName}</p>
+                                        <p style={styles.eventTime}>{formatTime(ev.eventDatetime)}</p>
                                     </div>
-                                ))}
-                            </div>
-                            <button
-                                style={{ ...styles.secondaryBtn, marginTop: '12px' }}
-                                onClick={() => fetchRecommendation('일상')}
-                            >
+                                    <button style={{
+                                        ...styles.eventRecommendBtn,
+                                        backgroundColor: getTpoColor(ev.tpoKeyword)
+                                    }} onClick={() => { setSelectedEvent(ev); setShowEventRecommendPrompt(true); }}>
+                                        코디 추천
+                                    </button>
+                                </div>
+                            ))}
+                            <button style={styles.secondaryBtn} onClick={() => fetchRecommendation('일상')}>
                                 일상 코디로 추천받기
                             </button>
                         </div>
 
                     ) : (
-                        /* 일정도 코디도 없는 경우 */
-                        <div style={styles.emptyBox}>
-                            <p style={styles.emptyText}>
-                                AI가 오늘 날씨와 내 옷장을 분석해서 코디를 추천해드려요
-                            </p>
-                            <button
-                                style={styles.primaryBtn}
-                                onClick={() => fetchRecommendation('일상')}
-                                disabled={loading}
-                            >
+                        <div style={styles.outfitEmpty}>
+                            <p style={styles.outfitEmptyTitle}>코디 추천을 받아보세요.</p>
+                            <p style={styles.outfitEmptySub}>추천 탭에서 TPO를 선택하고 AI 코디를 받아보세요.</p>
+                            <button style={styles.primaryBtn} onClick={() => fetchRecommendation('일상')}>
                                 오늘의 코디 추천받기
                             </button>
                         </div>
                     )}
                 </div>
 
-                {/* 주간 캘린더 */}
-                <div style={styles.section}>
-                    <div style={styles.weekHeader}>
-                        <h2 style={styles.sectionTitle}>이번 주 일정</h2>
-                        <button style={styles.moreBtn} onClick={() => navigate('/calendar')}>
-                            전체 보기 →
-                        </button>
-                    </div>
+                {/* 주간 코디 체크 */}
+                <p style={styles.sectionLabel}>주간 코디 체크</p>
+                <div style={styles.weekScroll}>
+                    {weekDays.map((date, i) => {
+                        const dayEvts = getEventsOnDay(date);
+                        const dayOutfits = getOutfitsOnDay(date);
+                        const isToday = i === 0;
+                        const dow = date.getDay();
+                        const firstOutfit = dayOutfits[0];
+                        const firstEvent = dayEvts[0];
 
-                    <div style={styles.weekGrid}>
-                        {weekDays.map((date, i) => {
-                            const dayEvts = getEventsOnDay(date);
-                            const isToday = i === 0;
-                            const dow = date.getDay();
+                        return (
+                            <div key={i} style={{
+                                ...styles.weekCard,
+                                border: isToday
+                                    ? `2px solid ${theme.colors.primary}`
+                                    : `1px solid ${theme.colors.border}`
+                            }} onClick={() => setPopup({ date, events: dayEvts, outfits: dayOutfits })}>
+                                <p style={{
+                                    ...styles.weekCardDate,
+                                    color: dow === 0 ? '#FF5A5A' : dow === 6 ? theme.colors.blue : theme.colors.text
+                                }}>
+                                    {date.getMonth()+1}/{date.getDate()}
+                                </p>
 
-                            return (
-                                <div
-                                    key={i}
-                                    style={{
-                                        ...styles.weekDayCol,
-                                        backgroundColor: isToday ? '#f0f0f0' : 'white',
-                                        cursor: 'pointer'
-                                    }}
-                                    onClick={() => navigate('/calendar')}
-                                >
-                                    <p style={{
-                                        ...styles.weekDayName,
-                                        color: dow === 0 ? '#FF3B30' : dow === 6 ? '#007AFF' : '#888'
-                                    }}>
-                                        {WEEKDAYS[dow]}
-                                    </p>
-                                    <p style={{
-                                        ...styles.weekDayNum,
-                                        backgroundColor: isToday ? '#333' : 'transparent',
-                                        color: isToday ? 'white' : '#333'
-                                    }}>
-                                        {date.getDate()}
-                                    </p>
-                                    <div style={styles.weekEventList}>
-                                        {dayEvts.length === 0 ? (
-                                            <div style={styles.noEventDot} />
-                                        ) : (
-                                            dayEvts.slice(0, 2).map((ev, ei) => (
-                                                <div key={ei} style={{
-                                                    ...styles.weekEventChip,
-                                                    backgroundColor: getTpoColor(ev.tpoKeyword) + '22',
-                                                    borderLeft: `2px solid ${getTpoColor(ev.tpoKeyword)}`
-                                                }}>
-                                                    <span style={{
-                                                        fontSize: '10px',
-                                                        color: getTpoColor(ev.tpoKeyword),
-                                                        overflow: 'hidden',
-                                                        whiteSpace: 'nowrap',
-                                                        textOverflow: 'ellipsis'
-                                                    }}>
-                                                        {ev.eventName}
-                                                    </span>
-                                                </div>
-                                            ))
-                                        )}
-                                        {dayEvts.length > 2 && (
-                                            <p style={styles.moreEventsText}>+{dayEvts.length - 2}</p>
-                                        )}
-                                    </div>
+                                {/* 날씨 미니 */}
+                                <div style={styles.weekCardWeather}>
+                                    {(() => {
+                                        const dateStr = toDateStr(date);
+                                        const dayWeather = weekWeathers[dateStr];
+                                        if (!dayWeather) return null;  // 날씨 없으면 아예 표시 안 함
+                                        return (
+                                            <>
+                                                <span style={{ fontSize: '18px' }}>{getWeatherEmoji(dayWeather.desc)}</span>
+                                                <span style={styles.weekCardTemp}>{dayWeather.temp}°C</span>
+                                            </>
+                                        );
+                                    })()}
                                 </div>
-                            );
-                        })}
-                    </div>
+
+                                {/* 일정 */}
+                                {firstEvent && (
+                                    <p style={styles.weekCardEvent}>일정: {firstEvent.tpoKeyword}</p>
+                                )}
+
+                                {/* 코디 이미지 */}
+                                {firstOutfit?.matchedItems?.[0]?.imageUrl ? (
+                                    <img src={firstOutfit.matchedItems[0].imageUrl} alt="코디"
+                                         style={styles.weekCardImg} />
+                                ) : dayOutfits.length > 0 ? (
+                                    <div style={styles.weekCardOutfitBadge}>👗</div>
+                                ) : null}
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
+
+            {/* 날짜 팝업 */}
+            {popup && (
+                <>
+                    <div style={styles.overlay} onClick={() => setPopup(null)} />
+                    <div style={styles.popupBox}>
+                        <div style={styles.popupHeader}>
+                            <p style={styles.popupDate}>
+                                {popup.date.getMonth()+1}월 {popup.date.getDate()}일
+                                <span style={styles.popupWeekday}>({WEEKDAYS[popup.date.getDay()]})</span>
+                            </p>
+                            <button style={styles.closeBtn} onClick={() => setPopup(null)}>✕</button>
+                        </div>
+                        <div style={styles.popupContent}>
+                            {popup.events.length === 0 && popup.outfits.length === 0 && (
+                                <p style={styles.noEventText}>일정 및 저장된 코디가 없습니다.</p>
+                            )}
+                            {popup.events.map(ev => (
+                                <div key={ev.eventId} style={styles.popupEventCard}>
+                                    <div style={{ width: '4px', alignSelf: 'stretch', backgroundColor: getTpoColor(ev.tpoKeyword), borderRadius: '2px' }} />
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span>{getTpoEmoji(ev.tpoKeyword)}</span>
+                                            <p style={styles.popupEventName}>{ev.eventName}</p>
+                                        </div>
+                                        <p style={styles.popupEventTime}>{formatTime(ev.eventDatetime)}</p>
+                                    </div>
+                                </div>
+                            ))}
+                            {popup.outfits.map((outfit, i) => (
+                                <div key={i} style={styles.popupOutfitCard}>
+                                    <p style={styles.popupOutfitTitle}>👗 저장된 코디</p>
+                                    {outfit.description && <p style={styles.popupOutfitDesc}>{outfit.description}</p>}
+                                    {outfit.matchedItems?.length > 0 && (
+                                        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                                            {outfit.matchedItems.map((item, mi) => item.imageUrl && (
+                                                <img key={mi} src={item.imageUrl} alt=""
+                                                     style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px' }} />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                            <button style={styles.goCalendarBtn}
+                                    onClick={() => { setPopup(null); navigate('/calendar'); }}>
+                                캘린더에서 자세히 보기 →
+                            </button>
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     );
 }
 
 const styles = {
-    page: { backgroundColor: '#f5f5f5', minHeight: '100vh' },
-    container: { maxWidth: '800px', margin: '0 auto', padding: '24px 16px' },
-    greeting: { marginBottom: '20px' },
-    greetingText: { fontSize: '22px', fontWeight: 'bold', color: '#333', margin: '0 0 4px' },
-    greetingName: { color: '#333' },
-    greetingDate: { fontSize: '14px', color: '#888', margin: 0 },
+    page: { backgroundColor: theme.colors.background, minHeight: '100vh' },
+    container: { maxWidth: '480px', margin: '0 auto', padding: '16px 20px 90px' },
+    greeting: { fontSize: '22px', color: theme.colors.text, margin: '0 0 16px' },
+
+    // 날씨
     weatherCard: {
-        display: 'flex', alignItems: 'center', gap: '24px',
-        backgroundColor: 'white', borderRadius: '16px', padding: '20px',
-        marginBottom: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+        backgroundColor: theme.colors.primaryLight, borderRadius: theme.radius.xl,
+        padding: '24px', marginBottom: '24px'
     },
-    weatherEmoji: { fontSize: '56px' },
-    weatherInfo: {},
-    weatherCity: { fontSize: '13px', color: '#888', margin: '0 0 4px' },
-    weatherTemp: { fontSize: '40px', fontWeight: 'bold', color: '#333', margin: '0 0 4px' },
-    weatherDesc: { fontSize: '15px', color: '#555', margin: '0 0 4px' },
-    weatherDetail: { fontSize: '12px', color: '#888', margin: 0 },
-    section: {
-        backgroundColor: 'white', borderRadius: '16px', padding: '20px',
-        marginBottom: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+    weatherInner: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    weatherTemp: { fontSize: '48px', fontWeight: '700', color: theme.colors.text, margin: 0, lineHeight: 1 },
+    weatherCity: { fontSize: '13px', color: theme.colors.textSub, margin: '8px 0 4px' },
+    weatherDesc: { fontSize: '14px', color: theme.colors.textSub, margin: 0 },
+    weatherEmojiBox: { fontSize: '72px', lineHeight: 1 },
+    weatherEmoji: {},
+
+    // 섹션 레이블
+    sectionLabel: {
+        fontSize: '17px', fontWeight: '600', color: theme.colors.text, margin: '0 0 12px'
     },
-    sectionTitle: { fontSize: '17px', fontWeight: 'bold', color: '#333', margin: '0 0 16px' },
-    loadingBox: { textAlign: 'center', padding: '32px 0' },
-    loadingText: { color: '#888', fontSize: '14px' },
-    emptyBox: { textAlign: 'center', padding: '24px 0' },
-    emptyText: { color: '#888', fontSize: '14px', marginBottom: '16px' },
+
+    // 오늘의 코디 카드
+    outfitCard: {
+        backgroundColor: theme.colors.white, borderRadius: theme.radius.xl,
+        overflow: 'hidden', marginBottom: '24px',
+        boxShadow: theme.colors.cardShadow
+    },
+    outfitCardHeader: {
+        backgroundColor: theme.colors.primary, padding: '12px 20px'
+    },
+    outfitCardBadge: {
+        fontSize: '15px', fontWeight: '600', color: theme.colors.white
+    },
+    outfitContent: { padding: '16px 20px' },
+    outfitEmpty: { padding: '24px 20px', textAlign: 'center' },
+    outfitEmptyTitle: {
+        fontSize: '16px', fontWeight: '600', color: theme.colors.text, margin: '0 0 6px'
+    },
+    outfitEmptySub: {
+        fontSize: '13px', color: theme.colors.textSub, margin: '0 0 16px', lineHeight: '1.5'
+    },
+    outfitItems: { display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' },
+    outfitChip: {
+        backgroundColor: theme.colors.primaryLight, borderRadius: theme.radius.md,
+        padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '2px'
+    },
+    outfitChipLabel: { fontSize: '10px', color: theme.colors.primary, fontWeight: '600' },
+    outfitChipValue: { fontSize: '13px', fontWeight: '600', color: theme.colors.text },
+    outfitChipColor: { fontSize: '11px', color: theme.colors.textSub },
+    outfitDesc: {
+        fontSize: '13px', color: theme.colors.textSub, lineHeight: '1.6',
+        margin: '0 0 12px', backgroundColor: '#F9FBF9', padding: '10px 12px',
+        borderRadius: theme.radius.md
+    },
+    matchedRow: { display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '12px' },
+    matchedItem: { textAlign: 'center' },
+    matchedImg: { width: '72px', height: '72px', objectFit: 'cover', borderRadius: theme.radius.md },
+    matchedType: { fontSize: '11px', color: theme.colors.textSub, marginTop: '4px' },
+    retryBtn: {
+        padding: '8px 16px', backgroundColor: theme.colors.primaryLight,
+        color: theme.colors.primary, border: 'none', borderRadius: theme.radius.full,
+        fontSize: '13px', cursor: 'pointer', fontWeight: '500'
+    },
     primaryBtn: {
-        padding: '12px 24px', backgroundColor: '#333', color: 'white',
-        border: 'none', borderRadius: '8px', fontSize: '14px',
-        cursor: 'pointer', fontWeight: '500'
+        padding: '12px 20px', backgroundColor: theme.colors.primary, color: 'white',
+        border: 'none', borderRadius: theme.radius.full, fontSize: '14px',
+        cursor: 'pointer', fontWeight: '600'
     },
     secondaryBtn: {
-        padding: '10px 20px', backgroundColor: '#f0f0f0', color: '#333',
-        border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer'
+        padding: '10px 18px', backgroundColor: theme.colors.primaryLight,
+        color: theme.colors.primary, border: 'none', borderRadius: theme.radius.full,
+        fontSize: '13px', cursor: 'pointer', fontWeight: '500'
     },
-    outfitGrid: { display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' },
-    outfitItem: {
-        flex: 1, minWidth: '80px', backgroundColor: '#f9f9f9',
-        borderRadius: '8px', padding: '12px', textAlign: 'center'
+    eventItem: {
+        display: 'flex', alignItems: 'center', gap: '10px',
+        marginBottom: '10px', padding: '10px',
+        backgroundColor: theme.colors.background, borderRadius: theme.radius.md
     },
-    outfitLabel: { fontSize: '11px', color: '#888', margin: '0 0 4px' },
-    outfitType: { fontSize: '13px', fontWeight: 'bold', color: '#333', margin: '0 0 2px' },
-    outfitColor: { fontSize: '12px', color: '#666', margin: 0 },
-    outfitDesc: { fontSize: '13px', color: '#555', lineHeight: '1.6', marginBottom: '12px' },
-    matchedRow: { display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '8px' },
-    matchedItem: { textAlign: 'center' },
-    matchedImg: { width: '72px', height: '72px', objectFit: 'cover', borderRadius: '8px' },
-    matchedType: { fontSize: '11px', color: '#666', marginTop: '4px' },
-    todayEventBox: {
-        backgroundColor: '#f9f9f9', borderRadius: '12px', padding: '14px', marginBottom: '8px'
-    },
-    todayEventTitle: { fontSize: '12px', color: '#888', margin: '0 0 10px' },
-    todayEventItem: {
-        display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px'
-    },
-    todayEventName: { fontSize: '14px', fontWeight: 'bold', color: '#333', margin: '0 0 2px' },
-    todayEventTime: { fontSize: '12px', color: '#888', margin: 0 },
+    eventName: { fontSize: '14px', fontWeight: '600', color: theme.colors.text, margin: '0 0 2px' },
+    eventTime: { fontSize: '12px', color: theme.colors.textSub, margin: 0 },
     eventRecommendBtn: {
-        marginLeft: 'auto', padding: '6px 12px', color: 'white',
-        border: 'none', borderRadius: '6px', fontSize: '12px', cursor: 'pointer'
+        padding: '6px 12px', color: 'white', border: 'none',
+        borderRadius: theme.radius.full, fontSize: '12px', cursor: 'pointer', fontWeight: '500'
     },
-    eventPromptBox: { textAlign: 'center', padding: '16px 0' },
-    eventPromptEmoji: { fontSize: '40px', margin: '0 0 8px' },
-    eventPromptText: { fontSize: '16px', color: '#333', margin: '0 0 6px' },
-    eventPromptSub: { fontSize: '13px', color: '#888', margin: '0 0 20px' },
-    promptBtnRow: { display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' },
-    weekHeader: {
-        display: 'flex', justifyContent: 'space-between',
-        alignItems: 'center', marginBottom: '12px'
+
+    // 주간 캘린더
+    weekScroll: {
+        display: 'flex', gap: '10px', overflowX: 'auto',
+        paddingBottom: '8px',
+        scrollbarWidth: 'none',
     },
-    moreBtn: {
-        background: 'none', border: 'none', fontSize: '13px',
-        color: '#888', cursor: 'pointer'
+    weekCard: {
+        minWidth: '110px', backgroundColor: theme.colors.white,
+        borderRadius: theme.radius.lg, padding: '12px',
+        cursor: 'pointer', flexShrink: 0
     },
-    weekGrid: { display: 'flex', gap: '6px' },
-    weekDayCol: {
-        flex: 1, borderRadius: '10px', padding: '8px 4px',
-        textAlign: 'center', minHeight: '80px'
+    weekCardDate: { fontSize: '13px', fontWeight: '600', margin: '0 0 8px' },
+    weekCardWeather: { display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px' },
+    weekCardTemp: { fontSize: '13px', fontWeight: '600', color: theme.colors.text },
+    weekCardEvent: {
+        fontSize: '11px', color: theme.colors.textSub, margin: '0 0 8px',
+        overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis'
     },
-    weekDayName: { fontSize: '11px', fontWeight: '600', margin: '0 0 4px' },
-    weekDayNum: {
-        width: '26px', height: '26px', borderRadius: '50%',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '13px', fontWeight: '500', margin: '0 auto 6px'
+    weekCardImg: {
+        width: '100%', height: '80px', objectFit: 'cover',
+        borderRadius: theme.radius.md, marginTop: '4px'
     },
-    weekEventList: { display: 'flex', flexDirection: 'column', gap: '2px' },
-    noEventDot: {
-        width: '4px', height: '4px', borderRadius: '50%',
-        backgroundColor: '#e0e0e0', margin: '0 auto'
+    weekCardOutfitBadge: { fontSize: '24px', textAlign: 'center', marginTop: '4px' },
+
+    // 팝업
+    overlay: {
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 200
     },
-    weekEventChip: {
-        borderRadius: '3px', padding: '2px 4px',
-        display: 'flex', alignItems: 'center'
+    popupBox: {
+        position: 'fixed', top: '50%', left: '50%',
+        transform: 'translate(-50%, -50%)',
+        backgroundColor: theme.colors.white, borderRadius: theme.radius.xl,
+        width: '360px', maxWidth: '90vw', maxHeight: '80vh', overflowY: 'auto',
+        zIndex: 201, boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
     },
-    moreEventsText: { fontSize: '10px', color: '#888', margin: '2px 0 0' }
+    popupHeader: {
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '20px 20px 0', marginBottom: '16px'
+    },
+    popupDate: { fontSize: '20px', fontWeight: '700', color: theme.colors.text, margin: 0 },
+    popupWeekday: { fontSize: '15px', fontWeight: '400', color: theme.colors.textSub, marginLeft: '6px' },
+    closeBtn: { background: 'none', border: 'none', fontSize: '18px', color: '#999', cursor: 'pointer' },
+    popupContent: { padding: '0 20px 20px' },
+    noEventText: { color: theme.colors.textLight, fontSize: '14px', textAlign: 'center', padding: '16px 0' },
+    popupEventCard: {
+        display: 'flex', gap: '12px', alignItems: 'flex-start',
+        backgroundColor: theme.colors.background, borderRadius: theme.radius.md,
+        padding: '12px', marginBottom: '10px'
+    },
+    popupEventName: { fontSize: '15px', fontWeight: '600', color: theme.colors.text, margin: 0 },
+    popupEventTime: { fontSize: '12px', color: theme.colors.textSub, margin: '4px 0 0' },
+    popupOutfitCard: {
+        backgroundColor: theme.colors.primaryLight, borderRadius: theme.radius.md,
+        padding: '14px', marginBottom: '10px'
+    },
+    popupOutfitTitle: { fontSize: '13px', fontWeight: '700', color: theme.colors.primary, margin: '0 0 6px' },
+    popupOutfitDesc: { fontSize: '13px', color: theme.colors.text, lineHeight: '1.5', margin: 0 },
+    goCalendarBtn: {
+        width: '100%', padding: '12px', backgroundColor: theme.colors.background,
+        color: theme.colors.textSub, border: 'none', borderRadius: theme.radius.md,
+        fontSize: '13px', cursor: 'pointer', marginTop: '8px'
+    }
 };
 
 export default Home;

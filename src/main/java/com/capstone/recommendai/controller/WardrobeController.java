@@ -71,6 +71,7 @@ public class WardrobeController {
         return ResponseEntity.ok(response);
     }
 
+
     // 코디 추천
     @PostMapping("/recommend")
     public ResponseEntity<?> recommend(
@@ -134,7 +135,8 @@ public class WardrobeController {
                     map.put("type", item.getType());
                     map.put("color", item.getColor());
                     map.put("material", item.getMaterial());
-                    map.put("imageB64", item.getImageUrl());
+                    map.put("imageB64", item.getImageUrl());  // 하위 호환
+                    map.put("imageUrl", item.getImageUrl());  // S3 URL
                     return map;
                 }).collect(Collectors.toList()),
                 linkedEvents);
@@ -152,6 +154,8 @@ public class WardrobeController {
         String firstEventId = linkedEvents.isEmpty() ? null
                 : (String) linkedEvents.get(0).get("eventId");
 
+        String outfitDate = (String) body.getOrDefault("outfitDate", null);
+
         var saved = recommendationService.saveRecommendation(
                 user.getUserId(),
                 tpo,
@@ -160,6 +164,7 @@ public class WardrobeController {
                 temperature,
                 weatherCondition,
                 firstEventId,
+                outfitDate,
                 matchedItems
         );
 
@@ -174,5 +179,16 @@ public class WardrobeController {
             @PathVariable String itemId) {
         wardrobeService.deleteItem(userDetails.getUsername(), itemId);
         return ResponseEntity.ok("삭제되었습니다");
+    }
+
+    // 옷장 아이템 수정
+    @PutMapping("/{itemId}")
+    public ResponseEntity<?> updateItem(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable String itemId,
+            @RequestBody Map<String, String> body) {
+
+        wardrobeService.updateItem(userDetails.getUsername(), itemId, body);
+        return ResponseEntity.ok(Map.of("message", "수정됐습니다."));
     }
 }

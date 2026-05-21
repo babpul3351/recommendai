@@ -34,16 +34,6 @@ export const authAPI = {
     login: (data) => api.post('/auth/login', data)
 };
 
-export const weatherAPI = {
-    getWeather: () => api.get('/weather')
-};
-
-export const wardrobeAPI = {
-    getWardrobe: () => api.get('/wardrobe'),
-    uploadItem: (imageB64) => api.post('/wardrobe/upload', { imageB64 }),
-    deleteItem: (itemId) => api.delete(`/wardrobe/${itemId}`),
-    recommend: (data) => api.post('/wardrobe/recommend', data)
-};
 
 export const calendarAPI = {
     getEvents: () => api.get('/calendar'),
@@ -57,7 +47,28 @@ export const userAPI = {
 };
 
 export const recommendationAPI = {
-    getHistory: () => api.get('/recommendations')
+    getHistory: () => api.get('/recommendations'),
+    getWeekOutfits: (start, end) => api.get(`/recommendations/week?start=${start}&end=${end}`)
+};
+
+export const colorAssistantAPI = {
+    daltonize: (imageB64, colorType) =>
+        api.post('/user/color-assistant/daltonize', { imageB64, colorType }),
+    updateColorType: (colorType) =>
+        api.put('/user/color-type', { colorType })
+};
+
+export const weatherAPI = {
+    getWeather: () => api.get('/weather'),
+    getForecast: (date) => api.get(`/weather/forecast?date=${date}`)
+};
+
+export const wardrobeAPI = {
+    getWardrobe: () => api.get('/wardrobe'),
+    uploadItem: (imageB64) => api.post('/wardrobe/upload', { imageB64 }),
+    deleteItem: (itemId) => api.delete(`/wardrobe/${itemId}`),
+    updateItem: (itemId, data) => api.put(`/wardrobe/${itemId}`, data),
+    recommend: (data) => api.post('/wardrobe/recommend', data)
 };
 
 export default api;

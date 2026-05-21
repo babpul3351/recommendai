@@ -7,4 +7,9 @@ import java.util.List;
 
 public interface RecommendationRepository extends JpaRepository<Recommendation, String> {
     List<Recommendation> findByUserOrderByCreatedAtDesc(User user);
+    List<Recommendation> findByUserAndOutfitDateBetween(
+            User user, java.time.LocalDate start, java.time.LocalDate end);
+
+    List<Recommendation> findByUserAndOutfitDate(
+            User user, java.time.LocalDate date);
 }
