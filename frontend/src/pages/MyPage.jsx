@@ -16,139 +16,385 @@ const COLOR_TYPE_LABELS = {
     'normal': '정상 색각',
     'protanopia': '제1색맹 (적색맹)',
     'deuteranopia': '제2색맹 (녹색맹)',
-    'tritanopia': '제3색맹 (청색맹)'
+    'tritanopia': '제3색맹 (청황색맹)'
 };
 const COLOR_TYPE_DESCS = {
     'normal': '색각이 정상입니다.',
     'protanopia': '빨간색 계열 구분이 어렵습니다.',
     'deuteranopia': '초록색 계열 구분이 어렵습니다.',
-    'tritanopia': '파란색 계열 구분이 어렵습니다.'
+    'tritanopia': '파란/노란색 계열 구분이 어렵습니다.'
 };
 
-// 스타일별 안전 색상 조합 추천
+// ── 색각 유형별 주의 색상 조합 (색각유형_허서윤.html 기반) ──
+const COLOR_TYPE_WARN = {
+    protanopia: {
+        label: '적색맹 주의 색상 조합',
+        items: [
+            { colors: ['#8b0000', '#1a1a1a'], name: '다크레드 + 블랙', desc: '빨간색이 어둡게 보여서 검정과 거의 같아 보일 수 있어요.' },
+            { colors: ['#cc3333', '#2d8c3c'], name: '빨강 + 초록', desc: '빨강이 탁하게 느껴져서 초록과 헷갈리기 쉬운 조합이에요.' },
+            { colors: ['#8b1a2a', '#556b2f'], name: '와인 + 카키', desc: '두 색 모두 어둡고 탁해서 상하의 구분이 잘 안 될 수 있어요.' },
+        ]
+    },
+    deuteranopia: {
+        label: '녹색맹 주의 색상 조합',
+        items: [
+            { colors: ['#cc3333', '#2d8c3c'], name: '빨강 + 초록', desc: '이 두 색이 비슷한 색으로 보여서 코디 포인트가 사라질 수 있어요.' },
+            { colors: ['#8B4513', '#228B22'], name: '갈색 + 짙은 초록', desc: '어둡고 탁한 색끼리라 입었을 때 경계가 흐릿하게 보일 수 있어요.' },
+            { colors: ['#6f7448', '#d8c8a2'], name: '카키 + 베이지', desc: '카키가 갈색처럼 보여서 베이지와 구분이 어려울 수 있어요.' },
+        ]
+    },
+    tritanopia: {
+        label: '청황색맹 주의 색상 조합',
+        items: [
+            { colors: ['#1a66cc', '#f0c040'], name: '블루 + 옐로우', desc: '두 색이 비슷한 밝기로 느껴져 구분이 어려울 수 있어요.' },
+            { colors: ['#2563eb', '#7c3aed'], name: '파랑 + 보라', desc: '파란 계열끼리라 하나로 뭉쳐 보일 수 있어요.' },
+            { colors: ['#0f9992', '#98e2d2'], name: '청록 + 민트', desc: '비슷한 느낌의 색이라 경계가 흐릿해 보일 수 있어요.' },
+        ]
+    },
+    normal: null,
+};
+
+// ── 스타일별 추천 색상 조합 ──
 const STYLE_COLOR_PALETTES = {
-    business: {
-        label: '비즈니스',
-        palettes: [
+    business: { label: '비즈니스', palettes: [
             { name: '클래식 네이비', colors: ['#1a2a5e', '#ffffff', '#c0c0c0'], desc: '남색 + 흰색 + 실버 — 신뢰감 있는 정장 코디' },
             { name: '차콜 그레이', colors: ['#36454f', '#f5f5f5', '#8b7355'], desc: '차콜 + 아이보리 + 베이지 — 모던한 오피스 룩' },
             { name: '블랙 포멀', colors: ['#1a1a1a', '#ffffff', '#c9a84c'], desc: '블랙 + 화이트 + 골드 — 격식 있는 미팅룩' },
-        ]
-    },
-    formal: {
-        label: '포멀',
-        palettes: [
+        ]},
+    formal: { label: '포멀', palettes: [
             { name: '모노크롬', colors: ['#1a1a1a', '#888888', '#f0f0f0'], desc: '블랙 + 그레이 + 화이트 — 세련된 포멀 코디' },
             { name: '네이비 클래식', colors: ['#1a2a5e', '#c9a84c', '#ffffff'], desc: '네이비 + 골드 + 화이트 — 품격 있는 스타일' },
-        ]
-    },
-    casual: {
-        label: '캐주얼',
-        palettes: [
+        ]},
+    casual: { label: '캐주얼', palettes: [
             { name: '어스톤', colors: ['#8B6914', '#D2B48C', '#F5DEB3'], desc: '브라운 + 베이지 + 크림 — 자연스러운 캐주얼' },
             { name: '데님 믹스', colors: ['#1560BD', '#f5f5f5', '#c0392b'], desc: '블루 + 화이트 + 레드 포인트 — 활기찬 캐주얼' },
             { name: '그린 어스', colors: ['#355E3B', '#D2B48C', '#F5DEB3'], desc: '카키 + 베이지 + 크림 — 내추럴 스타일' },
-        ]
-    },
-    lovely: {
-        label: '러블리',
-        palettes: [
+        ]},
+    lovely: { label: '러블리', palettes: [
             { name: '핑크 로맨틱', colors: ['#FFB6C1', '#ffffff', '#C8A2C8'], desc: '라이트핑크 + 화이트 + 라일락 — 사랑스러운 코디' },
-            { name: '파스텔 믹스', colors: ['#FADADD', '#B0E0E6', '#FFFACD'], desc: '파스텔 핑크 + 파우더 블루 + 레몬 — 상큼한 여성스타일' },
-        ]
-    },
-    feminine: {
-        label: '페미닌',
-        palettes: [
+            { name: '파스텔 믹스', colors: ['#FADADD', '#B0E0E6', '#FFFACD'], desc: '파스텔 핑크 + 파우더 블루 + 레몬 — 상큼한 스타일' },
+        ]},
+    feminine: { label: '페미닌', palettes: [
             { name: '로즈 & 누드', colors: ['#C9707A', '#F5CBA7', '#ffffff'], desc: '로즈 + 누드 + 화이트 — 우아한 페미닌 룩' },
             { name: '버건디 클래식', colors: ['#800020', '#f5f5f5', '#D4AF37'], desc: '버건디 + 아이보리 + 골드 — 고급스러운 여성미' },
-        ]
-    },
-    sporty: {
-        label: '스포티',
-        palettes: [
+        ]},
+    sporty: { label: '스포티', palettes: [
             { name: '모노 스포티', colors: ['#1a1a1a', '#ffffff', '#FF4500'], desc: '블랙 + 화이트 + 오렌지 레드 — 역동적인 스포츠룩' },
             { name: '네온 믹스', colors: ['#1a1a1a', '#39FF14', '#ffffff'], desc: '블랙 + 네온그린 + 화이트 — 개성 있는 스트릿 스포티' },
-        ]
-    },
-    comfort: {
-        label: '컴포트',
-        palettes: [
+        ]},
+    comfort: { label: '컴포트', palettes: [
             { name: '뉴트럴 컴포트', colors: ['#D3D3D3', '#F5F5DC', '#A9A9A9'], desc: '라이트그레이 + 베이지 + 그레이 — 편안한 데일리 룩' },
             { name: '웜 베이지', colors: ['#F5DEB3', '#D2B48C', '#8B7355'], desc: '크림 + 베이지 + 탄 — 따뜻하고 편안한 스타일' },
-        ]
-    }
+        ]},
 };
 
-const TEST_QUESTIONS = [
-    {
-        question: "아래 원 안에서 숫자를 읽어주세요.",
-        canvas: { bg: '#E8A87C', dots: '#6B4C3B', number: '6', hint: '정상이면 6이 보입니다' },
-        options: ['6', '8', '잘 모르겠음'],
-        normal: '6', protanopia: '8', deuteranopia: '8', tritanopia: '6'
-    },
-    {
-        question: "아래 원 안에서 숫자를 읽어주세요.",
-        canvas: { bg: '#7CB87C', dots: '#B87C7C', number: '3', hint: '정상이면 3이 보입니다' },
-        options: ['3', '5', '잘 모르겠음'],
-        normal: '3', protanopia: '5', deuteranopia: '5', tritanopia: '3'
-    },
-    {
-        question: "아래 원 안에서 숫자를 읽어주세요.",
-        canvas: { bg: '#7C7CB8', dots: '#B8B87C', number: '7', hint: '정상이면 7이 보입니다' },
-        options: ['7', '잘 모르겠음', '1'],
-        normal: '7', protanopia: '7', deuteranopia: '7', tritanopia: '잘 모르겠음'
-    },
-    {
-        question: "두 색상 중 더 다르게 보이는 쌍을 선택하세요.",
-        options: ['빨강과 초록', '파랑과 노랑', '차이가 없음'],
-        normal: '빨강과 초록', protanopia: '차이가 없음',
-        deuteranopia: '차이가 없음', tritanopia: '빨강과 초록'
+// ════════════════════════════════════════
+// 통합 색각 테스트 컴포넌트
+// (index.html 숫자 문항 5개 + 색각유형_허서윤.html 알파벳/영단어 문항 3개)
+// ════════════════════════════════════════
+function ColorTest({ onResult }) {
+    const canvasRef = useRef(null);
+    const [step, setStep] = useState(0);
+    const [answers, setAnswers] = useState([]);
+    const [rendered, setRendered] = useState(false);
+
+    // 8문항: 숫자 5 + 알파벳/영단어 3
+    const PLATES = [
+        {
+            id: 1, text: '29',
+            question: '원 안의 숫자를 읽어주세요',
+            category: '적록 판별',
+            options: ['29', '70', '21', '보기 어려움'],
+            answer: '29', weight: 'deutan',
+            bg: ['#9eaa68','#b0b977','#8f9b5e','#c0bd80'],
+            fg: ['#bd694d','#ca7a5a','#a95743','#d18a69'],
+        },
+        {
+            id: 2, text: '45',
+            question: '원 안의 숫자를 읽어주세요',
+            category: '적색 판별',
+            options: ['45', '15', '48', '보기 어려움'],
+            answer: '45', weight: 'protan',
+            bg: ['#c67a68','#b9685c','#d08d75','#b75f51'],
+            fg: ['#728f5b','#668453','#83a168','#5a744a'],
+        },
+        {
+            id: 3, text: '7',
+            question: '원 안의 숫자를 읽어주세요',
+            category: '청황 판별',
+            options: ['7', '1', '3', '보기 어려움'],
+            answer: '7', weight: 'tritan',
+            bg: ['#c4b45f','#d1c36f','#b9a753','#d8ca83'],
+            fg: ['#536fab','#46619b','#657fba','#3d558a'],
+        },
+        {
+            id: 4, text: '12',
+            question: '원 안의 숫자를 읽어주세요',
+            category: '기준 확인',
+            options: ['12', '17', '21', '보기 어려움'],
+            answer: '12', weight: 'normal',
+            bg: ['#d4bd72','#c7a961','#e0ca87','#b99b58'],
+            fg: ['#405c86','#324b73','#536f98','#253d61'],
+        },
+        {
+            id: 5, text: '5',
+            question: '원 안의 숫자를 읽어주세요',
+            category: '적색 판별',
+            options: ['5', '6', '8', '보기 어려움'],
+            answer: '5', weight: 'protan',
+            bg: ['#cf9077','#c57d6d','#d9a08a','#b96c60'],
+            fg: ['#6f8d69','#5e7c5e','#82a17a','#537052'],
+        },
+        {
+            id: 6, text: 'RED', isWord: true,
+            question: '원 안에 숨겨진 영단어를 찾아주세요',
+            category: '적록 판별',
+            options: ['RED', 'BED', 'REB', '보기 어려움'],
+            answer: 'RED', weight: 'deutan',
+            bg: ['#c8d090','#b8c070','#d8e0a0','#e0e8b0','#a8b860'],
+            fg: ['#d06040','#c04828','#e07050','#b83820'],
+        },
+        {
+            id: 7, text: 'GO', isWord: true,
+            question: '원 안에 숨겨진 영단어를 찾아주세요',
+            category: '녹색 판별',
+            options: ['GO', 'DO', '보이지 않음', '보기 어려움'],
+            answer: 'GO', weight: 'protan',
+            bg: ['#a8c8a8','#98b898','#b8d8b8','#88a888','#c0d8c0'],
+            fg: ['#c04040','#d05050','#b03030','#c84848'],
+        },
+        {
+            id: 8, text: 'B', isWord: true,
+            question: '원 안에 숨겨진 알파벳을 찾아주세요',
+            category: '청황 판별',
+            options: ['B', 'E', 'R', '보기 어려움'],
+            answer: 'B', weight: 'tritan',
+            bg: ['#a0c8e0','#80b0d0','#c0d8f0','#b0c8e8','#90b8d8'],
+            fg: ['#e08020','#d06010','#f09030','#c07008'],
+        },
+    ];
+
+    // ── index.html의 정확한 drawPlate 방식 ──
+    function createTextMask(W, text, isWord) {
+        const mc = document.createElement('canvas');
+        mc.width = W; mc.height = W;
+        const mctx = mc.getContext('2d');
+        mctx.clearRect(0, 0, W, W);
+        mctx.fillStyle = '#000';
+        mctx.textAlign = 'center';
+        mctx.textBaseline = 'middle';
+        // 글자 크기: 한 글자는 크게, 여러 글자는 작게
+        const fontSize = isWord
+            ? (text.length === 1 ? Math.round(W * 0.62) : Math.round(W * 0.34))
+            : (text.length > 1 ? Math.round(W * 0.40) : Math.round(W * 0.52));
+        mctx.font = `900 ${fontSize}px Arial, sans-serif`;
+        mctx.fillText(text, W / 2, W / 2 + fontSize * 0.04);
+        return mctx;
     }
-];
 
-function analyzeTestResult(answers) {
-    let scores = { normal: 0, protanopia: 0, deuteranopia: 0, tritanopia: 0 };
-    answers.forEach((answer, i) => {
-        const q = TEST_QUESTIONS[i];
-        Object.keys(scores).forEach(type => {
-            if (q[type] === answer) scores[type]++;
+    function isTextPixel(maskCtx, x, y) {
+        try {
+            return maskCtx.getImageData(
+                Math.max(0, Math.min(Math.floor(x), maskCtx.canvas.width - 1)),
+                Math.max(0, Math.min(Math.floor(y), maskCtx.canvas.height - 1)),
+                1, 1
+            ).data[3] > 16;
+        } catch (e) { return false; }
+    }
+
+    function randColor(colors) {
+        return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    function drawDot(ctx, x, y, r, colors) {
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = randColor(colors);
+        ctx.fill();
+    }
+
+    function randomInCircle(cx, cy, radius) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.sqrt(Math.random()) * radius;
+        return { x: cx + Math.cos(angle) * dist, y: cy + Math.sin(angle) * dist };
+    }
+
+    function drawPlate(canvas, plate) {
+        const W = canvas.width;
+        const cx = W / 2, cy = W / 2;
+        const radius = W * 0.45;
+        const ctx = canvas.getContext('2d');
+
+        ctx.clearRect(0, 0, W, W);
+        ctx.fillStyle = '#f7fafc';
+        ctx.fillRect(0, 0, W, W);
+
+        const mask = createTextMask(W, plate.text, plate.isWord || false);
+
+        // 1. 배경 점 (1450개)
+        for (let i = 0; i < 1450; i++) {
+            const p = randomInCircle(cx, cy, radius);
+            drawDot(ctx, p.x, p.y, 5 + Math.random() * 9, plate.bg);
+        }
+
+        // 2. 글자 점 (최대 620개, 글자 영역에만)
+        let drawn = 0, attempts = 0;
+        while (drawn < 620 && attempts < 620 * 18) {
+            attempts++;
+            const p = randomInCircle(cx, cy, radius * 0.82);
+            if (!isTextPixel(mask, p.x, p.y)) continue;
+            drawDot(ctx, p.x, p.y, 7 + Math.random() * 10, plate.fg);
+            drawn++;
+        }
+
+        // 3. 작은 질감 점 (260개)
+        for (let i = 0; i < 260; i++) {
+            const p = randomInCircle(cx, cy, radius);
+            const colors = isTextPixel(mask, p.x, p.y) ? plate.fg : plate.bg;
+            drawDot(ctx, p.x, p.y, 3 + Math.random() * 5, colors);
+        }
+
+        // 4. 원형 테두리
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = '#d7dee6';
+        ctx.stroke();
+
+        setRendered(true);
+    }
+
+    // step 변경 시 Canvas 렌더링
+    useEffect(() => {
+        if (!canvasRef.current) return;
+        setRendered(false);
+        // requestAnimationFrame으로 Canvas가 DOM에 완전히 마운트된 후 그림
+        const raf = requestAnimationFrame(() => {
+            if (canvasRef.current) {
+                drawPlate(canvasRef.current, PLATES[step]);
+            }
         });
-    });
-    return Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
-}
+        return () => cancelAnimationFrame(raf);
+    }, [step]);
 
-function ColorTest({ step, onAnswer }) {
-    const q = TEST_QUESTIONS[step - 1];
+    const analyze = (ans) => {
+        const miss = { protan: 0, deutan: 0, tritan: 0 };
+        ans.forEach((a, i) => {
+            const p = PLATES[i];
+            if (a !== p.answer && miss[p.weight] !== undefined) miss[p.weight]++;
+        });
+        // 정답률이 높으면 정상
+        const total = ans.filter((a, i) => a === PLATES[i].answer).length;
+        if (total >= PLATES.length - 1) { onResult('normal'); return; }
+        // 가장 많이 틀린 유형
+        const dominant = Object.entries(miss).sort((a, b) => b[1] - a[1])[0];
+        if (dominant[1] === 0) { onResult('normal'); return; }
+        if (dominant[0] === 'protan') { onResult('protanopia'); return; }
+        if (dominant[0] === 'deutan') { onResult('deuteranopia'); return; }
+        if (dominant[0] === 'tritan') { onResult('tritanopia'); return; }
+        onResult('normal');
+    };
+
+    const handleAnswer = (opt) => {
+        const newAns = [...answers, opt];
+        setAnswers(newAns);
+        if (step + 1 >= PLATES.length) {
+            analyze(newAns);
+        } else {
+            setRendered(false);
+            setStep(step + 1);
+        }
+    };
+
+    const plate = PLATES[step];
+    const progress = Math.round(((step + 1) / PLATES.length) * 100);
+
     return (
-        <div style={colorStyles.testBox}>
-            <p style={colorStyles.testStep}>{step} / 4</p>
-            <p style={colorStyles.testQuestion}>{q.question}</p>
-            {q.canvas && (
+        <div style={{ textAlign: 'center' }}>
+            {/* 진행 바 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
                 <div style={{
-                    width: '160px', height: '160px', borderRadius: '50%',
-                    backgroundColor: q.canvas.bg, margin: '16px auto',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '56px', fontWeight: 'bold', color: q.canvas.dots,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                    flex: 1, height: '5px', backgroundColor: theme.colors.border,
+                    borderRadius: '4px', overflow: 'hidden'
                 }}>
-                    {q.canvas.number}
+                    <div style={{
+                        width: `${progress}%`, height: '100%',
+                        backgroundColor: theme.colors.primary, borderRadius: '4px',
+                        transition: 'width 0.35s ease',
+                    }} />
                 </div>
-            )}
-            {q.canvas?.hint && (
-                <p style={{ fontSize: '12px', color: '#aaa', marginBottom: '12px' }}>
-                    {q.canvas.hint}
-                </p>
-            )}
-            {q.options.map(opt => (
-                <button key={opt} style={colorStyles.optionBtn} onClick={() => onAnswer(opt)}>
-                    {opt}
-                </button>
-            ))}
+                <span style={{ fontSize: '12px', color: theme.colors.textSub, whiteSpace: 'nowrap' }}>
+                    {step + 1} / {PLATES.length}
+                </span>
+            </div>
+
+            {/* 카테고리 태그 */}
+            <div style={{
+                display: 'inline-block', padding: '3px 12px',
+                backgroundColor: theme.colors.primaryLight, color: theme.colors.primary,
+                borderRadius: '20px', fontSize: '11px', fontWeight: '700', marginBottom: '12px'
+            }}>
+                {plate.category}
+            </div>
+
+            {/* 질문 */}
+            <p style={{ fontSize: '15px', fontWeight: '600', color: theme.colors.dark, marginBottom: '18px' }}>
+                {plate.question}
+            </p>
+
+            {/* Canvas */}
+            <div style={{ position: 'relative', display: 'inline-block', marginBottom: '20px' }}>
+                {!rendered && (
+                    <div style={{
+                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        backgroundColor: '#f7fafc', borderRadius: '50%', zIndex: 1,
+                    }}>
+                        <span style={{ fontSize: '12px', color: theme.colors.textSub }}>로딩 중...</span>
+                    </div>
+                )}
+                <canvas
+                    ref={canvasRef}
+                    width={400}
+                    height={400}
+                    style={{
+                        width: '220px',
+                        height: '220px',
+                        borderRadius: '50%',
+                        boxShadow: '0 6px 24px rgba(0,0,0,0.18)',
+                        display: 'block',
+                        imageRendering: 'auto',
+                    }}
+                />
+            </div>
+
+            {/* 선택지 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {plate.options.map(opt => (
+                    <button key={opt} onClick={() => handleAnswer(opt)} style={{
+                        width: '100%', padding: '13px 18px',
+                        border: `1.5px solid ${theme.colors.border}`,
+                        borderRadius: theme.radius.md, backgroundColor: theme.colors.white,
+                        fontSize: '15px', fontWeight: '500', color: theme.colors.dark,
+                        cursor: 'pointer', textAlign: 'left',
+                        display: 'flex', alignItems: 'center', gap: '12px',
+                        fontFamily: 'inherit', transition: 'border-color 0.15s',
+                    }}>
+                        <div style={{
+                            width: '20px', height: '20px', borderRadius: '50%',
+                            border: `2px solid ${theme.colors.border}`, flexShrink: 0
+                        }} />
+                        {opt}
+                    </button>
+                ))}
+            </div>
         </div>
     );
 }
 
+// ════════════════════════════════════════
+// MyPage 메인
+// ════════════════════════════════════════
 function MyPage() {
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
@@ -158,6 +404,16 @@ function MyPage() {
     const [editForm, setEditForm] = useState({});
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(false);
+
+    // 색각 테스트 상태
+    const [showColorTest, setShowColorTest] = useState(false);
+    const [testActive, setTestActive] = useState(false);
+    const [testResult, setTestResult] = useState(null);
+
+    // 색약 보정 뷰어
+    const [daltonizeResult, setDaltonizeResult] = useState(null);
+    const [daltonizing, setDaltonizing] = useState(false);
+
     const handleLogout = () => {
         if (window.confirm('로그아웃 하시겠습니까?')) {
             localStorage.clear();
@@ -165,31 +421,15 @@ function MyPage() {
         }
     };
 
-
-    // 색각 테스트 (프로필 탭 내)
-    const [showColorTest, setShowColorTest] = useState(false);
-    const [testStep, setTestStep] = useState(0);
-    const [testAnswers, setTestAnswers] = useState([]);
-    const [testResult, setTestResult] = useState(null);
-
-    // 색상 어시스턴트 탭
-    const [daltonizeResult, setDaltonizeResult] = useState(null);
-    const [daltonizing, setDaltonizing] = useState(false);
-
-    useEffect(() => {
-        fetchProfile();
-        fetchHistory();
-    }, []);
+    useEffect(() => { fetchProfile(); fetchHistory(); }, []);
 
     const fetchProfile = async () => {
         try {
             const res = await userAPI.getProfile();
             setProfile(res.data);
             setEditForm({
-                nickname: res.data.nickname,
-                ageGroup: res.data.ageGroup,
-                gender: res.data.gender,
-                colorType: res.data.colorType,
+                nickname: res.data.nickname, ageGroup: res.data.ageGroup,
+                gender: res.data.gender, colorType: res.data.colorType,
                 styles: res.data.styles || []
             });
         } catch (err) { console.error(err); }
@@ -222,27 +462,14 @@ function MyPage() {
         }
     };
 
-    const handleTestAnswer = (answer) => {
-        const newAnswers = [...testAnswers, answer];
-        setTestAnswers(newAnswers);
-        if (testStep === 4) {
-            const result = analyzeTestResult(newAnswers);
-            setTestResult(result);
-            setTestStep(5);
-        } else {
-            setTestStep(testStep + 1);
-        }
-    };
-
     const handleSaveColorType = async (colorType) => {
         try {
             await colorAssistantAPI.updateColorType(colorType);
             await fetchProfile();
             setShowColorTest(false);
-            setTestStep(0);
-            setTestAnswers([]);
+            setTestActive(false);
             setTestResult(null);
-            alert(`색각 유형이 '${COLOR_TYPE_LABELS[colorType]}'으로 저장됐습니다.`);
+            alert(`'${COLOR_TYPE_LABELS[colorType]}'으로 저장됐습니다.`);
         } catch (err) { alert('저장 실패'); }
     };
 
@@ -263,140 +490,137 @@ function MyPage() {
 
     const formatDate = (datetime) => {
         if (!datetime) return '';
-        const d = new Date(datetime);
-        return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+        return new Date(datetime).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
     };
 
     if (!profile) return (
-        <div style={styles.page}>
-            <Navbar />
+        <div style={S.page}><Navbar />
             <p style={{ textAlign: 'center', marginTop: '60px', color: '#888' }}>불러오는 중...</p>
         </div>
     );
 
     return (
-        <div style={styles.page}>
+        <div style={S.page}>
             <Navbar />
-            <div style={styles.container}>
+            <div style={S.container}>
 
                 {/* 프로필 헤더 */}
-                <div style={styles.profileHeader}>
-                    <div style={styles.avatar}>
-                        {profile.nickname?.charAt(0).toUpperCase()}
-                    </div>
+                <div style={S.profileHeader}>
+                    <div style={S.avatar}>{profile.nickname?.charAt(0).toUpperCase()}</div>
                     <div style={{ flex: 1 }}>
-                        <h1 style={styles.nicknameLarge}>{profile.nickname}</h1>
-                        <p style={styles.loginIdText}>@{profile.loginId}</p>
-                        <p style={styles.joinDate}>{formatDate(profile.createdAt)} 가입</p>
+                        <h1 style={S.nicknameLarge}>{profile.nickname}</h1>
+                        <p style={S.loginIdText}>@{profile.loginId}</p>
+                        <p style={S.joinDate}>{formatDate(profile.createdAt)} 가입</p>
                     </div>
-                    <button style={styles.logoutBtn} onClick={handleLogout}>
-                        로그아웃
-                    </button>
+                    <button style={S.logoutBtn} onClick={handleLogout}>로그아웃</button>
                 </div>
 
                 {/* 탭 */}
-                <div style={styles.tabRow}>
+                <div style={S.tabRow}>
                     {TABS.map(t => (
                         <button key={t} style={{
-                            ...styles.tabBtn,
-                            borderBottom: tab === t ? '2px solid #333' : '2px solid transparent',
-                            color: tab === t ? '#333' : '#888',
-                            fontWeight: tab === t ? '600' : '400'
+                            ...S.tabBtn,
+                            borderBottom: tab === t ? `2px solid ${theme.colors.primary}` : '2px solid transparent',
+                            color: tab === t ? theme.colors.primary : '#888',
+                            fontWeight: tab === t ? '700' : '400'
                         }} onClick={() => setTab(t)}>{t}</button>
                     ))}
                 </div>
 
                 {/* ── 프로필 탭 ── */}
                 {tab === '프로필' && (
-                    <div style={styles.section}>
-                        <div style={styles.sectionHeader}>
-                            <h2 style={styles.sectionTitle}>내 프로필</h2>
+                    <div style={S.section}>
+                        <div style={S.sectionHeader}>
+                            <h2 style={S.sectionTitle}>내 프로필</h2>
                             {!editMode ? (
-                                <button style={styles.editBtn} onClick={() => setEditMode(true)}>수정</button>
+                                <button style={S.editBtn} onClick={() => setEditMode(true)}>수정</button>
                             ) : (
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button style={styles.saveBtn} onClick={handleSave} disabled={loading}>
+                                    <button style={S.saveBtn} onClick={handleSave} disabled={loading}>
                                         {loading ? '저장 중...' : '저장'}
                                     </button>
-                                    <button style={styles.cancelBtn} onClick={() => setEditMode(false)}>취소</button>
+                                    <button style={S.cancelBtn} onClick={() => setEditMode(false)}>취소</button>
                                 </div>
                             )}
                         </div>
 
                         {!editMode ? (
-                            <div style={styles.profileInfo}>
-                                <div style={styles.infoRow}>
-                                    <span style={styles.infoLabel}>닉네임</span>
-                                    <span style={styles.infoValue}>{profile.nickname}</span>
-                                </div>
-                                <div style={styles.infoRow}>
-                                    <span style={styles.infoLabel}>아이디</span>
-                                    <span style={styles.infoValue}>{profile.loginId}</span>
-                                </div>
-                                <div style={styles.infoRow}>
-                                    <span style={styles.infoLabel}>연령대</span>
-                                    <span style={styles.infoValue}>{profile.ageGroup}</span>
-                                </div>
-                                <div style={styles.infoRow}>
-                                    <span style={styles.infoLabel}>성별</span>
-                                    <span style={styles.infoValue}>{profile.gender}</span>
-                                </div>
+                            <div>
+                                {[
+                                    { label: '닉네임', value: profile.nickname },
+                                    { label: '아이디', value: profile.loginId },
+                                    { label: '연령대', value: profile.ageGroup },
+                                    { label: '성별', value: profile.gender },
+                                ].map(row => (
+                                    <div key={row.label} style={S.infoRow}>
+                                        <span style={S.infoLabel}>{row.label}</span>
+                                        <span style={S.infoValue}>{row.value}</span>
+                                    </div>
+                                ))}
 
-                                {/* 색각 유형 + 테스트 버튼 */}
-                                <div style={styles.infoRow}>
-                                    <span style={styles.infoLabel}>색각 유형</span>
+                                {/* 색각 유형 + 테스트 */}
+                                <div style={S.infoRow}>
+                                    <span style={S.infoLabel}>색각 유형</span>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <span style={styles.infoValue}>
+                                        <span style={S.infoValue}>
                                             {COLOR_TYPE_LABELS[profile.colorType] || '미설정'}
                                         </span>
-                                        <button style={colorStyles.testTriggerBtn}
-                                                onClick={() => { setShowColorTest(true); setTestStep(1); setTestAnswers([]); setTestResult(null); }}>
+                                        <button style={CS.testTriggerBtn} onClick={() => {
+                                            setShowColorTest(true);
+                                            setTestActive(true);
+                                            setTestResult(null);
+                                        }}>
                                             {profile.colorType ? '재검사' : '테스트 시작'}
                                         </button>
                                     </div>
                                 </div>
 
-                                <div style={styles.infoRow}>
-                                    <span style={styles.infoLabel}>선호 스타일</span>
+                                {/* 선호 스타일 */}
+                                <div style={S.infoRow}>
+                                    <span style={S.infoLabel}>선호 스타일</span>
                                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                                         {(profile.styles || []).map(s => (
-                                            <span key={s} style={styles.styleChip}>{STYLE_LABELS[s] || s}</span>
+                                            <span key={s} style={S.styleChip}>{STYLE_LABELS[s] || s}</span>
                                         ))}
                                     </div>
                                 </div>
 
-                                {/* 색각 유형 판별 테스트 인라인 */}
+                                {/* 인라인 테스트 */}
                                 {showColorTest && (
-                                    <div style={colorStyles.inlineTestBox}>
-                                        <div style={colorStyles.inlineTestHeader}>
-                                            <p style={colorStyles.inlineTestTitle}>색각 유형 판별 테스트</p>
-                                            <button style={colorStyles.closeTestBtn}
-                                                    onClick={() => { setShowColorTest(false); setTestStep(0); }}>✕</button>
+                                    <div style={CS.inlineTestBox}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                            <p style={CS.inlineTestTitle}>색각 유형 판별 테스트</p>
+                                            <button style={CS.closeTestBtn} onClick={() => {
+                                                setShowColorTest(false);
+                                                setTestActive(false);
+                                                setTestResult(null);
+                                            }}>✕</button>
                                         </div>
-                                        <p style={colorStyles.inlineTestDesc}>
-                                            의료 진단이 아닌 보조적 목적의 간이 테스트입니다.
+                                        <p style={CS.inlineTestDesc}>
+                                            의료 진단이 아닌 보조적 목적의 간이 테스트입니다. (총 8문항)
                                         </p>
 
-                                        {testStep >= 1 && testStep <= 4 && (
-                                            <ColorTest step={testStep} onAnswer={handleTestAnswer} />
+                                        {testActive && !testResult && (
+                                            <ColorTest onResult={(r) => {
+                                                setTestResult(r);
+                                                setTestActive(false);
+                                            }} />
                                         )}
 
-                                        {testStep === 5 && testResult && (
-                                            <div style={colorStyles.resultBox}>
-                                                <p style={colorStyles.resultTitle}>테스트 결과</p>
-                                                <p style={colorStyles.resultValue}>
-                                                    {COLOR_TYPE_LABELS[testResult]}
-                                                </p>
-                                                <p style={colorStyles.resultDesc}>
-                                                    {COLOR_TYPE_DESCS[testResult]}
-                                                </p>
+                                        {testResult && (
+                                            <div style={CS.resultBox}>
+                                                <p style={CS.resultTitle}>테스트 결과</p>
+                                                <p style={CS.resultValue}>{COLOR_TYPE_LABELS[testResult]}</p>
+                                                <p style={CS.resultDesc}>{COLOR_TYPE_DESCS[testResult]}</p>
                                                 <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-                                                    <button style={colorStyles.saveColorBtn}
+                                                    <button style={CS.saveColorBtn}
                                                             onClick={() => handleSaveColorType(testResult)}>
                                                         이 결과로 저장
                                                     </button>
-                                                    <button style={colorStyles.retryBtn}
-                                                            onClick={() => { setTestStep(1); setTestAnswers([]); setTestResult(null); }}>
+                                                    <button style={CS.retryBtn} onClick={() => {
+                                                        setTestResult(null);
+                                                        setTestActive(true);
+                                                    }}>
                                                         다시 테스트
                                                     </button>
                                                 </div>
@@ -406,28 +630,29 @@ function MyPage() {
                                 )}
                             </div>
                         ) : (
-                            <div style={styles.editForm}>
-                                <label style={styles.editLabel}>닉네임</label>
-                                <input style={styles.editInput} value={editForm.nickname}
+                            /* 편집 폼 */
+                            <div>
+                                <label style={S.editLabel}>닉네임</label>
+                                <input style={S.editInput} value={editForm.nickname}
                                        onChange={e => setEditForm({ ...editForm, nickname: e.target.value })} maxLength={20} />
-                                <label style={styles.editLabel}>연령대</label>
-                                <select style={styles.editInput} value={editForm.ageGroup}
+                                <label style={S.editLabel}>연령대</label>
+                                <select style={S.editInput} value={editForm.ageGroup}
                                         onChange={e => setEditForm({ ...editForm, ageGroup: e.target.value })}>
                                     {AGE_GROUPS.map(a => <option key={a} value={a}>{a}</option>)}
                                 </select>
-                                <label style={styles.editLabel}>성별</label>
-                                <select style={styles.editInput} value={editForm.gender}
+                                <label style={S.editLabel}>성별</label>
+                                <select style={S.editInput} value={editForm.gender}
                                         onChange={e => setEditForm({ ...editForm, gender: e.target.value })}>
                                     <option value="여성">여성</option>
                                     <option value="남성">남성</option>
                                 </select>
-                                <label style={styles.editLabel}>선호 스타일 (최대 3개)</label>
-                                <div style={styles.styleGrid}>
+                                <label style={S.editLabel}>선호 스타일 (최대 3개)</label>
+                                <div style={S.styleGrid}>
                                     {STYLES.map(s => (
                                         <button key={s} type="button"
                                                 style={{
-                                                    ...styles.styleToggle,
-                                                    backgroundColor: editForm.styles.includes(s) ? '#333' : '#f0f0f0',
+                                                    ...S.styleToggle,
+                                                    backgroundColor: editForm.styles.includes(s) ? theme.colors.primary : '#f0f0f0',
                                                     color: editForm.styles.includes(s) ? 'white' : '#333'
                                                 }}
                                                 onClick={() => toggleStyle(s)}>
@@ -442,22 +667,22 @@ function MyPage() {
 
                 {/* ── 추천 이력 탭 ── */}
                 {tab === '추천 이력' && (
-                    <div style={styles.section}>
-                        <h2 style={styles.sectionTitle}>추천 이력</h2>
+                    <div style={S.section}>
+                        <h2 style={S.sectionTitle}>추천 이력</h2>
                         {history.length === 0 ? (
-                            <p style={styles.emptyText}>추천 이력이 없습니다.</p>
+                            <p style={S.emptyText}>추천 이력이 없습니다.</p>
                         ) : (
                             history.map((rec, i) => (
-                                <div key={rec.recId || i} style={styles.historyCard}>
-                                    <div style={styles.historyTop}>
-                                        <span style={styles.historyTpo}>{rec.tpo}</span>
-                                        <span style={styles.historyDate}>{formatDate(rec.createdAt)}</span>
+                                <div key={rec.recId || i} style={S.historyCard}>
+                                    <div style={S.historyTop}>
+                                        <span style={S.historyTpo}>{rec.tpo}</span>
+                                        <span style={S.historyDate}>{formatDate(rec.createdAt)}</span>
                                     </div>
-                                    {rec.style && <span style={styles.historyStyle}>{rec.style}</span>}
+                                    {rec.style && <span style={S.historyStyle}>{rec.style}</span>}
                                     {rec.temperature && (
-                                        <p style={styles.historyWeather}>{rec.temperature}°C · {rec.weatherCondition}</p>
+                                        <p style={S.historyWeather}>{rec.temperature}°C · {rec.weatherCondition}</p>
                                     )}
-                                    {rec.description && <p style={styles.historyDesc}>{rec.description}</p>}
+                                    {rec.description && <p style={S.historyDesc}>{rec.description}</p>}
                                 </div>
                             ))
                         )}
@@ -467,12 +692,13 @@ function MyPage() {
                 {/* ── 색상 어시스턴트 탭 ── */}
                 {tab === '색상 어시스턴트' && (
                     <div>
-                        {/* 색각 유형 현황 */}
-                        <div style={styles.section}>
-                            <h2 style={styles.sectionTitle}>색상 어시스턴트</h2>
-                            <div style={colorStyles.typeBox}>
-                                <p style={colorStyles.typeLabel}>내 색각 유형</p>
-                                <p style={colorStyles.typeValue}>
+                        <div style={S.section}>
+                            <h2 style={S.sectionTitle}>색상 어시스턴트</h2>
+
+                            {/* 현재 색각 유형 */}
+                            <div style={CS.typeBox}>
+                                <p style={CS.typeLabel}>내 색각 유형</p>
+                                <p style={CS.typeValue}>
                                     {COLOR_TYPE_LABELS[profile.colorType] || '미설정'}
                                 </p>
                                 {!profile.colorType && (
@@ -482,77 +708,96 @@ function MyPage() {
                                 )}
                             </div>
 
-                            {/* 색상 조합 추천 */}
-                            <h3 style={colorStyles.subTitle}>내 스타일 색상 조합 추천</h3>
-                            <p style={colorStyles.desc}>
-                                선호 스타일을 기반으로 어울리는 색상 조합을 추천드려요
-                            </p>
-
+                            {/* 내 스타일 색상 조합 추천 */}
+                            <h3 style={CS.subTitle}>내 스타일 색상 조합 추천</h3>
+                            <p style={CS.desc}>선호 스타일을 기반으로 어울리는 색상 조합을 추천드려요</p>
                             {(profile.styles || []).length === 0 ? (
-                                <p style={styles.emptyText}>프로필에서 선호 스타일을 설정해주세요.</p>
+                                <p style={S.emptyText}>프로필에서 선호 스타일을 설정해주세요.</p>
                             ) : (
                                 (profile.styles || []).map(styleKey => {
                                     const palette = STYLE_COLOR_PALETTES[styleKey];
                                     if (!palette) return null;
                                     return (
-                                        <div key={styleKey} style={colorStyles.paletteSection}>
-                                            <p style={colorStyles.paletteSectionTitle}>
+                                        <div key={styleKey} style={CS.paletteSection}>
+                                            <p style={CS.paletteSectionTitle}>
                                                 {STYLE_LABELS[styleKey]} 스타일 추천 색상
                                             </p>
                                             {palette.palettes.map((p, pi) => (
-                                                <div key={pi} style={colorStyles.paletteCard}>
-                                                    <div style={colorStyles.paletteTop}>
-                                                        <p style={colorStyles.paletteName}>{p.name}</p>
-                                                        <div style={colorStyles.colorDots}>
+                                                <div key={pi} style={CS.paletteCard}>
+                                                    <div style={CS.paletteTop}>
+                                                        <p style={CS.paletteName}>{p.name}</p>
+                                                        <div style={CS.colorDots}>
                                                             {p.colors.map((c, ci) => (
                                                                 <div key={ci} style={{
-                                                                    ...colorStyles.colorDot,
-                                                                    backgroundColor: c,
-                                                                    border: c === '#ffffff' || c === '#f5f5f5' || c === '#F5F5DC' || c === '#FFFACD' || c === '#F5DEB3'
+                                                                    ...CS.colorDot, backgroundColor: c,
+                                                                    border: ['#ffffff','#f5f5f5','#F5DEB3','#FFFACD'].includes(c)
                                                                         ? '1px solid #e0e0e0' : 'none'
-                                                                }} title={c} />
+                                                                }} />
                                                             ))}
                                                         </div>
                                                     </div>
-                                                    <p style={colorStyles.paletteDesc}>{p.desc}</p>
+                                                    <p style={CS.paletteDesc}>{p.desc}</p>
                                                 </div>
                                             ))}
                                         </div>
                                     );
                                 })
                             )}
+
+                            {/* 색각 유형별 주의 색상 조합 */}
+                            {profile.colorType && profile.colorType !== 'normal' && COLOR_TYPE_WARN[profile.colorType] && (
+                                <div style={{ marginTop: '24px' }}>
+                                    <h3 style={{ ...CS.subTitle, color: '#E74C3C' }}>
+                                        ⚠️ {COLOR_TYPE_WARN[profile.colorType].label}
+                                    </h3>
+                                    <p style={CS.desc}>
+                                        색각 유형에 따라 아래 색상 조합은 코디 시 주의해주세요.
+                                    </p>
+                                    {COLOR_TYPE_WARN[profile.colorType].items.map((item, wi) => (
+                                        <div key={wi} style={{ ...CS.paletteCard, backgroundColor: '#FFF5F5', borderColor: '#FECACA' }}>
+                                            <div style={CS.paletteTop}>
+                                                <p style={CS.paletteName}>{item.name}</p>
+                                                <div style={CS.colorDots}>
+                                                    {item.colors.map((c, ci) => (
+                                                        <div key={ci} style={{
+                                                            ...CS.colorDot, backgroundColor: c,
+                                                            border: '1px solid rgba(0,0,0,0.1)'
+                                                        }} />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <p style={CS.paletteDesc}>{item.desc}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         {/* 색약 보정 뷰어 */}
                         {profile.colorType && profile.colorType !== 'normal' && (
-                            <div style={{ ...styles.section, marginTop: '16px' }}>
-                                <h3 style={colorStyles.subTitle}>색약 보정 뷰어</h3>
-                                <p style={colorStyles.desc}>
+                            <div style={{ ...S.section, marginTop: '16px' }}>
+                                <h3 style={CS.subTitle}>색약 보정 뷰어</h3>
+                                <p style={CS.desc}>
                                     의류 이미지를 업로드하면 색각 이상 시뮬레이션과 보정 결과를 비교할 수 있습니다.
                                 </p>
-                                <button style={colorStyles.uploadBtn}
-                                        onClick={() => fileInputRef.current.click()}>
+                                <button style={CS.uploadBtn} onClick={() => fileInputRef.current.click()}>
                                     이미지 업로드
                                 </button>
                                 <input ref={fileInputRef} type="file" accept="image/*"
                                        style={{ display: 'none' }} onChange={handleImageUpload} />
-
-                                {daltonizing && <p style={colorStyles.loadingText}>보정 처리 중...</p>}
-
+                                {daltonizing && <p style={CS.loadingText}>보정 처리 중...</p>}
                                 {daltonizeResult && (
-                                    <div style={colorStyles.compareBox}>
-                                        <div style={colorStyles.compareItem}>
-                                            <p style={colorStyles.compareLabel}>원본</p>
-                                            <img src={daltonizeResult.original} alt="원본" style={colorStyles.compareImg} />
-                                        </div>
-                                        <div style={colorStyles.compareItem}>
-                                            <p style={colorStyles.compareLabel}>색각 이상 시뮬레이션</p>
-                                            <img src={daltonizeResult.simulated} alt="시뮬레이션" style={colorStyles.compareImg} />
-                                        </div>
-                                        <div style={colorStyles.compareItem}>
-                                            <p style={colorStyles.compareLabel}>보정 후</p>
-                                            <img src={daltonizeResult.corrected} alt="보정" style={colorStyles.compareImg} />
-                                        </div>
+                                    <div style={CS.compareBox}>
+                                        {[
+                                            { label: '원본', src: daltonizeResult.original },
+                                            { label: '색각 이상 시뮬레이션', src: daltonizeResult.simulated },
+                                            { label: '보정 후', src: daltonizeResult.corrected },
+                                        ].map(item => (
+                                            <div key={item.label} style={CS.compareItem}>
+                                                <p style={CS.compareLabel}>{item.label}</p>
+                                                <img src={item.src} alt={item.label} style={CS.compareImg} />
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
                             </div>
@@ -564,7 +809,7 @@ function MyPage() {
     );
 }
 
-const styles = {
+const S = {
     page: { backgroundColor: theme.colors.background, minHeight: '100vh' },
     container: { maxWidth: '480px', margin: '0 auto', padding: '20px 20px 90px' },
     profileHeader: {
@@ -581,6 +826,11 @@ const styles = {
     nicknameLarge: { fontSize: '20px', fontWeight: '700', color: theme.colors.text, margin: '0 0 4px' },
     loginIdText: { fontSize: '13px', color: theme.colors.textSub, margin: '0 0 2px' },
     joinDate: { fontSize: '12px', color: theme.colors.textLight, margin: 0 },
+    logoutBtn: {
+        padding: '8px 16px', backgroundColor: 'white', color: theme.colors.danger,
+        border: `1px solid ${theme.colors.danger}`, borderRadius: theme.radius.full,
+        fontSize: '13px', cursor: 'pointer', fontWeight: '500', alignSelf: 'flex-start',
+    },
     tabRow: {
         display: 'flex', marginBottom: '16px', backgroundColor: theme.colors.white,
         borderRadius: theme.radius.xl, padding: '4px', boxShadow: theme.colors.cardShadow
@@ -607,18 +857,6 @@ const styles = {
         padding: '7px 16px', backgroundColor: theme.colors.background, color: theme.colors.textSub,
         border: 'none', borderRadius: theme.radius.full, fontSize: '13px', cursor: 'pointer'
     },
-    logoutBtn: {
-        padding: '8px 16px',
-        backgroundColor: 'white',
-        color: theme.colors.danger,
-        border: `1px solid ${theme.colors.danger}`,
-        borderRadius: theme.radius.full,
-        fontSize: '13px',
-        cursor: 'pointer',
-        fontWeight: '500',
-        alignSelf: 'flex-start',
-    },
-    profileInfo: {},
     infoRow: {
         display: 'flex', alignItems: 'center', padding: '12px 0',
         borderBottom: `1px solid ${theme.colors.border}`
@@ -629,7 +867,6 @@ const styles = {
         padding: '4px 12px', backgroundColor: theme.colors.primaryLight,
         borderRadius: theme.radius.full, fontSize: '12px', color: theme.colors.primary, fontWeight: '500'
     },
-    editForm: {},
     editLabel: { fontSize: '12px', color: theme.colors.textSub, display: 'block', marginBottom: '6px', marginTop: '14px' },
     editInput: {
         width: '100%', padding: '10px 12px', borderRadius: theme.radius.md,
@@ -638,10 +875,7 @@ const styles = {
     styleGrid: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' },
     styleToggle: { padding: '8px 14px', borderRadius: theme.radius.full, border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '500' },
     emptyText: { color: theme.colors.textLight, fontSize: '14px', textAlign: 'center', padding: '32px 0' },
-    historyCard: {
-        backgroundColor: theme.colors.background, borderRadius: theme.radius.lg,
-        padding: '14px', marginBottom: '10px'
-    },
+    historyCard: { backgroundColor: theme.colors.background, borderRadius: theme.radius.lg, padding: '14px', marginBottom: '10px' },
     historyTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' },
     historyTpo: {
         fontSize: '13px', fontWeight: '600', color: theme.colors.primary,
@@ -656,7 +890,7 @@ const styles = {
     historyDesc: { fontSize: '13px', color: theme.colors.text, lineHeight: '1.6', margin: '6px 0 0' },
 };
 
-const colorStyles = {
+const CS = {
     testTriggerBtn: {
         padding: '4px 12px', backgroundColor: theme.colors.primary, color: 'white',
         border: 'none', borderRadius: theme.radius.full, fontSize: '12px', cursor: 'pointer', fontWeight: '500'
@@ -665,22 +899,12 @@ const colorStyles = {
         marginTop: '16px', backgroundColor: theme.colors.primaryLight, borderRadius: theme.radius.lg,
         padding: '20px', border: `1px solid ${theme.colors.primary}44`
     },
-    inlineTestHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' },
     inlineTestTitle: { fontSize: '15px', fontWeight: '700', color: theme.colors.primary, margin: 0 },
     inlineTestDesc: { fontSize: '12px', color: theme.colors.textSub, marginBottom: '16px' },
     closeTestBtn: { background: 'none', border: 'none', fontSize: '16px', color: '#999', cursor: 'pointer' },
-    testBox: { textAlign: 'center' },
-    testStep: { fontSize: '12px', color: theme.colors.textLight, marginBottom: '8px' },
-    testQuestion: { fontSize: '15px', color: theme.colors.text, marginBottom: '12px' },
-    optionBtn: {
-        display: 'block', width: '100%', padding: '12px', margin: '8px 0',
-        backgroundColor: theme.colors.white, color: theme.colors.text,
-        border: `1px solid ${theme.colors.border}`, borderRadius: theme.radius.md,
-        fontSize: '14px', cursor: 'pointer'
-    },
     resultBox: {
         backgroundColor: theme.colors.background, borderRadius: theme.radius.lg,
-        padding: '20px', textAlign: 'center'
+        padding: '20px', textAlign: 'center', marginTop: '16px'
     },
     resultTitle: { fontSize: '13px', color: theme.colors.primary, margin: '0 0 8px' },
     resultValue: { fontSize: '20px', fontWeight: '700', color: theme.colors.text, margin: '0 0 8px' },
