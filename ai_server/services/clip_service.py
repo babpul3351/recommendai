@@ -70,7 +70,9 @@ def match_wardrobe(outfit: dict, wardrobe_items: list) -> list:  # 추천 로직
                 continue
 
         # 추천 우선 방식: CLIP으로 유사도 검색
-        query = slot.get("search_query", f"{slot.get('color','')} {slot.get('type','')}")  # 검색 쿼리 생성
+        query = slot.get("search_query") or f"{slot.get('color') or ''} {slot.get('type') or ''}".strip()
+        if not query or not isinstance(query, str):
+            query = f"{cat} fashion item"  # 검색 쿼리 생성
         candidates = [w for w in wardrobe_items if w.get("category") == cat]
         if not candidates:
             candidates = wardrobe_items
@@ -89,6 +91,10 @@ def match_wardrobe(outfit: dict, wardrobe_items: list) -> list:  # 추천 로직
                                                    # 이미 정규화 완료했으므로 dot product = cosine similarity
             if score > best_score:
                 best_score, best_item = score, w
+
+        if best_item is None and candidates:
+                    best_item = candidates[0]
+                    best_score = 0.5
 
         if best_item:
             matched.append({  # 결과 반환 => AI 추천 설명과 가장 유사한 실제 사용자 옷 반환

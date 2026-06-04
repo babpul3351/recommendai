@@ -3,6 +3,7 @@ package com.capstone.recommendai.service;
 import com.capstone.recommendai.dto.RecommendationResponse;
 import com.capstone.recommendai.entity.*;
 import com.capstone.recommendai.repository.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,33 +19,30 @@ public class RecommendationService {
     private final UserRepository userRepository;
     private final WardrobeRepository wardrobeRepository;
     private final CalendarEventRepository calendarEventRepository;
+    private final ObjectMapper objectMapper;
 
     private User getUser(String userId) {
         return userRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
     }
 
-    // 추천 이력 조회
     public List<RecommendationResponse> getHistory(String userId) {
         User user = getUser(userId);
         return recommendationRepository.findByUserOrderByCreatedAtDesc(user)
-                .stream()
-                .map(RecommendationResponse::new)
-                .collect(Collectors.toList());
+                .stream().map(RecommendationResponse::new).collect(Collectors.toList());
     }
 
-    // 추천 결과 저장
     @Transactional
     public RecommendationResponse saveRecommendation(
             String userId,
             String tpo,
-            String style,
-            String description,
+            List<Map<String, Object>> outfits,
             Integer temperature,
             String weatherCondition,
             String eventId,
             String outfitDate,
-            List<Map<String, Object>> matchedItems) {
+            List<List<Map<String, Object>>> matchedItemsPerOutfit,
+            String parentRecId) {
 
         User user = getUser(userId);
 
@@ -58,43 +56,88 @@ public class RecommendationService {
             date = java.time.LocalDate.parse(outfitDate);
         }
 
+        String defaultStyle = "";
+        String defaultDesc  = "";
+        if (outfits != null && !outfits.isEmpty()) {
+            defaultStyle = (String) outfits.get(0).getOrDefault("style", "");
+            defaultDesc  = (String) outfits.get(0).getOrDefault("description", "");
+        }
+
+        int retryCount = 0;
+        if (parentRecId != null && !parentRecId.isEmpty()) {
+            Recommendation parent = recommendationRepository.findById(parentRecId).orElse(null);
+            if (parent != null) {
+                retryCount = (parent.getRetryCount() != null ? parent.getRetryCount() : 0) + 1;
+            }
+        }
+
         Recommendation rec = Recommendation.builder()
                 .user(user)
                 .calendarEvent(calendarEvent)
                 .tpo(tpo)
-                .style(style)
-                .description(description)
+                .style(defaultStyle)
+                .description(defaultDesc)
                 .temperature(temperature)
                 .weatherCondition(weatherCondition)
                 .outfitDate(date)
+                .retryCount(retryCount)
+                .parentRecId(parentRecId)
                 .build();
 
         recommendationRepository.save(rec);
 
+        // 전체 코디 정보 JSON 저장
+        if (outfits != null && !outfits.isEmpty()) {
+            try {
+                rec.setOutfitsJson(objectMapper.writeValueAsString(outfits));
+            } catch (Exception ignored) {}
+        }
+
+        // 각 코디별 아이템 저장
         int orderNum = 1;
-        for (Map<String, Object> matched : matchedItems) {
-            String wardrobeItemId = (String) matched.get("id");
-            Float score = matched.get("score") != null
-                    ? Float.parseFloat(matched.get("score").toString()) : null;
-            String category = (String) matched.get("category");
+        if (matchedItemsPerOutfit != null) {
+            for (int outfitIdx = 0; outfitIdx < matchedItemsPerOutfit.size(); outfitIdx++) {
+                List<Map<String, Object>> items = matchedItemsPerOutfit.get(outfitIdx);
+                if (items == null) continue;
+                for (Map<String, Object> matched : items) {
+                    String wardrobeId = matched.get("id") != null
+                            ? String.valueOf(matched.get("id")) : null;
+                    Float score = matched.get("score") != null
+                            ? Float.parseFloat(matched.get("score").toString()) : null;
+                    String category = (String) matched.getOrDefault("category", "");
 
-            WardrobeItem wardrobeItem = null;
-            if (wardrobeItemId != null) {
-                wardrobeRepository.findById(wardrobeItemId).orElse(null);
+                    WardrobeItem wardrobeItem = null;
+                    if (wardrobeId != null && !wardrobeId.equals("null")) {
+                        wardrobeItem = wardrobeRepository.findById(wardrobeId).orElse(null);
+                    }
+
+                    rec.getItems().add(RecommendationItem.builder()
+                            .recommendation(rec)
+                            .orderNum(orderNum++)
+                            .category(category)
+                            .matchedWardrobeItem(wardrobeItem)
+                            .similarityScore(score)
+                            .outfitIndex(outfitIdx)
+                            .build());
+                }
             }
-
-            RecommendationItem recItem = RecommendationItem.builder()
-                    .recommendation(rec)
-                    .orderNum(orderNum++)
-                    .category(category != null ? category : "")
-                    .matchedWardrobeItem(wardrobeItem)
-                    .similarityScore(score)
-                    .build();
-
-            rec.getItems().add(recItem);
         }
 
         recommendationRepository.save(rec);
         return new RecommendationResponse(rec);
+    }
+
+    @Transactional
+    public void acceptOutfit(String recId, Integer outfitIndex,
+                             String style, String description, String userId) {
+        Recommendation rec = recommendationRepository.findById(recId)
+                .orElseThrow(() -> new RuntimeException("추천 없음"));
+        if (!rec.getUser().getUserId().equals(userId)) {
+            throw new RuntimeException("권한 없음");
+        }
+        rec.setAcceptedOutfitIndex(outfitIndex);
+        if (style != null && !style.isEmpty())             rec.setStyle(style);
+        if (description != null && !description.isEmpty()) rec.setDescription(description);
+        recommendationRepository.save(rec);
     }
 }
