@@ -25,6 +25,14 @@ const COLOR_TYPE_DESCS = {
     'tritanopia': '파란/노란색 계열 구분이 어렵습니다.'
 };
 
+const WEEKDAYS_KR = ['일','월','화','수','목','금','토'];
+const formatOutfitDate = (dateStr) => {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    return `${m}월 ${d}일 (${WEEKDAYS_KR[dt.getDay()]})`;
+};
+
 // ── 색각 유형별 주의 색상 조합 (색각유형_허서윤.html 기반) ──
 const COLOR_TYPE_WARN = {
     protanopia: {
@@ -395,6 +403,17 @@ function ColorTest({ onResult }) {
 // ════════════════════════════════════════
 // MyPage 메인
 // ════════════════════════════════════════
+const TPO_COLOR = {
+    '데이트': '#FF6B9D', '직장': '#4A90D9', '캐주얼': '#7EC8A4',
+    '운동': '#F5A623', '파티': '#BD10E0', '여행': '#50E3C2',
+    '일상': '#9B9B9B', '격식': '#4A4A4A',
+};
+
+const CAT_COLOR = {
+    '상의': '#4CAF8A', '하의': '#4A90D9',
+    '아우터': '#E8832A', '원피스': '#E91E8C',
+};
+
 function MyPage() {
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
@@ -476,6 +495,10 @@ function MyPage() {
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
+
+        e.target.value = '';        // ← 즉시 초기화 (같은 파일 재선택 가능하게)
+        setDaltonizeResult(null);   // ← 이전 결과 초기화
+
         const reader = new FileReader();
         reader.onloadend = async () => {
             setDaltonizing(true);
@@ -486,6 +509,19 @@ function MyPage() {
             finally { setDaltonizing(false); }
         };
         reader.readAsDataURL(file);
+    };
+
+    const handleChangeAccept = async (recId, outfitIndex, info) => {
+        try {
+            await recommendationAPI.acceptOutfit(recId, {
+                outfitIndex,
+                style:       info?.style       || '',
+                description: info?.description || '',
+            });
+            await fetchHistory(); // 이력 즉시 갱신
+        } catch {
+            alert('변경에 실패했습니다.');
+        }
     };
 
     const formatDate = (datetime) => {
@@ -673,16 +709,125 @@ function MyPage() {
                             <p style={S.emptyText}>추천 이력이 없습니다.</p>
                         ) : (
                             history.map((rec, i) => (
-                                <div key={rec.recId || i} style={S.historyCard}>
-                                    <div style={S.historyTop}>
-                                        <span style={S.historyTpo}>{rec.tpo}</span>
-                                        <span style={S.historyDate}>{formatDate(rec.createdAt)}</span>
+                                <div key={rec.recId || i} style={S.histCard}>
+
+                                    {/* ── 컬러 헤더 ── */}
+                                    <div style={{
+                                        ...S.histHeader,
+                                        background: `linear-gradient(135deg,
+                ${TPO_COLOR[rec.tpo] || theme.colors.primary}DD,
+                ${TPO_COLOR[rec.tpo] || theme.colors.primary}99)`,
+                                    }}>
+                                        <div style={S.histHeaderTop}>
+                                            <span style={S.histTpoPill}>{rec.tpo}</span>
+                                            {rec.retryCount > 0 && (
+                                                <span style={S.histRetryPill}>🔄 재추천 {rec.retryCount}회</span>
+                                            )}
+                                            <span style={S.histCreatedAt}>{formatDate(rec.createdAt)}</span>
+                                        </div>
+                                        <div style={S.histHeaderBottom}>
+                                            {rec.outfitDate ? (
+                                                <span style={S.histDateBig}>
+                        📅 {formatOutfitDate(rec.outfitDate)} 코디
+                    </span>
+                                            ) : (
+                                                <span style={S.histDateBig}>코디 추천</span>
+                                            )}
+                                            {rec.temperature && (
+                                                <span style={S.histWeatherPill}>
+                        🌡 {rec.temperature}°C · {rec.weatherCondition}
+                    </span>
+                                            )}
+                                        </div>
                                     </div>
-                                    {rec.style && <span style={S.historyStyle}>{rec.style}</span>}
-                                    {rec.temperature && (
-                                        <p style={S.historyWeather}>{rec.temperature}°C · {rec.weatherCondition}</p>
-                                    )}
-                                    {rec.description && <p style={S.historyDesc}>{rec.description}</p>}
+
+                                    {/* ── 본문 ── */}
+                                    <div style={S.histBody}>
+
+                                        {rec.description && (
+                                            <p style={S.histGlobalDesc}>"{rec.description}"</p>
+                                        )}
+
+                                        {rec.allOutfitGroups && Object.keys(rec.allOutfitGroups).length > 0 ? (
+                                            Object.entries(rec.allOutfitGroups).map(([idxStr, items]) => {
+                                                const idx        = parseInt(idxStr);
+                                                const isAccepted = rec.acceptedOutfitIndex === idx;
+                                                const info       = rec.outfitInfos?.[idx];
+
+                                                return (
+                                                    <div key={idx} style={{
+                                                        ...S.histOutfitBlock,
+                                                        background:  isAccepted ? theme.colors.primaryLight : '#F7F9FB',
+                                                        borderLeft:  isAccepted
+                                                            ? `3px solid ${theme.colors.primary}`
+                                                            : '3px solid #E0E6ED',
+                                                    }}>
+                                                        {/* 코디 블록 헤더 */}
+                                                        <div style={S.histBlockHead}>
+                                                            <div style={S.histBlockHeadLeft}>
+                                    <span style={{
+                                        ...S.histOutfitNum,
+                                        background: isAccepted
+                                            ? theme.colors.primary : '#B0BEC5',
+                                    }}>{idx + 1}</span>
+                                                                {info?.style && (
+                                                                    <span style={{
+                                                                        ...S.histStyleTag,
+                                                                        color: isAccepted
+                                                                            ? theme.colors.primary : '#607D8B',
+                                                                        background: isAccepted ? 'white' : '#EEF2F5',
+                                                                        border: isAccepted
+                                                                            ? `1px solid ${theme.colors.primary}44`
+                                                                            : '1px solid #DDE3E9',
+                                                                    }}>{info.style}</span>
+                                                                )}
+                                                            </div>
+                                                            {isAccepted && (
+                                                                <span style={S.histAcceptedBadge}>✓ 선택됨</span>
+                                                            )}
+                                                        </div>
+
+                                                        {/* 아이템 사진 스트립 */}
+                                                        {items.length > 0 ? (
+                                                            <div style={S.histStrip}>
+                                                                {items.map((item, ii) => (
+                                                                    <div key={ii} style={S.histStripItem}>
+                                                                        {item.imageUrl ? (
+                                                                            <img src={item.imageUrl}
+                                                                                 alt={item.type}
+                                                                                 style={S.histStripImg}/>
+                                                                        ) : (
+                                                                            <div style={S.histStripImgEmpty}>👗</div>
+                                                                        )}
+                                                                        <span style={{
+                                                                            ...S.histCatLabel,
+                                                                            background: CAT_COLOR[item.category]
+                                                                                || theme.colors.primary,
+                                                                        }}>{item.category}</span>
+                                                                        <p style={S.histItemType}>{item.type}</p>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <p style={S.histNoItem}>매칭 아이템 없음</p>
+                                                        )}
+
+                                                        {/* 변경 버튼 */}
+                                                        {!isAccepted && (
+                                                            <button
+                                                                style={S.histChangeCta}
+                                                                onClick={() => handleChangeAccept(rec.recId, idx, info)}
+                                                            >
+                                                                이 코디로 변경하기
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })
+                                        ) : (
+                                            <p style={S.histEmpty}>코디 정보 없음</p>
+                                        )}
+                                    </div>
                                 </div>
                             ))
                         )}
@@ -786,19 +931,37 @@ function MyPage() {
                                 <input ref={fileInputRef} type="file" accept="image/*"
                                        style={{ display: 'none' }} onChange={handleImageUpload} />
                                 {daltonizing && <p style={CS.loadingText}>보정 처리 중...</p>}
+
                                 {daltonizeResult && (
-                                    <div style={CS.compareBox}>
-                                        {[
-                                            { label: '원본', src: daltonizeResult.original },
-                                            { label: '색각 이상 시뮬레이션', src: daltonizeResult.simulated },
-                                            { label: '보정 후', src: daltonizeResult.corrected },
-                                        ].map(item => (
-                                            <div key={item.label} style={CS.compareItem}>
-                                                <p style={CS.compareLabel}>{item.label}</p>
-                                                <img src={item.src} alt={item.label} style={CS.compareImg} />
-                                            </div>
-                                        ))}
-                                    </div>
+                                    <>
+                                        {/* 다른 사진 보정하기 버튼 추가 */}
+                                        <button
+                                            style={{
+                                                ...CS.uploadBtn,
+                                                backgroundColor: theme.colors.white,
+                                                color: theme.colors.primary,
+                                                border: `1px solid ${theme.colors.primary}`,
+                                                marginBottom: '12px',
+                                                marginLeft: '6px'
+                                            }}
+                                            onClick={() => fileInputRef.current.click()}
+                                        >
+                                            다른 사진 보정하기
+                                        </button>
+
+                                        <div style={CS.compareBox}>
+                                            {[
+                                                { label: '원본', src: daltonizeResult.original },
+                                                { label: '색각 이상 시뮬레이션', src: daltonizeResult.simulated },
+                                                { label: '보정 후', src: daltonizeResult.corrected },
+                                            ].map(item => (
+                                                <div key={item.label} style={CS.compareItem}>
+                                                    <p style={CS.compareLabel}>{item.label}</p>
+                                                    <img src={item.src} alt={item.label} style={CS.compareImg} />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </>
                                 )}
                             </div>
                         )}
@@ -844,7 +1007,7 @@ const S = {
         padding: '20px', boxShadow: theme.colors.cardShadow
     },
     sectionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' },
-    sectionTitle: { fontSize: '17px', fontWeight: '700', color: theme.colors.text, margin: 0 },
+    sectionTitle: { fontSize: '17px', fontWeight: '700', color: theme.colors.text, margin: '0 0 16px'},
     editBtn: {
         padding: '7px 16px', backgroundColor: theme.colors.primaryLight, color: theme.colors.primary,
         border: 'none', borderRadius: theme.radius.full, fontSize: '13px', cursor: 'pointer', fontWeight: '500'
@@ -875,19 +1038,139 @@ const S = {
     styleGrid: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' },
     styleToggle: { padding: '8px 14px', borderRadius: theme.radius.full, border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '500' },
     emptyText: { color: theme.colors.textLight, fontSize: '14px', textAlign: 'center', padding: '32px 0' },
-    historyCard: { backgroundColor: theme.colors.background, borderRadius: theme.radius.lg, padding: '14px', marginBottom: '10px' },
-    historyTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' },
-    historyTpo: {
-        fontSize: '13px', fontWeight: '600', color: theme.colors.primary,
-        backgroundColor: theme.colors.primaryLight, padding: '4px 12px', borderRadius: theme.radius.full
+    // ── 추천 이력 카드 ──────────────────────────────
+    // 기존 histMeta → histInfoRow 로 교체
+    // histOutfitLabel → histOutfitMeta 로 교체
+    // 기존 histMeta → histInfoRow 로 교체
+    // ── 추천 이력 카드 ─────────────────────────────
+    histCard: {
+        background: 'white',
+        borderRadius: '20px',
+        marginBottom: '16px',
+        overflow: 'hidden',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+        border: '1px solid rgba(0,0,0,0.04)',
     },
-    historyDate: { fontSize: '12px', color: theme.colors.textLight },
-    historyStyle: {
-        fontSize: '12px', color: theme.colors.textSub, backgroundColor: theme.colors.white,
-        padding: '2px 10px', borderRadius: theme.radius.full, display: 'inline-block', marginBottom: '6px'
+// 컬러 헤더
+    histHeader: {
+        padding: '16px 18px 14px',
     },
-    historyWeather: { fontSize: '13px', color: theme.colors.textSub, margin: '4px 0' },
-    historyDesc: { fontSize: '13px', color: theme.colors.text, lineHeight: '1.6', margin: '6px 0 0' },
+    histHeaderTop: {
+        display: 'flex', alignItems: 'center',
+        gap: '7px', marginBottom: '10px', flexWrap: 'wrap',
+    },
+    histTpoPill: {
+        fontSize: '12px', fontWeight: '800', color: 'white',
+        background: 'rgba(255,255,255,0.25)',
+        padding: '4px 12px', borderRadius: '20px',
+    },
+    histRetryPill: {
+        fontSize: '10px', color: 'rgba(255,255,255,0.9)',
+        background: 'rgba(255,255,255,0.18)',
+        padding: '3px 9px', borderRadius: '20px',
+    },
+    histCreatedAt: {
+        fontSize: '11px', color: 'rgba(255,255,255,0.7)',
+        marginLeft: 'auto',
+    },
+    histHeaderBottom: {
+        display: 'flex', alignItems: 'center',
+        gap: '10px', flexWrap: 'wrap',
+    },
+    histDateBig: {
+        fontSize: '17px', fontWeight: '800', color: 'white',
+        letterSpacing: '-0.3px',
+    },
+    histWeatherPill: {
+        fontSize: '11px', color: 'rgba(255,255,255,0.9)',
+        background: 'rgba(255,255,255,0.18)',
+        padding: '4px 10px', borderRadius: '20px',
+    },
+// 본문
+    histBody: {
+        padding: '14px 16px 16px',
+    },
+    histGlobalDesc: {
+        fontSize: '12px', color: theme.colors.textSub,
+        lineHeight: '1.65', margin: '0 0 12px',
+        fontStyle: 'italic',
+        paddingLeft: '10px',
+        borderLeft: `2px solid ${theme.colors.primaryLight}`,
+    },
+// 코디 블록
+    histOutfitBlock: {
+        borderRadius: '14px', padding: '12px 14px',
+        marginBottom: '10px', transition: 'all 0.15s',
+    },
+    histBlockHead: {
+        display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between', marginBottom: '11px',
+    },
+    histBlockHeadLeft: {
+        display: 'flex', alignItems: 'center', gap: '8px',
+    },
+    histOutfitNum: {
+        width: '24px', height: '24px', borderRadius: '50%',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: '12px', fontWeight: '900', color: 'white', flexShrink: 0,
+    },
+    histStyleTag: {
+        fontSize: '12px', fontWeight: '700',
+        padding: '3px 10px', borderRadius: '20px',
+    },
+    histAcceptedBadge: {
+        fontSize: '11px', fontWeight: '700',
+        color: theme.colors.primary, background: 'white',
+        padding: '4px 12px', borderRadius: '20px',
+        border: `1.5px solid ${theme.colors.primary}`,
+    },
+// 사진 스트립
+    histStrip: {
+        display: 'flex', gap: '10px', flexWrap: 'wrap',
+    },
+    histStripItem: {
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', gap: '4px', width: '70px',
+    },
+    histStripImg: {
+        width: '70px', height: '70px', objectFit: 'cover',
+        borderRadius: '12px',
+        border: '2px solid rgba(255,255,255,0.9)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+    },
+    histStripImgEmpty: {
+        width: '70px', height: '70px', borderRadius: '12px',
+        background: theme.colors.primaryLight,
+        display: 'flex', alignItems: 'center',
+        justifyContent: 'center', fontSize: '24px',
+    },
+    histCatLabel: {
+        fontSize: '9px', fontWeight: '700', color: 'white',
+        padding: '2px 6px', borderRadius: '5px',
+    },
+    histItemType: {
+        fontSize: '10px', color: theme.colors.text, fontWeight: '500',
+        margin: 0, textAlign: 'center', maxWidth: '70px',
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+    },
+    histNoItem: {
+        fontSize: '11px', color: theme.colors.textLight,
+        margin: 0, padding: '6px 0',
+    },
+// 변경 버튼
+    histChangeCta: {
+        marginTop: '12px', width: '100%', padding: '10px',
+        background: 'white',
+        border: `1.5px solid ${theme.colors.primary}`,
+        borderRadius: '10px', fontSize: '13px', fontWeight: '700',
+        color: theme.colors.primary, cursor: 'pointer',
+        letterSpacing: '-0.2px',
+    },
+    histEmpty: {
+        fontSize: '12px', color: theme.colors.textLight,
+        textAlign: 'center', padding: '16px 0',
+    },
+// ─────────────────────────────────────────────
 };
 
 const CS = {
@@ -948,7 +1231,69 @@ const CS = {
     compareBox: { display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '16px' },
     compareItem: { flex: 1, minWidth: '140px', textAlign: 'center' },
     compareLabel: { fontSize: '12px', color: theme.colors.textSub, fontWeight: '600', marginBottom: '8px' },
-    compareImg: { width: '100%', height: '160px', objectFit: 'cover', borderRadius: theme.radius.md }
+    compareImg: { width: '100%', height: '160px', objectFit: 'cover', borderRadius: theme.radius.md },
+    retryBadge: {
+        fontSize: '11px', color: '#F57F17', backgroundColor: '#FFF8E1',
+        padding: '2px 8px', borderRadius: theme.radius.full,
+        fontWeight: '600', border: '1px solid #FFE082'
+    },
+    historyItems: {
+        marginTop: '10px', paddingTop: '10px',
+        borderTop: `1px solid ${theme.colors.border}`
+    },
+    historyItemsLabel: {
+        fontSize: '11px', color: theme.colors.primary,
+        fontWeight: '600', marginBottom: '8px', margin: '0 0 8px'
+    },
+    historyItemsGrid: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
+    historyItem: { textAlign: 'center', width: '72px' },
+    historyItemImg: {
+        width: '72px', height: '72px', objectFit: 'cover',
+        borderRadius: theme.radius.md
+    },
+    historyItemType: {
+        fontSize: '11px', color: theme.colors.textSub,
+        margin: '4px 0 2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+    },
+    historyItemCat: {
+        fontSize: '10px', color: theme.colors.primary,
+        backgroundColor: theme.colors.primaryLight,
+        padding: '1px 6px', borderRadius: theme.radius.full, display: 'inline-block'
+    },
+    historyNoSelect: {
+        fontSize: '12px', color: theme.colors.textLight,
+        marginTop: '8px', fontStyle: 'italic'
+    },
+    histOutfitGroup: {
+        borderRadius: theme.radius.lg, padding: '12px',
+        marginBottom: '10px', transition: 'all 0.2s',
+    },
+    histOutfitGroupHeader: {
+        display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px',
+    },
+    histOutfitLabel: {
+        fontSize: '12px', fontWeight: '700', color: 'white',
+        backgroundColor: theme.colors.primary, padding: '2px 10px',
+        borderRadius: theme.radius.full,
+    },
+    histOutfitStyle: {
+        fontSize: '12px', color: theme.colors.textSub, fontWeight: '500',
+    },
+    histAcceptedBadge: {
+        fontSize: '12px', fontWeight: '700', color: theme.colors.primary,
+        marginLeft: 'auto',
+    },
+    histOutfitDateChip: {
+        display: 'inline-block', fontSize: '12px', fontWeight: '700',
+        color: theme.colors.primary, background: theme.colors.primaryLight,
+        padding: '4px 10px', borderRadius: '8px',
+    },
+    histChangeBtn: {
+        marginTop: '4px', padding: '3px 10px',
+        background: 'none', border: `1px solid ${theme.colors.primary}`,
+        borderRadius: '20px', fontSize: '10px', fontWeight: '700',
+        color: theme.colors.primary, cursor: 'pointer',
+    },
 };
 
 export default MyPage;

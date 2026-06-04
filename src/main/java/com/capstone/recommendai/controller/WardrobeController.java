@@ -17,6 +17,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.http.MediaType;
+import org.springframework.http.HttpHeaders;
+import org.springframework.web.client.RestTemplate;
 
 @RestController
 @RequestMapping("/api/wardrobe")
@@ -31,6 +34,7 @@ public class WardrobeController {
     private final UserStyleRepository userStyleRepository;
     private final WeatherService weatherService;
     private final CalendarEventRepository calendarEventRepository;
+    private final RestTemplate restTemplate;
 
     // 내 옷장 전체 조회
     @GetMapping
@@ -81,7 +85,6 @@ public class WardrobeController {
         User user = userRepository.findByUserId(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("사용자 없음"));
 
-        // 날씨 자동 조회
         Map<String, Object> weather;
         if (body.containsKey("weather")) {
             weather = (Map<String, Object>) body.get("weather");
@@ -89,84 +92,74 @@ public class WardrobeController {
             weather = weatherService.getCurrentWeather("Seoul", "KR");
         }
 
-        // 옷장 조회
         List<WardrobeItemResponse> itemResponses = wardrobeRepository.findByUser(user)
                 .stream().map(WardrobeItemResponse::new).collect(Collectors.toList());
 
-        // 사용자 프로필
         List<String> styles = userStyleRepository.findByUser(user)
-                .stream().map(us -> us.getStyle().getStyleCode())
-                .collect(Collectors.toList());
+                .stream().map(us -> us.getStyle().getStyleCode()).collect(Collectors.toList());
         Map<String, Object> profile = new HashMap<>();
         profile.put("ageGroup", user.getAgeGroup());
-        profile.put("gender", user.getGender());
-        profile.put("styles", styles);
+        profile.put("gender",   user.getGender());
+        profile.put("styles",   styles);
 
-        // linkedEvents — 이벤트 ID 목록을 실제 일정 데이터로 변환
         List<Map<String, Object>> linkedEvents = new ArrayList<>();
         if (body.containsKey("linkedEventIds")) {
             List<String> eventIds = (List<String>) body.get("linkedEventIds");
             for (String eventId : eventIds) {
                 calendarEventRepository.findById(eventId).ifPresent(event -> {
-                    Map<String, Object> eventMap = new HashMap<>();
-                    eventMap.put("eventId", event.getEventId());
-                    eventMap.put("eventName", event.getEventName());
-                    eventMap.put("tpoKeyword", event.getTpoKeyword());
-                    eventMap.put("eventDatetime", event.getEventDatetime().toString());
-                    linkedEvents.add(eventMap);
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("eventId",       event.getEventId());
+                    m.put("eventName",     event.getEventName());
+                    m.put("tpoKeyword",    event.getTpoKeyword());
+                    m.put("eventDatetime", event.getEventDatetime().toString());
+                    linkedEvents.add(m);
                 });
             }
         }
 
-        String tpo = (String) body.getOrDefault("tpo", "일상");
-        String mode = (String) body.getOrDefault("mode", "rag");
+        String tpo      = (String) body.getOrDefault("tpo", "일상");
+        String mode     = (String) body.getOrDefault("mode", "rag");
+        int numOutfits  = body.containsKey("numOutfits")
+                ? ((Number) body.get("numOutfits")).intValue() : 2;
+        String parentRecId = (String) body.get("parentRecId");
+        String outfitDate  = (String) body.getOrDefault("outfitDate", null);
 
-        // AI 추천 요청
-        // AI 추천 요청
+        @SuppressWarnings("unchecked")
+        List<String> excludeItemIds = (List<String>) body.getOrDefault("excludeItemIds", new ArrayList<>());
+
         Map<String, Object> aiResult = aiService.recommend(
-                tpo,
-                mode,
-                weather,
-                profile,
-                itemResponses.stream().map(item -> {
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("id", item.getId());
-                    map.put("category", item.getCategory());
-                    map.put("type", item.getType());
-                    map.put("color", item.getColor());
-                    map.put("material", item.getMaterial());
-                    map.put("imageB64", item.getImageUrl());  // 하위 호환
-                    map.put("imageUrl", item.getImageUrl());  // S3 URL
-                    return map;
-                }).collect(Collectors.toList()),
-                linkedEvents);
+                tpo, mode, weather, profile,
+                itemResponses.stream()
+                        .filter(item -> !excludeItemIds.contains(item.getId()))
+                        .map(item -> {
+                            Map<String, Object> map = new HashMap<>();
+                            map.put("id",       item.getId());
+                            map.put("category", item.getCategory());
+                            map.put("type",     item.getType());
+                            map.put("color",    item.getColor());
+                            map.put("material", item.getMaterial());
+                            map.put("imageUrl", item.getImageUrl());
+                            return map;
+                        }).collect(Collectors.toList()),
+                linkedEvents,
+                numOutfits);
 
-        // 추천 결과 저장 및 반환
-        // 추천 결과 저장 및 반환
-        List<Map<String, Object>> matchedItems = (List<Map<String, Object>>) aiResult.getOrDefault("matched_items", new ArrayList<>());
-        Map<String, Object> outfit = (Map<String, Object>) aiResult.getOrDefault("outfit", new HashMap<>());
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> outfits =
+                (List<Map<String, Object>>) aiResult.getOrDefault("outfits", new ArrayList<>());
+        @SuppressWarnings("unchecked")
+        List<List<Map<String, Object>>> matchedItemsPerOutfit =
+                (List<List<Map<String, Object>>>) aiResult.getOrDefault("matched_items_per_outfit", new ArrayList<>());
 
-        String style = (String) outfit.getOrDefault("style", "");
-        String description = (String) outfit.getOrDefault("description", "");
-        Integer temperature = weather.get("temp") != null
+        Integer temperature    = weather.get("temp") != null
                 ? Integer.parseInt(weather.get("temp").toString()) : null;
         String weatherCondition = (String) weather.getOrDefault("desc", "");
-        String firstEventId = linkedEvents.isEmpty() ? null
+        String firstEventId    = linkedEvents.isEmpty() ? null
                 : (String) linkedEvents.get(0).get("eventId");
 
-        String outfitDate = (String) body.getOrDefault("outfitDate", null);
-
         var saved = recommendationService.saveRecommendation(
-                user.getUserId(),
-                tpo,
-                style,
-                description,
-                temperature,
-                weatherCondition,
-                firstEventId,
-                outfitDate,
-                matchedItems
-        );
+                user.getUserId(), tpo, outfits, temperature, weatherCondition,
+                firstEventId, outfitDate, matchedItemsPerOutfit, parentRecId);
 
         aiResult.put("recId", saved.getRecId());
         return ResponseEntity.ok(aiResult);
@@ -190,5 +183,19 @@ public class WardrobeController {
 
         wardrobeService.updateItem(userDetails.getUsername(), itemId, body);
         return ResponseEntity.ok(Map.of("message", "수정됐습니다."));
+    }
+
+    @GetMapping("/image-proxy")
+    public ResponseEntity<byte[]> proxyImage(
+            @RequestParam String url,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            byte[] imageBytes = restTemplate.getForObject(url, byte[].class);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.IMAGE_JPEG);
+            return ResponseEntity.ok().headers(headers).body(imageBytes);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
     }
 }

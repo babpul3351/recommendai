@@ -1,12 +1,20 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Navbar from '../components/Navbar';
-import { wardrobeAPI } from '../api/api';
+import { wardrobeAPI, userAPI } from '../api/api';
 import { theme } from '../styles/theme';
+import DaltonizedImage from '../components/DaltonizedImage';
 
 const CATEGORIES = ['상의', '하의', '아우터', '원피스', '기타'];
 const COLORS = ['블랙', '화이트', '그레이', '네이비', '블루', '레드', '핑크',
-    '옐로우', '그린', '카키', '브라운', '베이지', '퍼플', '오렌지'];
+    '옐로우', '그린', '카키', '브라운', '갈색', '베이지', '퍼플', '오렌지',
+    '와인', '민트', '코랄', '머스타드', '아이보리'];  // ← 갈색 외 자주 나오는 색상 추가
 const MATERIALS = ['코튼', '데님', '니트', '가죽', '린넨', '폴리에스터', '울', '시폰', '기타'];
+
+const COLOR_TYPE_LABEL = {
+    protanopia: '제1색맹(적록)',
+    deuteranopia: '제2색맹(적록)',
+    tritanopia: '제3색맹(청황)',
+};
 
 function Wardrobe() {
     const [items, setItems] = useState([]);
@@ -18,9 +26,31 @@ function Wardrobe() {
     const [editForm, setEditForm] = useState({});
     const fileInputRef = useRef(null);
 
+    // ── 색각 보정 ──────────────────────────────
+    const [colorType, setColorType] = useState(null);
+    const [correctionEnabled, setCorrectionEnabled] = useState(false);
+    // ──────────────────────────────────────────
+
     const categories = ['전체', ...CATEGORIES];
 
-    useEffect(() => { fetchWardrobe(); }, []);
+    useEffect(() => {
+        fetchWardrobe();
+        fetchUserColorType();
+    }, []);
+
+    // 로그인한 사용자의 colorType을 /api/user/profile에서 가져옴
+    const fetchUserColorType = async () => {
+        try {
+            const res = await userAPI.getProfile();  // api.get('/user/profile') 대신
+            const ct = res.data.colorType;
+            setColorType(ct);
+            if (ct && ct !== 'normal') {
+                setCorrectionEnabled(true);
+            }
+        } catch (err) {
+            console.error('프로필 조회 실패', err);
+        }
+    };
 
     const fetchWardrobe = async () => {
         setLoading(true);
@@ -98,17 +128,59 @@ function Wardrobe() {
 
     const getColorHex = (colorName) => {
         const map = {
-            '블랙':'#1a1a1a','화이트':'#f5f5f5','그레이':'#95a5a6','네이비':'#1a2a5e',
-            '블루':'#3498db','레드':'#e74c3c','핑크':'#ff6b9d','옐로우':'#f1c40f',
-            '그린':'#2ecc71','카키':'#8B8B6A','브라운':'#8B4513','베이지':'#f5f0e8',
-            '퍼플':'#9b59b6','오렌지':'#e67e22'
+            // 무채색
+            '블랙': '#1a1a1a', '검정': '#1a1a1a', '블랙': '#1a1a1a',
+            '화이트': '#f5f5f5', '흰색': '#f5f5f5', '흰': '#f5f5f5',
+            '그레이': '#95a5a6', '회색': '#95a5a6', '그레이': '#95a5a6',
+            '아이보리': '#f5f0dc', '크림': '#fffdd0',
+
+            // 블루 계열
+            '네이비': '#1a2a5e', '남색': '#1a2a5e',
+            '블루': '#3498db', '파랑': '#3498db', '파란': '#3498db',
+            '하늘': '#87CEEB', '스카이': '#87CEEB',
+            '청': '#4169E1',
+
+            // 레드/핑크 계열
+            '레드': '#e74c3c', '빨강': '#e74c3c', '빨간': '#e74c3c', '적색': '#e74c3c',
+            '핑크': '#ff6b9d', '분홍': '#ff6b9d',
+            '코랄': '#FF6B6B', '살구': '#FDBCB4',
+            '와인': '#722F37', '버건디': '#800020', '마룬': '#800000',
+
+            // 옐로우/오렌지 계열
+            '옐로우': '#f1c40f', '노랑': '#f1c40f', '노란': '#f1c40f', '황색': '#f1c40f',
+            '오렌지': '#e67e22', '주황': '#e67e22',
+            '머스타드': '#FFDB58',
+
+            // 그린 계열
+            '그린': '#2ecc71', '초록': '#2ecc71', '녹색': '#2ecc71',
+            '카키': '#8B8B6A', '올리브': '#808000',
+            '민트': '#98FF98', '연두': '#90EE90',
+
+            // 브라운 계열
+            '브라운': '#8B4513', '브라운': '#8B4513',
+            '갈색': '#8B4513', '갈': '#8B4513',
+            '카멜': '#C19A6B', '카라멜': '#C19A6B',
+            '베이지': '#f5f0e8', '샌드': '#C2B280',
+            '탄': '#D2B48C', '누드': '#E8C9A0',
+
+            // 퍼플 계열
+            '퍼플': '#9b59b6', '보라': '#9b59b6', '자주': '#800080',
+            '라벤더': '#E6E6FA', '연보라': '#DDA0DD',
+            '바이올렛': '#EE82EE',
+
+            // 기타
+            '실버': '#C0C0C0', '골드': '#FFD700',
         };
+
         if (!colorName) return '#e0e0e0';
         for (const [key, val] of Object.entries(map)) {
             if (colorName.includes(key)) return val;
         }
         return '#e0e0e0';
     };
+
+    // 색각 이상 여부
+    const hasColorDeficiency = colorType && colorType !== 'normal';
 
     return (
         <div style={styles.page}>
@@ -129,6 +201,49 @@ function Wardrobe() {
                     <input ref={fileInputRef} type="file" accept="image/*"
                            style={{ display: 'none' }} onChange={handleFileChange} />
                 </div>
+
+                {/* 색각 보정 토글 배너 — 색각 이상 사용자에게만 표시 */}
+                {hasColorDeficiency && (
+                    <div style={{
+                        ...styles.correctionBanner,
+                        backgroundColor: correctionEnabled
+                            ? theme.colors.primaryLight
+                            : '#f5f5f5',
+                        borderColor: correctionEnabled
+                            ? theme.colors.primary
+                            : '#e0e0e0',
+                    }}>
+                        <div>
+                            <span style={styles.correctionTitle}>색약 보정 모드</span>
+                            <span style={styles.correctionSub}>
+                                {COLOR_TYPE_LABEL[colorType]}
+                            </span>
+                        </div>
+                        <div style={styles.toggleWrapper}
+                             onClick={() => setCorrectionEnabled(prev => !prev)}>
+                            <span style={{
+                                fontSize: '12px',
+                                color: correctionEnabled
+                                    ? theme.colors.primary
+                                    : theme.colors.textSub,
+                                fontWeight: correctionEnabled ? '600' : '400'
+                            }}>
+                                {correctionEnabled ? 'ON' : 'OFF'}
+                            </span>
+                            <div style={{
+                                ...styles.toggleTrack,
+                                backgroundColor: correctionEnabled
+                                    ? theme.colors.primary
+                                    : '#ccc',
+                            }}>
+                                <div style={{
+                                    ...styles.toggleThumb,
+                                    left: correctionEnabled ? '22px' : '2px',
+                                }} />
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* 카테고리 필터 */}
                 <div style={styles.filterRow}>
@@ -160,7 +275,9 @@ function Wardrobe() {
                     <div style={styles.emptyBox}>
                         <p style={styles.emptyEmoji}>👗</p>
                         <p style={styles.emptyText}>
-                            {selectedCategory === '전체' ? '옷장이 비어있습니다.' : `${selectedCategory} 카테고리에 옷이 없습니다.`}
+                            {selectedCategory === '전체'
+                                ? '옷장이 비어있습니다.'
+                                : `${selectedCategory} 카테고리에 옷이 없습니다.`}
                         </p>
                         <p style={styles.emptySubText}>오른쪽 상단 버튼으로 옷을 추가해보세요</p>
                     </div>
@@ -169,14 +286,22 @@ function Wardrobe() {
                         {filteredItems.map(item => (
                             <div key={item.id} style={styles.card} onClick={() => openPopup(item)}>
                                 {item.imageUrl ? (
-                                    <img src={item.imageUrl} alt={item.type} style={styles.image} />
+                                    <DaltonizedImage
+                                        src={item.imageUrl}
+                                        alt={item.type}
+                                        colorType={colorType}
+                                        correctionEnabled={correctionEnabled}
+                                        imgStyle={styles.image}
+                                    />
                                 ) : (
                                     <div style={styles.imagePlaceholder}>
                                         <span style={{ fontSize: '32px' }}>👗</span>
                                     </div>
                                 )}
                                 <div style={styles.cardInfo}>
-                                    <span style={styles.cardCategory}>{normalizeCategory(item.category)}</span>
+                                    <span style={styles.cardCategory}>
+                                        {normalizeCategory(item.category)}
+                                    </span>
                                     <p style={styles.cardType}>{item.type}</p>
                                     <div style={styles.cardColorRow}>
                                         <div style={{
@@ -196,27 +321,40 @@ function Wardrobe() {
             {/* 상세 팝업 */}
             {selectedItem && (
                 <>
-                    <div style={styles.overlay} onClick={() => { setSelectedItem(null); setEditMode(false); }} />
+                    <div style={styles.overlay}
+                         onClick={() => { setSelectedItem(null); setEditMode(false); }} />
                     <div style={styles.popup}>
                         <div style={styles.popupHeader}>
                             <h2 style={styles.popupTitle}>옷 상세 정보</h2>
                             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                 {!editMode ? (
-                                    <button style={styles.editBtn} onClick={() => setEditMode(true)}>수정</button>
+                                    <button style={styles.editBtn}
+                                            onClick={() => setEditMode(true)}>수정</button>
                                 ) : (
                                     <>
-                                        <button style={styles.saveBtn} onClick={handleEdit}>저장</button>
-                                        <button style={styles.cancelBtn} onClick={() => setEditMode(false)}>취소</button>
+                                        <button style={styles.saveBtn}
+                                                onClick={handleEdit}>저장</button>
+                                        <button style={styles.cancelBtn}
+                                                onClick={() => setEditMode(false)}>취소</button>
                                     </>
                                 )}
                                 <button style={styles.closeBtn}
-                                        onClick={() => { setSelectedItem(null); setEditMode(false); }}>✕</button>
+                                        onClick={() => { setSelectedItem(null); setEditMode(false); }}>
+                                    ✕
+                                </button>
                             </div>
                         </div>
 
+                        {/* 팝업 이미지 — 보정 적용 */}
                         <div style={styles.popupImageBox}>
                             {selectedItem.imageUrl ? (
-                                <img src={selectedItem.imageUrl} alt={selectedItem.type} style={styles.popupImage} />
+                                <DaltonizedImage
+                                    src={selectedItem.imageUrl}
+                                    alt={selectedItem.type}
+                                    colorType={colorType}
+                                    correctionEnabled={correctionEnabled}
+                                    imgStyle={styles.popupImage}
+                                />
                             ) : (
                                 <div style={styles.popupImagePlaceholder}>
                                     <span style={{ fontSize: '48px' }}>👗</span>
@@ -288,7 +426,8 @@ function Wardrobe() {
                             </div>
                         )}
 
-                        <button style={styles.deleteBtn} onClick={() => handleDelete(selectedItem.id)}>
+                        <button style={styles.deleteBtn}
+                                onClick={() => handleDelete(selectedItem.id)}>
                             옷장에서 삭제
                         </button>
                     </div>
@@ -301,7 +440,10 @@ function Wardrobe() {
 const styles = {
     page: { backgroundColor: theme.colors.background, minHeight: '100vh' },
     container: { maxWidth: '480px', margin: '0 auto', padding: '20px 20px 90px' },
-    header: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' },
+    header: {
+        display: 'flex', alignItems: 'flex-start',
+        justifyContent: 'space-between', marginBottom: '20px'
+    },
     title: { fontSize: '22px', fontWeight: '700', color: theme.colors.text, margin: '0 0 4px' },
     subtitle: { fontSize: '13px', color: theme.colors.textSub, margin: 0 },
     uploadBtn: {
@@ -309,6 +451,32 @@ const styles = {
         border: 'none', borderRadius: theme.radius.full, fontSize: '13px',
         cursor: 'pointer', fontWeight: '600', flexShrink: 0
     },
+
+    // ── 색각 보정 배너 ──────────────────────────
+    correctionBanner: {
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '10px 14px', borderRadius: theme.radius.lg,
+        border: '1px solid', marginBottom: '16px',
+        transition: 'background-color 0.2s, border-color 0.2s'
+    },
+    correctionTitle: {
+        fontSize: '13px', fontWeight: '600', color: theme.colors.primary, marginRight: '6px'
+    },
+    correctionSub: { fontSize: '12px', color: theme.colors.textSub },
+    toggleWrapper: {
+        display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer'
+    },
+    toggleTrack: {
+        width: '44px', height: '24px', borderRadius: '12px',
+        position: 'relative', transition: 'background-color 0.2s', flexShrink: 0
+    },
+    toggleThumb: {
+        position: 'absolute', top: '2px', width: '20px', height: '20px',
+        borderRadius: '50%', backgroundColor: '#fff',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.25)', transition: 'left 0.2s'
+    },
+    // ──────────────────────────────────────────
+
     filterRow: { display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' },
     filterBtn: {
         display: 'flex', alignItems: 'center', gap: '6px',
@@ -316,7 +484,8 @@ const styles = {
         fontSize: '13px', cursor: 'pointer', fontWeight: '500'
     },
     categoryCount: {
-        padding: '1px 7px', borderRadius: theme.radius.full, fontSize: '11px', fontWeight: '600'
+        padding: '1px 7px', borderRadius: theme.radius.full,
+        fontSize: '11px', fontWeight: '600'
     },
     emptyBox: {
         backgroundColor: theme.colors.white, borderRadius: theme.radius.xl,
@@ -327,10 +496,10 @@ const styles = {
     emptySubText: { color: theme.colors.textLight, fontSize: '13px', margin: 0 },
     grid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' },
     card: {
-        backgroundColor: theme.colors.white, borderRadius: theme.radius.lg, overflow: 'hidden',
-        boxShadow: theme.colors.cardShadow, cursor: 'pointer'
+        backgroundColor: theme.colors.white, borderRadius: theme.radius.lg,
+        overflow: 'hidden', boxShadow: theme.colors.cardShadow, cursor: 'pointer'
     },
-    image: { width: '100%', height: '180px', objectFit: 'cover' },
+    image: { width: '100%', height: '180px', objectFit: 'cover', display: 'block' },
     imagePlaceholder: {
         width: '100%', height: '180px', backgroundColor: theme.colors.primaryLight,
         display: 'flex', alignItems: 'center', justifyContent: 'center'
@@ -338,8 +507,8 @@ const styles = {
     cardInfo: { padding: '10px 12px' },
     cardCategory: {
         fontSize: '10px', color: theme.colors.primary, backgroundColor: theme.colors.primaryLight,
-        padding: '2px 8px', borderRadius: theme.radius.full, display: 'inline-block', marginBottom: '6px',
-        fontWeight: '600'
+        padding: '2px 8px', borderRadius: theme.radius.full,
+        display: 'inline-block', marginBottom: '6px', fontWeight: '600'
     },
     cardType: { fontSize: '14px', fontWeight: '600', color: theme.colors.text, margin: '0 0 4px' },
     cardColorRow: { display: 'flex', alignItems: 'center', gap: '5px' },
@@ -361,19 +530,26 @@ const styles = {
     popupTitle: { fontSize: '17px', fontWeight: '700', color: theme.colors.text, margin: 0 },
     editBtn: {
         padding: '6px 14px', backgroundColor: theme.colors.primaryLight, color: theme.colors.primary,
-        border: 'none', borderRadius: theme.radius.full, fontSize: '13px', cursor: 'pointer', fontWeight: '500'
+        border: 'none', borderRadius: theme.radius.full, fontSize: '13px',
+        cursor: 'pointer', fontWeight: '500'
     },
     saveBtn: {
         padding: '6px 14px', backgroundColor: theme.colors.primary, color: theme.colors.white,
-        border: 'none', borderRadius: theme.radius.full, fontSize: '13px', cursor: 'pointer', fontWeight: '600'
+        border: 'none', borderRadius: theme.radius.full, fontSize: '13px',
+        cursor: 'pointer', fontWeight: '600'
     },
     cancelBtn: {
         padding: '6px 14px', backgroundColor: theme.colors.background, color: theme.colors.textSub,
         border: 'none', borderRadius: theme.radius.full, fontSize: '13px', cursor: 'pointer'
     },
-    closeBtn: { background: 'none', border: 'none', fontSize: '18px', color: '#999', cursor: 'pointer' },
+    closeBtn: {
+        background: 'none', border: 'none', fontSize: '18px', color: '#999', cursor: 'pointer'
+    },
     popupImageBox: { padding: '0 20px', marginBottom: '16px' },
-    popupImage: { width: '100%', height: '260px', objectFit: 'cover', borderRadius: theme.radius.lg },
+    popupImage: {
+        width: '100%', height: '260px', objectFit: 'cover',
+        borderRadius: theme.radius.lg, display: 'block'
+    },
     popupImagePlaceholder: {
         width: '100%', height: '260px', backgroundColor: theme.colors.primaryLight,
         borderRadius: theme.radius.lg, display: 'flex', alignItems: 'center', justifyContent: 'center'
@@ -387,11 +563,15 @@ const styles = {
         display: 'flex', alignItems: 'flex-start', padding: '11px 0',
         borderBottom: `1px solid ${theme.colors.border}`, gap: '12px'
     },
-    infoLabel: { width: '70px', fontSize: '13px', color: theme.colors.textSub, flexShrink: 0, paddingTop: '2px' },
+    infoLabel: {
+        width: '70px', fontSize: '13px', color: theme.colors.textSub,
+        flexShrink: 0, paddingTop: '2px'
+    },
     infoValue: { fontSize: '14px', color: theme.colors.text, fontWeight: '500' },
     editSelect: {
         flex: 1, width: '100%', padding: '8px 10px', borderRadius: theme.radius.md,
-        border: `1px solid ${theme.colors.border}`, fontSize: '14px', backgroundColor: theme.colors.white
+        border: `1px solid ${theme.colors.border}`, fontSize: '14px',
+        backgroundColor: theme.colors.white
     },
     editInput: {
         flex: 1, width: '100%', padding: '8px 10px', borderRadius: theme.radius.md,

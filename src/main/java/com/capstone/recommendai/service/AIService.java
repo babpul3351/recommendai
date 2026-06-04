@@ -17,32 +17,29 @@ public class AIService {
 
     private final RestTemplate restTemplate;
 
-    // 옷 이미지 분석
-    public Map<String, String> analyzeImage(String imageB64) {
-        String url = aiServerUrl + "/ai/analyze";
+    public Map analyzeImage(String imageB64) {
         Map<String, String> body = new HashMap<>();
         body.put("imageB64", imageB64);
-        return restTemplate.postForObject(url, body, Map.class);
+        return restTemplate.postForObject(aiServerUrl + "/ai/analyze", body, Map.class);
     }
 
-    // 코디 추천
-    public Map<String, Object> recommend(
-            String tpo,
-            String mode,
+    public Map recommend(
+            String tpo, String mode,
             Map<String, Object> weather,
             Map<String, Object> profile,
             List<Map<String, Object>> wardrobeItems,
-            List<Map<String, Object>> linkedEvents) {
+            List<Map<String, Object>> linkedEvents,
+            int numOutfits) {
 
-        String url = aiServerUrl + "/ai/recommend";
         Map<String, Object> body = new HashMap<>();
-        body.put("tpo", tpo);
-        body.put("mode", mode);
-        body.put("weather", weather);
-        body.put("profile", profile);
+        body.put("tpo",          tpo);
+        body.put("mode",         mode);
+        body.put("weather",      weather);
+        body.put("profile",      profile);
         body.put("wardrobeItems", wardrobeItems);
         body.put("linkedEvents", linkedEvents);
+        body.put("numOutfits",   numOutfits);
 
-        return restTemplate.postForObject(url, body, Map.class);
+        return restTemplate.postForObject(aiServerUrl + "/ai/recommend", body, Map.class);
     }
 }
