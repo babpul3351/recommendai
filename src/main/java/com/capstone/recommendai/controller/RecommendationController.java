@@ -39,15 +39,15 @@ public class RecommendationController {
                 .findByUserWithItemsOrderByCreatedAtDesc(user)   // ← JOIN FETCH
                 .stream().map(rec -> {
                     Map<String, Object> map = new HashMap<>();
-                    map.put("recId",             rec.getRecId());
-                    map.put("tpo",               rec.getTpo());
-                    map.put("style",             rec.getStyle());
-                    map.put("description",       rec.getDescription());
-                    map.put("temperature",       rec.getTemperature());
-                    map.put("weatherCondition",  rec.getWeatherCondition());
-                    map.put("createdAt",         rec.getCreatedAt());
+                    map.put("recId", rec.getRecId());
+                    map.put("tpo", rec.getTpo());
+                    map.put("style", rec.getStyle());
+                    map.put("description", rec.getDescription());
+                    map.put("temperature", rec.getTemperature());
+                    map.put("weatherCondition", rec.getWeatherCondition());
+                    map.put("createdAt", rec.getCreatedAt());
                     map.put("acceptedOutfitIndex", rec.getAcceptedOutfitIndex());
-                    map.put("retryCount",  rec.getRetryCount() != null ? rec.getRetryCount() : 0);
+                    map.put("retryCount", rec.getRetryCount() != null ? rec.getRetryCount() : 0);
                     map.put("parentRecId", rec.getParentRecId());
                     map.put("outfitDate",
                             rec.getOutfitDate() != null ? rec.getOutfitDate().toString() : null);
@@ -61,8 +61,8 @@ public class RecommendationController {
                             Map<String, Object> m = new HashMap<>();
                             m.put("category", item.getCategory());
                             m.put("imageUrl", item.getMatchedWardrobeItem().getImageThumbnail());
-                            m.put("type",     item.getMatchedWardrobeItem().getItemType());
-                            m.put("color",    item.getMatchedWardrobeItem().getColor());
+                            m.put("type", item.getMatchedWardrobeItem().getItemType());
+                            m.put("color", item.getMatchedWardrobeItem().getColor());
                             allOutfitGroups.get(idx).add(m);
                         }
                     }
@@ -73,9 +73,11 @@ public class RecommendationController {
                     if (rec.getOutfitsJson() != null) {
                         try {
                             TypeReference<List<Map<String, Object>>> typeRef =
-                                    new TypeReference<List<Map<String, Object>>>() {};
+                                    new TypeReference<List<Map<String, Object>>>() {
+                                    };
                             outfitInfos = objectMapper.readValue(rec.getOutfitsJson(), typeRef);
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                     }
                     map.put("outfitInfos", outfitInfos);
                     return map;
@@ -98,7 +100,7 @@ public class RecommendationController {
                     .body(Map.of("message", "outfitIndex가 필요합니다."));
         }
 
-        String style       = (String) body.getOrDefault("style", "");
+        String style = (String) body.getOrDefault("style", "");
         String description = (String) body.getOrDefault("description", "");
 
         recommendationService.acceptOutfit(
@@ -139,11 +141,11 @@ public class RecommendationController {
 
         List<Map<String, Object>> result = bestByDate.values().stream().map(rec -> {
             Map<String, Object> map = new HashMap<>();
-            map.put("recId",       rec.getRecId());
-            map.put("tpo",         rec.getTpo());
-            map.put("style",       rec.getStyle());
+            map.put("recId", rec.getRecId());
+            map.put("tpo", rec.getTpo());
+            map.put("style", rec.getStyle());
             map.put("description", rec.getDescription());
-            map.put("outfitDate",  rec.getOutfitDate().toString());
+            map.put("outfitDate", rec.getOutfitDate().toString());
             map.put("acceptedOutfitIndex", rec.getAcceptedOutfitIndex());
 
             int displayIdx = rec.getAcceptedOutfitIndex(); // null 아님 (필터됨)
@@ -154,8 +156,8 @@ public class RecommendationController {
                     .map(item -> {
                         Map<String, Object> m = new HashMap<>();
                         m.put("imageUrl", item.getMatchedWardrobeItem().getImageThumbnail());
-                        m.put("type",     item.getMatchedWardrobeItem().getItemType());
-                        m.put("color",    item.getMatchedWardrobeItem().getColor());
+                        m.put("type", item.getMatchedWardrobeItem().getItemType());
+                        m.put("color", item.getMatchedWardrobeItem().getColor());
                         return m;
                     }).collect(Collectors.toList());
             map.put("matchedItems", items);
