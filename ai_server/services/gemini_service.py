@@ -5,7 +5,7 @@ from io import BytesIO
 import base64, json
 import time
 
-API_KEY = "AQ.Ab8RN6Ij76g6eJBbwOfVLnRXK-FxpQoi2IM3Kn7vDSgBvy4UTw"
+API_KEY = ""
 
 gemini_client = None
 
