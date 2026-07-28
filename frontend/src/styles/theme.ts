@@ -1,17 +1,17 @@
 export const theme = {
     colors: {
-        primary: '#7EC8A4',
-        primaryLight: '#E8F5EE',
-        primaryDark: '#5BAF8A',
-        background: '#F5F7F5',
+        primary: '#71B3E5',
+        primaryLight: '#b1cce1',
+        primaryDark: '#2750CA',
+        background: '#e1e7eb',
         white: '#FFFFFF',
         text: '#1A1A1A',
         textSub: '#888888',
         textLight: '#AAAAAA',
-        border: '#E8EDE8',
+        border: '#c4d3df',
         cardShadow: '0 2px 12px rgba(126,200,164,0.12)',
         danger: '#FF5A5A',
-        blue: '#4A90D9',
+        blue: '#3017d2',
     },
     radius: {
         sm: '8px',
@@ -28,4 +28,6 @@ export const theme = {
         xl: '22px',
         xxl: '28px',
     }
-};
+} as const;
+
+export type Theme = typeof theme;

@@ -1,15 +1,25 @@
-import { useState, useEffect } from 'react';
-import { getDaltonizedImageUrl } from '../daltonization';   // ← 경로 수정
+import React, { useState, useEffect } from 'react';
+import { getDaltonizedImageUrl } from '../daltonization';
+
+interface DaltonizedImageProps {
+    src: string;
+    alt: string;
+    colorType: string;
+    correctionEnabled: boolean;
+    style?: React.CSSProperties;
+    imgStyle?: React.CSSProperties;
+    className?: string;
+}
 
 export default function DaltonizedImage({
-                                            src,
-                                            alt,
-                                            colorType,
-                                            correctionEnabled,
-                                            style,      // wrapper div 스타일
-                                            imgStyle,   // img 태그 스타일 (추가)
-                                            className
-                                        }) {
+    src,
+    alt,
+    colorType,
+    correctionEnabled,
+    style,
+    imgStyle,
+    className
+}: DaltonizedImageProps) {
     const [displaySrc, setDisplaySrc] = useState(src);
     const [loading, setLoading] = useState(false);
 
@@ -19,10 +29,10 @@ export default function DaltonizedImage({
             return;
         }
 
-        let objectUrl = null;
+        let objectUrl: string | null = null;
         setLoading(true);
 
-        getDaltonizedImageUrl(src, colorType)
+        getDaltonizedImageUrl(src, colorType as 'protanopia' | 'deuteranopia' | 'tritanopia')
             .then((url) => {
                 objectUrl = url;
                 setDisplaySrc(url);
