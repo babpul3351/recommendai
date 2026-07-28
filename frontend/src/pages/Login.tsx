@@ -8,11 +8,11 @@ function Login() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setLoading(true);
         setError('');
@@ -66,7 +66,7 @@ function Login() {
     );
 }
 
-const styles = {
+const styles: Record<string, React.CSSProperties> = {
     container: {
         display: 'flex', justifyContent: 'center',
         alignItems: 'center', height: '100vh', backgroundColor: '#f5f5f5'

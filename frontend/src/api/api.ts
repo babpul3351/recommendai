@@ -1,6 +1,5 @@
-import axios from 'axios';
-
-const BASE_URL = 'http://localhost:8080/api';
+import axios, { AxiosResponse } from 'axios';
+import { BASE_URL } from './env';
 
 const api = axios.create({
     baseURL: BASE_URL,
@@ -18,7 +17,7 @@ api.interceptors.request.use(config => {
 });
 
 api.interceptors.response.use(
-    response => response,
+    (response: AxiosResponse) => response,
     error => {
         if (error.response?.status === 401) {
             localStorage.removeItem('token');
@@ -30,46 +29,45 @@ api.interceptors.response.use(
 );
 
 export const authAPI = {
-    signup: (data) => api.post('/auth/signup', data),
-    login: (data) => api.post('/auth/login', data)
+    signup: (data: object) => api.post('/auth/signup', data),
+    login: (data: object) => api.post('/auth/login', data)
 };
-
 
 export const calendarAPI = {
     getEvents: () => api.get('/calendar'),
-    addEvent: (data) => api.post('/calendar', data),
-    deleteEvent: (eventId) => api.delete(`/calendar/${eventId}`)
+    addEvent: (data: object) => api.post('/calendar', data),
+    deleteEvent: (eventId: number) => api.delete(`/calendar/${eventId}`)
 };
 
 export const userAPI = {
     getProfile: () => api.get('/user/profile'),
-    updateProfile: (data) => api.put('/user/profile', data)
+    updateProfile: (data: object) => api.put('/user/profile', data)
 };
 
 export const recommendationAPI = {
     getHistory: () => api.get('/recommendations'),
-    getWeekOutfits: (start, end) => api.get(`/recommendations/week?start=${start}&end=${end}`),
-    acceptOutfit: (recId, data) => api.put(`/recommendations/${recId}/accept`, data),  // ← 추가
+    getWeekOutfits: (start: string, end: string) => api.get(`/recommendations/week?start=${start}&end=${end}`),
+    acceptOutfit: (recId: number, data: object) => api.put(`/recommendations/${recId}/accept`, data),
 };
 
 export const colorAssistantAPI = {
-    daltonize: (imageB64, colorType) =>
+    daltonize: (imageB64: string, colorType: string) =>
         api.post('/user/color-assistant/daltonize', { imageB64, colorType }),
-    updateColorType: (colorType) =>
+    updateColorType: (colorType: string) =>
         api.put('/user/color-type', { colorType })
 };
 
 export const weatherAPI = {
     getWeather: () => api.get('/weather'),
-    getForecast: (date) => api.get(`/weather/forecast?date=${date}`)
+    getForecast: (date: string) => api.get(`/weather/forecast?date=${date}`)
 };
 
 export const wardrobeAPI = {
     getWardrobe: () => api.get('/wardrobe'),
-    uploadItem: (imageB64) => api.post('/wardrobe/upload', { imageB64 }),
-    deleteItem: (itemId) => api.delete(`/wardrobe/${itemId}`),
-    updateItem: (itemId, data) => api.put(`/wardrobe/${itemId}`, data),
-    recommend: (data) => api.post('/wardrobe/recommend', data)
+    uploadItem: (imageB64: string) => api.post('/wardrobe/upload', { imageB64 }),
+    deleteItem: (itemId: number) => api.delete(`/wardrobe/${itemId}`),
+    updateItem: (itemId: number, data: object) => api.put(`/wardrobe/${itemId}`, data),
+    recommend: (data: object) => api.post('/wardrobe/recommend', data)
 };
 
 export default api;

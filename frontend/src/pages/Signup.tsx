@@ -3,14 +3,23 @@ import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../api/api';
 
 const STYLES = ['casual', 'formal', 'business', 'lovely', 'feminine', 'sporty', 'comfort'];
-const STYLE_LABELS = {
+const STYLE_LABELS: Record<string, string> = {
     casual: '캐주얼', formal: '포멀', business: '비즈니스',
     lovely: '러블리', feminine: '페미닌', sporty: '스포티', comfort: '컴포트'
 };
 
+interface SignupForm {
+    loginId: string;
+    nickname: string;
+    ageGroup: string;
+    gender: string;
+    password: string;
+    styles: string[];
+}
+
 function Signup() {
     const navigate = useNavigate();
-    const [form, setForm] = useState({
+    const [form, setForm] = useState<SignupForm>({
         loginId: '',
         nickname: '',
         ageGroup: '20대',
@@ -21,11 +30,11 @@ function Signup() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
-    const toggleStyle = (style) => {
+    const toggleStyle = (style: string) => {
         if (form.styles.includes(style)) {
             setForm({ ...form, styles: form.styles.filter(s => s !== style) });
         } else if (form.styles.length < 3) {
@@ -33,7 +42,7 @@ function Signup() {
         }
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (form.styles.length === 0) {
             setError('스타일을 최소 1개 선택해주세요.');
@@ -123,7 +132,7 @@ function Signup() {
     );
 }
 
-const styles = {
+const styles: Record<string, React.CSSProperties> = {
     container: {
         display: 'flex', justifyContent: 'center',
         alignItems: 'center', minHeight: '100vh', backgroundColor: '#f5f5f5'
