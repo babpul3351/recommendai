@@ -323,6 +323,9 @@ function Recommend() {
                                                     background: CAT_COLOR[item.category]||theme.colors.primary
                                                 }}>{item.category}</span>
                                                 <p style={S.matchedType}>{item.type}</p>
+                                                {item.matched === false && (
+                                                    <p style={S.matchedNote}>보유 아이템 아님</p>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
@@ -518,6 +521,11 @@ const S = {
         width: '68px', height: '68px', borderRadius: '10px',
         background: theme.colors.primaryLight,
         display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px',
+        border: '1.5px dashed #C8D4DC',  // 추가: 실물 없음을 시각적으로 구분
+    },
+    matchedNote: {
+        fontSize: '8.5px', color: '#AAB4BC', margin: '1px 0 0',
+        textAlign: 'center', fontStyle: 'italic',
     },
     matchedCat: {
         fontSize: '9px', fontWeight: '700', color: '#fff',

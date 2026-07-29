@@ -1,3 +1,21 @@
+"""
+gemini_service.py — RAG 전환 버전
+
+변경 사항
+--------
+get_outfit_recommendation()의 동작 방식이 바뀌었습니다.
+
+이전: 옷장 전체 목록을 프롬프트에 텍스트로 나열 → Gemini가 그 목록에서 직접 id를 선택
+      (검색 없이 Gemini가 바로 골라주는 방식 — "RAG"라는 이름이었지만 실제 검색 단계가 없었음)
+
+이후: Gemini에게 옷장 목록을 보여주지 않고, "이런 느낌의 아이템이 필요하다"는
+      설명 텍스트(search_query)만 생성하게 함 → 이 텍스트로 ChromaDB에서
+      카테고리별 실제 유사 아이템을 검색 (진짜 Retrieval → Generation 순서)
+
+이 파일에서 바뀐 함수는 get_outfit_recommendation() 하나뿐입니다.
+analyze_clothing, gemini_text, gemini_vision, 온도 구간 판별 등은 그대로입니다.
+"""
+
 from google import genai
 from google.genai import types
 from PIL import Image
@@ -5,7 +23,7 @@ from io import BytesIO
 import base64, json
 import time
 
-API_KEY = ""
+API_KEY = "AQ.Ab8RN6Ij76g6eJBbwOfVLnRXK-FxpQoi2IM3Kn7vDSgBvy4UTw"
 
 gemini_client = None
 
@@ -66,7 +84,7 @@ def gemini_vision(pil_img, prompt_text, max_retries=3):
     raise last_err
 
 # ─────────────────────────────────────────────
-# 옷 이미지 분석
+# 옷 이미지 분석 (변경 없음)
 # ─────────────────────────────────────────────
 def analyze_clothing(image_b64: str) -> dict:
     _, b64 = image_b64.split(",", 1)
@@ -91,7 +109,7 @@ def analyze_clothing(image_b64: str) -> dict:
     return result
 
 # ─────────────────────────────────────────────
-# 기온 구간 판별
+# 기온 구간 판별 (변경 없음)
 # ─────────────────────────────────────────────
 TEMP_ZONE_MAP = {
     "hot":    ["상의", "하의", "원피스"],
@@ -111,7 +129,12 @@ def get_temp_zone(temp: int) -> str:
     return "freeze"
 
 # ─────────────────────────────────────────────
-# 코디 추천
+# 코디 추천 — RAG 전환 버전
+#
+# wardrobe_items 파라미터는 시그니처 호환을 위해 그대로 받지만,
+# 프롬프트 구성에는 더 이상 사용하지 않습니다. (Gemini는 이제
+# 실제 옷장을 보지 않고, "어떤 느낌의 아이템이 필요한지"만 생성합니다.
+# 실제 아이템 검색은 clip_service.match_wardrobe()가 ChromaDB로 수행합니다.)
 # ─────────────────────────────────────────────
 def get_outfit_recommendation(tpo, weather, profile, mode, wardrobe_items, linked_events, num_outfits=2):
     temp = weather.get("temp", 18)
@@ -128,56 +151,28 @@ def get_outfit_recommendation(tpo, weather, profile, mode, wardrobe_items, linke
 
     num_outfits = max(2, min(3, num_outfits))
 
-    slot_fmt = '{{"id":"문자열또는null","color":"색상","type":"아이템명","search_query":"English query"}}'
+    # id는 항상 null — Gemini는 실제 옷장 목록을 보지 않으므로
+    # 실제 아이템 id를 알 수 없습니다. 매칭은 이후 ChromaDB 검색으로 처리됩니다.
+    slot_fmt = '{{"id":null,"color":"색상","type":"아이템명","search_query":"English query"}}'
 
-    if mode == "rag" and wardrobe_items:
-        allowed = TEMP_ZONE_MAP[zone]
-        candidates = {cat: [] for cat in allowed}
-        for item in wardrobe_items:
-            cat = item.get("category", "")
-            if cat in candidates:
-                candidates[cat].append(
-                    f"[{item['id']}] {item['color']} {item['type']} ({item.get('material','')})"
-                )
-        candidates_text = ""
-        for cat, items in candidates.items():
-            if items:
-                candidates_text += f"\n[{cat}]\n" + "\n".join(f"  - {i}" for i in items)
-
-        prompt = f"""
+    prompt = f"""
 === 사용자 조건 ===
 - 연령대: {profile.get('ageGroup','20대')} / 성별: {profile.get('gender','여성')}
 - TPO: {tpo} / 날씨: {temp}도, {weather.get('desc','맑음')}
 - 선호 스타일: {style_str}
 {event_context}
 
-=== 옷장 후보 ===
-{candidates_text if candidates_text else '(등록된 옷 없음)'}
-
 === 지시 ===
-후보에서 TPO·스타일에 맞는 서로 다른 {num_outfits}가지 코디를 구성하세요.
-각 코디는 스타일/조합이 달라야 합니다. 후보가 있으면 id를 반드시 기록하세요.
+TPO·날씨·스타일에 맞는 서로 다른 {num_outfits}가지 코디를 구성하세요.
+각 코디는 스타일/조합이 서로 달라야 합니다.
+각 슬롯(top, bottom, outer)의 search_query에는 이상적인 아이템의 특징을
+영어로 구체적으로 묘사하세요. (예: "black oversized cotton hoodie")
 아우터 필요 여부: {"필요" if needs_outer else "불필요"}
 
 === 출력 형식 (순수 JSON 배열만, {num_outfits}개) ===
 [
   {{"top":{slot_fmt},"bottom":{slot_fmt},"outer":{slot_fmt} 또는 null,"style":"스타일명","description":"한 줄 코디 설명"}},
   {{"top":{slot_fmt},"bottom":{slot_fmt},"outer":{slot_fmt} 또는 null,"style":"스타일명","description":"한 줄 코디 설명"}}
-]"""
-    else:
-        prompt = f"""
-=== 사용자 조건 ===
-- 연령대: {profile.get('ageGroup','20대')} / 성별: {profile.get('gender','여성')}
-- TPO: {tpo} / 날씨: {temp}도, {weather.get('desc','맑음')}
-- 선호 스타일: {style_str}
-
-=== 지시 ===
-TPO·스타일에 맞는 서로 다른 {num_outfits}가지 코디를 구성하세요.
-
-=== 출력 형식 (순수 JSON 배열만, {num_outfits}개) ===
-[
-  {{"top":{slot_fmt},"bottom":{slot_fmt},"outer":null,"style":"스타일명","description":"한 줄 코디 설명"}},
-  {{"top":{slot_fmt},"bottom":{slot_fmt},"outer":null,"style":"스타일명","description":"한 줄 코디 설명"}}
 ]"""
 
     raw = gemini_text(prompt)
