@@ -55,3 +55,5 @@ chroma_db/
 
 ### Mac OS ###
 .DS_Store
+ai_server/chroma_data/
+
