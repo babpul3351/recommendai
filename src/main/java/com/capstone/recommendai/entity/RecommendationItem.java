@@ -1,6 +1,5 @@
 package com.capstone.recommendai.entity;
 
-import com.capstone.recommendai.entity.FashionDbItem;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -36,4 +35,9 @@ public class RecommendationItem {
 
     @Column(name = "similarity_score")
     private Float similarityScore;
+
+    // ── 신규 ──────────────────────────────────
+    @Column(name = "outfit_index", nullable = false)
+    private Integer outfitIndex = 0;
+    // ─────────────────────────────────────────
 }

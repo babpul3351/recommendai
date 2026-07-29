@@ -48,7 +48,8 @@ export const userAPI = {
 
 export const recommendationAPI = {
     getHistory: () => api.get('/recommendations'),
-    getWeekOutfits: (start, end) => api.get(`/recommendations/week?start=${start}&end=${end}`)
+    getWeekOutfits: (start, end) => api.get(`/recommendations/week?start=${start}&end=${end}`),
+    acceptOutfit: (recId, data) => api.put(`/recommendations/${recId}/accept`, data),  // ← 추가
 };
 
 export const colorAssistantAPI = {
