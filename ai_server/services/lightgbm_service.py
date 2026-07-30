@@ -1,4 +1,4 @@
-﻿import os
+import os
 from datetime import date, datetime
 from typing import Any, Dict, List, Optional
 
@@ -59,6 +59,20 @@ def _fallback_idle_score(features: List[float]) -> float:
     return max(0.0, min(1.0, recency_score * 0.7 + low_usage_score * 0.2 + seasonal_penalty))
 
 
+def _idle_reason(feature: List[float], target_season: Optional[str]) -> str:
+    days_since_last_worn, wear_count, season_match = feature
+    reasons = []
+    if days_since_last_worn >= 90:
+        reasons.append("not worn for over 90 days")
+    elif days_since_last_worn >= 30:
+        reasons.append("not worn recently")
+    if wear_count <= 1:
+        reasons.append("low wear count")
+    if target_season and season_match == 0:
+        reasons.append("not matched to target season")
+    return ", ".join(reasons) if reasons else "recently used"
+
+
 def analyze_idle_items(items: List[Dict[str, Any]], target_season: Optional[str] = None) -> dict:
     today = date.today()
     features = [_build_features(item, today, target_season) for item in items]
@@ -78,8 +92,11 @@ def analyze_idle_items(items: List[Dict[str, Any]], target_season: Optional[str]
             "category": item.get("category", ""),
             "type": item.get("type", ""),
             "color": item.get("color", ""),
+            "season": item.get("season", ""),
             "imageUrl": item.get("imageUrl", ""),
             "idleScore": round(float(score), 4),
+            "idleLevel": "high" if score >= 0.7 else "medium" if score >= 0.4 else "low",
+            "reason": _idle_reason(feature, target_season),
             "daysSinceLastWorn": int(feature[0]),
             "wearCount": int(feature[1]),
         })
@@ -88,5 +105,6 @@ def analyze_idle_items(items: List[Dict[str, Any]], target_season: Optional[str]
     return {
         "model": os.getenv("LIGHTGBM_MODEL_PATH", ""),
         "scoringMode": scoring_mode,
+        "targetSeason": target_season,
         "items": results,
     }

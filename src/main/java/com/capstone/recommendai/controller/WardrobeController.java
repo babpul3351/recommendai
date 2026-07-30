@@ -198,4 +198,52 @@ public class WardrobeController {
             return ResponseEntity.status(500).build();
         }
     }
+
+    @PostMapping("/vit/classify")
+    public ResponseEntity<?> classifyWithVit(@RequestBody Map<String, Object> body) {
+        String imageB64 = (String) body.getOrDefault("imageB64", null);
+        String imageUrl = (String) body.getOrDefault("imageUrl", null);
+        int topK = body.containsKey("topK") ? ((Number) body.get("topK")).intValue() : 5;
+
+        return ResponseEntity.ok(aiService.classifyFashionImage(imageB64, imageUrl, topK));
+    }
+
+    @GetMapping("/idle-analysis")
+    public ResponseEntity<?> analyzeIdleWardrobe(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(required = false) String targetSeason) {
+
+        User user = userRepository.findByUserId(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("사용자 없음"));
+        String season = targetSeason != null ? targetSeason : currentSeason();
+
+        List<Map<String, Object>> items = wardrobeRepository.findByUser(user)
+                .stream()
+                .map(item -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", item.getItemId());
+                    map.put("category", item.getCategory());
+                    map.put("type", item.getItemType());
+                    map.put("color", item.getColor());
+                    map.put("material", item.getMaterial());
+                    map.put("imageUrl", item.getImageThumbnail());
+                    map.put("lastWornDate", item.getCreatedAt() != null
+                            ? item.getCreatedAt().toLocalDate().toString()
+                            : null);
+                    map.put("wearCount", 0);
+                    map.put("season", season);
+                    return map;
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(aiService.analyzeIdleWardrobe(items, season));
+    }
+
+    private String currentSeason() {
+        int month = java.time.LocalDate.now().getMonthValue();
+        if (month >= 3 && month <= 5) return "spring";
+        if (month >= 6 && month <= 8) return "summer";
+        if (month >= 9 && month <= 11) return "fall";
+        return "winter";
+    }
 }

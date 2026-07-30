@@ -184,7 +184,8 @@ async def daltonize(req: DaltonizeRequest):
         raise HTTPException(status_code=500, detail=str(e))
 # ViT and LightGBM branch endpoints
 class VitClassifyRequest(BaseModel):
-    imageB64: str
+    imageB64: Optional[str] = None
+    imageUrl: Optional[str] = None
     topK: int = 5
 
 
@@ -208,7 +209,7 @@ class IdleAnalysisRequest(BaseModel):
 async def classify_with_vit(req: VitClassifyRequest):
     try:
         from services.vit_service import classify_fashion_image
-        return classify_fashion_image(req.imageB64, req.topK)
+        return classify_fashion_image(req.imageB64, req.imageUrl, req.topK)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -73,4 +73,19 @@ public class AIService {
     public void deleteEmbedding(String itemId) {
         restTemplate.delete(aiServerUrl + "/ai/wardrobe/embed/" + itemId);
     }
+
+    public Map classifyFashionImage(String imageB64, String imageUrl, int topK) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("imageB64", imageB64);
+        body.put("imageUrl", imageUrl);
+        body.put("topK", topK);
+        return restTemplate.postForObject(aiServerUrl + "/ai/vit/classify", body, Map.class);
+    }
+
+    public Map analyzeIdleWardrobe(List<Map<String, Object>> items, String targetSeason) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("items", items);
+        body.put("targetSeason", targetSeason);
+        return restTemplate.postForObject(aiServerUrl + "/ai/idle-analysis", body, Map.class);
+    }
 }
