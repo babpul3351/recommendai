@@ -182,3 +182,51 @@ async def daltonize(req: DaltonizeRequest):
         return {"corrected": corrected}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+# ViT and LightGBM branch endpoints
+class VitClassifyRequest(BaseModel):
+    imageB64: str
+    topK: int = 5
+
+
+class IdleWardrobeItem(BaseModel):
+    id: str
+    category: Optional[str] = ""
+    type: Optional[str] = ""
+    color: Optional[str] = ""
+    season: Optional[str] = ""
+    imageUrl: Optional[str] = ""
+    lastWornDate: Optional[str] = None
+    wearCount: int = 0
+
+
+class IdleAnalysisRequest(BaseModel):
+    items: List[IdleWardrobeItem] = []
+    targetSeason: Optional[str] = None
+
+
+@app.post("/ai/vit/classify")
+async def classify_with_vit(req: VitClassifyRequest):
+    try:
+        from services.vit_service import classify_fashion_image
+        return classify_fashion_image(req.imageB64, req.topK)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/ai/idle-analysis")
+async def idle_analysis_status():
+    return {
+        "status": "ready",
+        "message": "Use POST /ai/idle-analysis with wardrobe items for scoring.",
+        "features": ["daysSinceLastWorn", "wearCount", "seasonMatch"],
+    }
+
+
+@app.post("/ai/idle-analysis")
+async def analyze_idle_wardrobe(req: IdleAnalysisRequest):
+    try:
+        from services.lightgbm_service import analyze_idle_items
+        items = [item.dict() for item in req.items]
+        return analyze_idle_items(items, req.targetSeason)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

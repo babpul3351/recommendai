@@ -3,3 +3,11 @@ uvicorn==0.46.0
 openai==2.30.0
 pydantic==2.12.5
 python-dotenv==1.2.2
+numpy
+pandas
+pillow
+datasets
+transformers
+torch
+torchvision
+lightgbm
