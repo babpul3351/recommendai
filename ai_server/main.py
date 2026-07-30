@@ -1,15 +1,13 @@
 """
-main.py 최종 수정본 (v2)
+main.py 전체 최종본
 
-v1 대비 변경 사항
-----------------
-발견된 문제: WardrobeItemData.id가 int로 되어 있었으나,
-실제 WardrobeItem.itemId는 String(UUID)입니다.
-(이는 ChromaDB 작업과 무관하게 원래 있던 버그로 보입니다.)
+이전 버전(ChromaDB 통합 v2) 대비 변경 사항
+----------------------------------------
+/ai/daltonize 엔드포인트를 추가했습니다. (DaltonizeRequest 모델 포함)
+daltonization_service.py의 simulate_color_blindness()를 호출합니다.
 
-→ id: int  →  id: str 로 수정
-→ EmbedItemRequest.itemId, userId도 str로 수정
-→ DELETE 엔드포인트의 item_id도 str로 수정
+그 외 엔드포인트(/ai/analyze, /ai/recommend, /ai/wardrobe/embed 등)는
+이전 버전과 동일합니다. 변경 없습니다.
 """
 
 from fastapi import FastAPI, HTTPException
@@ -33,14 +31,14 @@ app.add_middleware(
 # 요청 모델
 # ─────────────────────────────────────────────
 class WardrobeItemData(BaseModel):
-    id: str  # UUID 문자열 (기존 int에서 수정됨)
+    id: str
     category: Optional[str] = ""
     type: Optional[str] = ""
     color: Optional[str] = ""
     material: Optional[str] = ""
-    imageB64: Optional[str] = ""   # 과거 방식 (현재 Spring Boot는 더 이상 보내지 않음)
-    imageUrl: Optional[str] = ""   # 현재 Spring Boot가 실제로 보내는 필드 (S3 URL)
-    embedding: Optional[str] = ""  # 더 이상 사용하지 않지만 기존 호환을 위해 유지
+    imageB64: Optional[str] = ""
+    imageUrl: Optional[str] = ""
+    embedding: Optional[str] = ""
 
 class RecommendRequest(BaseModel):
     tpo: str
@@ -54,12 +52,17 @@ class AnalyzeImageRequest(BaseModel):
     imageB64: str
 
 class EmbedItemRequest(BaseModel):
-    itemId: str    # UUID 문자열
-    userId: str    # UUID 문자열
+    itemId: str
+    userId: str
     category: str
     color: Optional[str] = ""
     type: Optional[str] = ""
-    imageB64: str  # data:image/jpeg;base64,... 형식
+    imageB64: str
+
+# [신규] 색각 보정 요청 모델
+class DaltonizeRequest(BaseModel):
+    imageB64: str
+    colorType: str
 
 # ─────────────────────────────────────────────
 # 헬스 체크
@@ -69,7 +72,7 @@ def health_check():
     return {"status": "AI 서버 정상 실행 중"}
 
 # ─────────────────────────────────────────────
-# 옷 이미지 분석 (기존 그대로)
+# 옷 이미지 분석
 # ─────────────────────────────────────────────
 @app.post("/ai/analyze")
 async def analyze_image(req: AnalyzeImageRequest):
@@ -82,10 +85,6 @@ async def analyze_image(req: AnalyzeImageRequest):
 
 # ─────────────────────────────────────────────
 # 코디 추천
-# 수정 사항: get_outfit_recommendation()이 코디 "여러 개"가 담긴 리스트를 반환하는데,
-# 기존 코드는 단일 코디로 가정하고 있었습니다. (ChromaDB 작업과 무관한 기존 버그)
-# Spring Boot(WardrobeController)가 기대하는 "outfits" / "matched_items_per_outfit"
-# (둘 다 복수형) 키에 맞춰 응답 형식을 수정했습니다.
 # ─────────────────────────────────────────────
 @app.post("/ai/recommend")
 async def recommend(req: RecommendRequest):
@@ -102,7 +101,6 @@ async def recommend(req: RecommendRequest):
             linked_events=req.linkedEvents
         )
 
-        # get_outfit_recommendation이 단일 dict를 반환하는 경우까지 대비
         if isinstance(outfits, dict):
             outfits = [outfits]
 
@@ -124,8 +122,7 @@ async def recommend(req: RecommendRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 # ─────────────────────────────────────────────
-# [신규] 의류 임베딩 등록 (ChromaDB 영구 저장)
-# Spring Boot가 옷장 아이템을 MySQL에 저장하고 ID를 발급받은 직후 호출
+# 의류 임베딩 등록 (ChromaDB 영구 저장)
 # ─────────────────────────────────────────────
 @app.post("/ai/wardrobe/embed")
 async def register_embedding(req: EmbedItemRequest):
@@ -154,8 +151,7 @@ async def register_embedding(req: EmbedItemRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 # ─────────────────────────────────────────────
-# [신규] 의류 임베딩 삭제
-# Spring Boot가 옷장 아이템을 삭제할 때 함께 호출
+# 의류 임베딩 삭제
 # ─────────────────────────────────────────────
 @app.delete("/ai/wardrobe/embed/{item_id}")
 async def delete_embedding(item_id: str):
@@ -167,9 +163,22 @@ async def delete_embedding(item_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 # ─────────────────────────────────────────────
-# [신규] ChromaDB 상태 확인 (디버깅용)
+# ChromaDB 상태 확인 (디버깅용)
 # ─────────────────────────────────────────────
 @app.get("/ai/wardrobe/embed/stats")
 async def embedding_stats():
     from services import chroma_service
     return chroma_service.get_stats()
+
+# ─────────────────────────────────────────────
+# [신규] 색각 보정 (Daltonization)
+# Spring Boot(UserController.daltonize)가 이 엔드포인트를 호출합니다.
+# ─────────────────────────────────────────────
+@app.post("/ai/daltonize")
+async def daltonize(req: DaltonizeRequest):
+    try:
+        from services.daltonization_service import simulate_color_blindness
+        corrected = simulate_color_blindness(req.imageB64, req.colorType)
+        return {"corrected": corrected}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

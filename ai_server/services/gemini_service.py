@@ -1,20 +1,21 @@
 """
-gemini_service.py — RAG 전환 버전
+gemini_service.py
 
-변경 사항
---------
-get_outfit_recommendation()의 동작 방식이 바뀌었습니다.
+변경 사항 (기존 대비)
+------------------
+API_KEY를 코드에 직접 작성하는 대신, .env 파일에서 읽어오도록 변경.
+이제 API 키가 코드에 노출되지 않으므로, GitHub(public 저장소)에 안전하게
+커밋 가능.
 
-이전: 옷장 전체 목록을 프롬프트에 텍스트로 나열 → Gemini가 그 목록에서 직접 id를 선택
-      (검색 없이 Gemini가 바로 골라주는 방식 — "RAG"라는 이름이었지만 실제 검색 단계가 없었음)
-
-이후: Gemini에게 옷장 목록을 보여주지 않고, "이런 느낌의 아이템이 필요하다"는
-      설명 텍스트(search_query)만 생성하게 함 → 이 텍스트로 ChromaDB에서
-      카테고리별 실제 유사 아이템을 검색 (진짜 Retrieval → Generation 순서)
-
-이 파일에서 바뀐 함수는 get_outfit_recommendation() 하나뿐입니다.
-analyze_clothing, gemini_text, gemini_vision, 온도 구간 판별 등은 그대로입니다.
+.env 파일은 ai_server 폴더 안에 각자 만들어야 하며, git에는 업로드되지 않음.
+(.env.example 파일을 참고해서 본인의 .env를 생성해야 함.)
 """
+
+import os
+from dotenv import load_dotenv
+
+# ai_server/.env 파일을 읽어서 환경변수로 등록
+load_dotenv()
 
 from google import genai
 from google.genai import types
@@ -23,7 +24,14 @@ from io import BytesIO
 import base64, json
 import time
 
-API_KEY = ""
+API_KEY = os.environ.get("GEMINI_API_KEY")
+
+if not API_KEY:
+    raise RuntimeError(
+        "GEMINI_API_KEY가 설정되지 않았습니다.\n"
+        "ai_server 폴더에 .env 파일을 만들고 GEMINI_API_KEY=본인의_키 를 추가하세요.\n"
+        "(.env.example 파일을 참고하세요)"
+    )
 
 gemini_client = None
 
@@ -48,7 +56,7 @@ def gemini_text(prompt, max_retries=3):
             last_err = e
             if '503' in str(e) or 'UNAVAILABLE' in str(e):
                 if attempt < max_retries - 1:
-                    wait = (attempt + 1) * 3   # 3초, 6초 순서로 대기
+                    wait = (attempt + 1) * 3
                     print(f"[Gemini] 503 재시도 {attempt+1}/{max_retries} ({wait}초 대기)")
                     time.sleep(wait)
                     continue
@@ -84,7 +92,7 @@ def gemini_vision(pil_img, prompt_text, max_retries=3):
     raise last_err
 
 # ─────────────────────────────────────────────
-# 옷 이미지 분석 (변경 없음)
+# 옷 이미지 분석
 # ─────────────────────────────────────────────
 def analyze_clothing(image_b64: str) -> dict:
     _, b64 = image_b64.split(",", 1)
@@ -101,7 +109,6 @@ def analyze_clothing(image_b64: str) -> dict:
     clean = raw.replace("```json", "").replace("```", "").strip()
     result = json.loads(clean)
 
-    # 썸네일 base64 저장
     buf = BytesIO()
     thumb.save(buf, format="JPEG", quality=75)
     result["imageB64"] = "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
@@ -109,7 +116,7 @@ def analyze_clothing(image_b64: str) -> dict:
     return result
 
 # ─────────────────────────────────────────────
-# 기온 구간 판별 (변경 없음)
+# 기온 구간 판별
 # ─────────────────────────────────────────────
 TEMP_ZONE_MAP = {
     "hot":    ["상의", "하의", "원피스"],
@@ -129,12 +136,7 @@ def get_temp_zone(temp: int) -> str:
     return "freeze"
 
 # ─────────────────────────────────────────────
-# 코디 추천 — RAG 전환 버전
-#
-# wardrobe_items 파라미터는 시그니처 호환을 위해 그대로 받지만,
-# 프롬프트 구성에는 더 이상 사용하지 않습니다. (Gemini는 이제
-# 실제 옷장을 보지 않고, "어떤 느낌의 아이템이 필요한지"만 생성합니다.
-# 실제 아이템 검색은 clip_service.match_wardrobe()가 ChromaDB로 수행합니다.)
+# 코디 추천
 # ─────────────────────────────────────────────
 def get_outfit_recommendation(tpo, weather, profile, mode, wardrobe_items, linked_events, num_outfits=2):
     temp = weather.get("temp", 18)
@@ -151,8 +153,6 @@ def get_outfit_recommendation(tpo, weather, profile, mode, wardrobe_items, linke
 
     num_outfits = max(2, min(3, num_outfits))
 
-    # id는 항상 null — Gemini는 실제 옷장 목록을 보지 않으므로
-    # 실제 아이템 id를 알 수 없습니다. 매칭은 이후 ChromaDB 검색으로 처리됩니다.
     slot_fmt = '{{"id":null,"color":"색상","type":"아이템명","search_query":"English query"}}'
 
     prompt = f"""

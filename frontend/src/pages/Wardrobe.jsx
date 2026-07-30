@@ -4,10 +4,22 @@ import { wardrobeAPI, userAPI } from '../api/api';
 import { theme } from '../styles/theme';
 import DaltonizedImage from '../components/DaltonizedImage';
 
+/*
+ * 변경 사항 (기존 대비)
+ * ------------------
+ * 1. correctionEnabled를 더 이상 useState(false)로 초기화하지 않고,
+ *    서버(/user/profile 응답의 correctionEnabled)에서 가져온 값을 그대로 사용합니다.
+ *    → 이전에는 화면 재진입 시마다 매번 false로 초기화된 뒤 colorType이 있으면
+ *      자동으로 true가 되어버려, 사용자가 꺼둔 설정이 유지되지 않았습니다.
+ *
+ * 2. 토글 클릭 시 handleToggleCorrection()이 서버에 즉시 저장합니다.
+ *    (PUT /user/profile 로 correctionEnabled 값 전송)
+ */
+
 const CATEGORIES = ['상의', '하의', '아우터', '원피스', '기타'];
 const COLORS = ['블랙', '화이트', '그레이', '네이비', '블루', '레드', '핑크',
     '옐로우', '그린', '카키', '브라운', '갈색', '베이지', '퍼플', '오렌지',
-    '와인', '민트', '코랄', '머스타드', '아이보리'];  // ← 갈색 외 자주 나오는 색상 추가
+    '와인', '민트', '코랄', '머스타드', '아이보리'];
 const MATERIALS = ['코튼', '데님', '니트', '가죽', '린넨', '폴리에스터', '울', '시폰', '기타'];
 
 const COLOR_TYPE_LABEL = {
@@ -29,6 +41,7 @@ function Wardrobe() {
     // ── 색각 보정 ──────────────────────────────
     const [colorType, setColorType] = useState(null);
     const [correctionEnabled, setCorrectionEnabled] = useState(false);
+    const [savingToggle, setSavingToggle] = useState(false);
     // ──────────────────────────────────────────
 
     const categories = ['전체', ...CATEGORIES];
@@ -38,17 +51,34 @@ function Wardrobe() {
         fetchUserColorType();
     }, []);
 
-    // 로그인한 사용자의 colorType을 /api/user/profile에서 가져옴
+    // 로그인한 사용자의 colorType과 correctionEnabled를 /api/user/profile에서 가져옴
     const fetchUserColorType = async () => {
         try {
-            const res = await userAPI.getProfile();  // api.get('/user/profile') 대신
-            const ct = res.data.colorType;
-            setColorType(ct);
-            if (ct && ct !== 'normal') {
-                setCorrectionEnabled(true);
-            }
+            const res = await userAPI.getProfile();
+            setColorType(res.data.colorType);
+            // [변경] 서버에 저장된 값을 그대로 사용 (자동으로 true로 덮어쓰지 않음)
+            setCorrectionEnabled(!!res.data.correctionEnabled);
         } catch (err) {
             console.error('프로필 조회 실패', err);
+        }
+    };
+
+    // [신규] 토글 클릭 시 서버에 즉시 저장
+    const handleToggleCorrection = async () => {
+        if (savingToggle) return;
+        const next = !correctionEnabled;
+
+        setCorrectionEnabled(next);
+        setSavingToggle(true);
+
+        try {
+            await userAPI.updateProfile({ correctionEnabled: next });
+        } catch (err) {
+            console.error('보정 설정 저장 실패', err);
+            setCorrectionEnabled(!next);
+            alert('설정 저장에 실패했습니다. 다시 시도해주세요.');
+        } finally {
+            setSavingToggle(false);
         }
     };
 
@@ -128,47 +158,32 @@ function Wardrobe() {
 
     const getColorHex = (colorName) => {
         const map = {
-            // 무채색
-            '블랙': '#1a1a1a', '검정': '#1a1a1a', '블랙': '#1a1a1a',
+            '블랙': '#1a1a1a', '검정': '#1a1a1a',
             '화이트': '#f5f5f5', '흰색': '#f5f5f5', '흰': '#f5f5f5',
-            '그레이': '#95a5a6', '회색': '#95a5a6', '그레이': '#95a5a6',
+            '그레이': '#95a5a6', '회색': '#95a5a6',
             '아이보리': '#f5f0dc', '크림': '#fffdd0',
-
-            // 블루 계열
             '네이비': '#1a2a5e', '남색': '#1a2a5e',
             '블루': '#3498db', '파랑': '#3498db', '파란': '#3498db',
             '하늘': '#87CEEB', '스카이': '#87CEEB',
             '청': '#4169E1',
-
-            // 레드/핑크 계열
             '레드': '#e74c3c', '빨강': '#e74c3c', '빨간': '#e74c3c', '적색': '#e74c3c',
             '핑크': '#ff6b9d', '분홍': '#ff6b9d',
             '코랄': '#FF6B6B', '살구': '#FDBCB4',
             '와인': '#722F37', '버건디': '#800020', '마룬': '#800000',
-
-            // 옐로우/오렌지 계열
             '옐로우': '#f1c40f', '노랑': '#f1c40f', '노란': '#f1c40f', '황색': '#f1c40f',
             '오렌지': '#e67e22', '주황': '#e67e22',
             '머스타드': '#FFDB58',
-
-            // 그린 계열
             '그린': '#2ecc71', '초록': '#2ecc71', '녹색': '#2ecc71',
             '카키': '#8B8B6A', '올리브': '#808000',
             '민트': '#98FF98', '연두': '#90EE90',
-
-            // 브라운 계열
-            '브라운': '#8B4513', '브라운': '#8B4513',
+            '브라운': '#8B4513',
             '갈색': '#8B4513', '갈': '#8B4513',
             '카멜': '#C19A6B', '카라멜': '#C19A6B',
             '베이지': '#f5f0e8', '샌드': '#C2B280',
             '탄': '#D2B48C', '누드': '#E8C9A0',
-
-            // 퍼플 계열
             '퍼플': '#9b59b6', '보라': '#9b59b6', '자주': '#800080',
             '라벤더': '#E6E6FA', '연보라': '#DDA0DD',
             '바이올렛': '#EE82EE',
-
-            // 기타
             '실버': '#C0C0C0', '골드': '#FFD700',
         };
 
@@ -179,7 +194,6 @@ function Wardrobe() {
         return '#e0e0e0';
     };
 
-    // 색각 이상 여부
     const hasColorDeficiency = colorType && colorType !== 'normal';
 
     return (
@@ -187,7 +201,6 @@ function Wardrobe() {
             <Navbar />
             <div style={styles.container}>
 
-                {/* 헤더 */}
                 <div style={styles.header}>
                     <div>
                         <h1 style={styles.title}>내 옷장</h1>
@@ -219,8 +232,12 @@ function Wardrobe() {
                                 {COLOR_TYPE_LABEL[colorType]}
                             </span>
                         </div>
-                        <div style={styles.toggleWrapper}
-                             onClick={() => setCorrectionEnabled(prev => !prev)}>
+                        <div style={{
+                            ...styles.toggleWrapper,
+                            opacity: savingToggle ? 0.6 : 1,
+                            pointerEvents: savingToggle ? 'none' : 'auto',
+                        }}
+                             onClick={handleToggleCorrection}>
                             <span style={{
                                 fontSize: '12px',
                                 color: correctionEnabled
@@ -245,7 +262,6 @@ function Wardrobe() {
                     </div>
                 )}
 
-                {/* 카테고리 필터 */}
                 <div style={styles.filterRow}>
                     {categories.map(cat => (
                         <button key={cat} style={{
@@ -266,7 +282,6 @@ function Wardrobe() {
                     ))}
                 </div>
 
-                {/* 그리드 */}
                 {loading ? (
                     <div style={styles.emptyBox}>
                         <p style={styles.emptyText}>불러오는 중...</p>
@@ -318,7 +333,6 @@ function Wardrobe() {
                 )}
             </div>
 
-            {/* 상세 팝업 */}
             {selectedItem && (
                 <>
                     <div style={styles.overlay}
@@ -345,7 +359,6 @@ function Wardrobe() {
                             </div>
                         </div>
 
-                        {/* 팝업 이미지 — 보정 적용 */}
                         <div style={styles.popupImageBox}>
                             {selectedItem.imageUrl ? (
                                 <DaltonizedImage
@@ -452,7 +465,6 @@ const styles = {
         cursor: 'pointer', fontWeight: '600', flexShrink: 0
     },
 
-    // ── 색각 보정 배너 ──────────────────────────
     correctionBanner: {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '10px 14px', borderRadius: theme.radius.lg,
@@ -475,7 +487,6 @@ const styles = {
         borderRadius: '50%', backgroundColor: '#fff',
         boxShadow: '0 1px 3px rgba(0,0,0,0.25)', transition: 'left 0.2s'
     },
-    // ──────────────────────────────────────────
 
     filterRow: { display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' },
     filterBtn: {
