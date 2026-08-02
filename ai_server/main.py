@@ -182,3 +182,31 @@ async def daltonize(req: DaltonizeRequest):
         return {"corrected": corrected}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+"""
+main.py에 추가해야 할 부분 — /ai/idle-analysis 엔드포인트
+.env에 추가해야 할 부분 - DB_PASSWORD=자신의 DB 비밀번호
+
+적용 방법
+--------
+새로 필요한 import XX. (idle_analysis_service 안에서 필요한 것을 처리)
+"""
+
+@app.get("/ai/idle-analysis")
+async def idle_analysis(user_id: str, threshold_days: int = 30, idle_only: bool = True):
+    """
+    유휴 의류 분석 (WBS Phase 2.4)
+
+    Spring Boot가 마이페이지 등에서 "오래 안 입은 옷" 섹션을 보여줄 때 호출.
+
+    쿼리 파라미터 예시:
+        GET /ai/idle-analysis?user_id=abc-123
+        GET /ai/idle-analysis?user_id=abc-123&threshold_days=45
+        GET /ai/idle-analysis?user_id=abc-123&idle_only=false  (전체 아이템 + is_idle 플래그)
+    """
+    try:
+        from services.idle_analysis_service import get_idle_analysis
+        results = get_idle_analysis(user_id, threshold_days=threshold_days, idle_only=idle_only)
+        return {"items": results, "count": len(results)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
