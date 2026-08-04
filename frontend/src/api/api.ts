@@ -1,6 +1,23 @@
 import axios, { AxiosResponse } from 'axios';
 import { BASE_URL } from './env';
 
+interface SignupData      { loginId: string; nickname: string; ageGroup: string; gender: string; password: string; styles: string[]; }
+interface LoginData       { loginId: string; password: string; }
+interface AddEventData    { eventName: string; eventDatetime: string; tpoKeyword: string; }
+interface UpdateProfileData { nickname: string; ageGroup: string; gender: string; colorType: string; styles: string[]; }
+interface AcceptOutfitData  { outfitIndex: number; style: string; description: string; }
+interface UpdateItemData  { category: string; type: string; color: string; material: string; }
+interface RecommendData {
+    tpo: string;
+    mode: string;
+    linkedEvents?: number[];
+    linkedEventIds?: number[];
+    outfitDate?: string;
+    numOutfits?: number;
+    parentRecId?: number | null;
+    excludeItemIds?: (string | undefined)[];
+}
+
 const api = axios.create({
     baseURL: BASE_URL,
     headers: {
@@ -29,25 +46,25 @@ api.interceptors.response.use(
 );
 
 export const authAPI = {
-    signup: (data: object) => api.post('/auth/signup', data),
-    login: (data: object) => api.post('/auth/login', data)
+    signup: (data: SignupData) => api.post('/auth/signup', data),
+    login:  (data: LoginData)  => api.post('/auth/login', data),
 };
 
 export const calendarAPI = {
     getEvents: () => api.get('/calendar'),
-    addEvent: (data: object) => api.post('/calendar', data),
+    addEvent: (data: AddEventData) => api.post('/calendar', data),
     deleteEvent: (eventId: number) => api.delete(`/calendar/${eventId}`)
 };
 
 export const userAPI = {
     getProfile: () => api.get('/user/profile'),
-    updateProfile: (data: object) => api.put('/user/profile', data)
+    updateProfile: (data: UpdateProfileData) => api.put('/user/profile', data)
 };
 
 export const recommendationAPI = {
     getHistory: () => api.get('/recommendations'),
     getWeekOutfits: (start: string, end: string) => api.get(`/recommendations/week?start=${start}&end=${end}`),
-    acceptOutfit: (recId: number, data: object) => api.put(`/recommendations/${recId}/accept`, data),
+    acceptOutfit: (recId: number, data: AcceptOutfitData) => api.put(`/recommendations/${recId}/accept`, data),
 };
 
 export const colorAssistantAPI = {
@@ -66,8 +83,8 @@ export const wardrobeAPI = {
     getWardrobe: () => api.get('/wardrobe'),
     uploadItem: (imageB64: string) => api.post('/wardrobe/upload', { imageB64 }),
     deleteItem: (itemId: number) => api.delete(`/wardrobe/${itemId}`),
-    updateItem: (itemId: number, data: object) => api.put(`/wardrobe/${itemId}`, data),
-    recommend: (data: object) => api.post('/wardrobe/recommend', data)
+    updateItem: (itemId: number, data: UpdateItemData) => api.put(`/wardrobe/${itemId}`, data),
+    recommend: (data: RecommendData) => api.post('/wardrobe/recommend', data)
 };
 
 export default api;
