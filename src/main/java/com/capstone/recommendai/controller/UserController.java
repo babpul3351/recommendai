@@ -1,5 +1,16 @@
 package com.capstone.recommendai.controller;
 
+/*
+ * 변경 사항 (기존 대비)
+ * ------------------
+ * 1. getProfile()에 correctionEnabled 응답 필드 추가
+ * 2. updateProfile()에 correctionEnabled 처리 추가 (토글 클릭 시 이 API로 저장)
+ *
+ * 다른 메서드(updateColorType, daltonize)는 변경하지 않았습니다.
+ *
+ * 적용 방법: 기존 UserController.java 파일 전체를 이 내용으로 교체하세요.
+ */
+
 import com.capstone.recommendai.entity.Style;
 import com.capstone.recommendai.entity.User;
 import com.capstone.recommendai.entity.UserStyle;
@@ -57,6 +68,7 @@ public class UserController {
         result.put("ageGroup", user.getAgeGroup());
         result.put("gender", user.getGender());
         result.put("colorType", user.getColorType());
+        result.put("correctionEnabled", user.getCorrectionEnabled());  // [신규]
         result.put("styles", styles);
         result.put("createdAt", user.getCreatedAt());
         return ResponseEntity.ok(result);
@@ -75,6 +87,10 @@ public class UserController {
         if (body.containsKey("ageGroup")) user.setAgeGroup((String) body.get("ageGroup"));
         if (body.containsKey("gender")) user.setGender((String) body.get("gender"));
         if (body.containsKey("colorType")) user.setColorType((String) body.get("colorType"));
+        // [신규] 색각 보정 토글 on/off 저장
+        if (body.containsKey("correctionEnabled")) {
+            user.setCorrectionEnabled((Boolean) body.get("correctionEnabled"));
+        }
         userRepository.save(user);
 
         if (body.containsKey("styles")) {
