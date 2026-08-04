@@ -18,6 +18,12 @@ function Calendar() {
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState<EventForm>({ eventName: '', eventDatetime: '', tpoKeyword: '일상' });
     const [activeEvent, setActiveEvent] = useState<CalendarEvent | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+    const showToast = useCallback((message: string, type: 'success' | 'error') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 2500);
+    }, []);
 
     const fetchEvents = useCallback(async () => {
         try { const res = await calendarAPI.getEvents(); setEvents(res.data); } catch (err) { console.error(err); }
@@ -41,13 +47,14 @@ function Calendar() {
     });
 
     const handleAddEvent = async () => {
-        if (!form.eventName || !form.eventDatetime) { alert('일정 이름과 날짜를 입력해주세요.'); return; }
+        if (!form.eventName || !form.eventDatetime) { showToast('일정 이름과 날짜를 입력해주세요', 'error'); return; }
         try {
             await calendarAPI.addEvent(form);
             setForm({ eventName: '', eventDatetime: '', tpoKeyword: '일상' });
             setShowForm(false);
             await fetchEvents();
-        } catch (err) { alert('일정 추가 실패'); }
+            showToast('일정이 추가됐습니다', 'success');
+        } catch (err) { showToast('일정 추가에 실패했습니다', 'error'); }
     };
 
     const handleDelete = async (eventId: number) => {
@@ -56,7 +63,8 @@ function Calendar() {
             await calendarAPI.deleteEvent(eventId);
             setEvents(events.filter(e => e.eventId !== eventId));
             setActiveEvent(null);
-        } catch (err) { alert('삭제 실패'); }
+            showToast('일정이 삭제됐습니다', 'success');
+        } catch (err) { showToast('삭제에 실패했습니다', 'error'); }
     };
 
     const daysInMonth = dayjs().year(calYear).month(calMonth).daysInMonth();
@@ -359,6 +367,20 @@ function Calendar() {
                         </div>
                     </div>
                 </>
+            )}
+
+            {/* Toast notification */}
+            {toast && (
+                <div style={{
+                    position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)',
+                    background: toast.type === 'success' ? '#1a1a2e' : '#e57373',
+                    color: 'white', borderRadius: 12, padding: '12px 24px',
+                    fontFamily: theme.fontFamily.ui, fontSize: 14, fontWeight: 600,
+                    zIndex: 300, boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+                    display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap',
+                }}>
+                    {toast.type === 'success' ? '✓' : '✕'} {toast.message}
+                </div>
             )}
         </div>
     );
