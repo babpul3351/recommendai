@@ -11,6 +11,18 @@ const navItems: { path: string; label: string; icon: React.ComponentType<{ color
     { path: '/mypage', label: '마이페이지', icon: UserIcon },
 ];
 
+function ActiveDot() {
+    return (
+        <div style={{
+            marginLeft: 'auto',
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.7)',
+        }} />
+    );
+}
+
 function Navbar() {
     const location = useLocation();
     const nickname = localStorage.getItem('nickname') || '사용자';
@@ -92,15 +104,7 @@ function Navbar() {
                             }}>
                                 {label}
                             </span>
-                            {active && (
-                                <div style={{
-                                    marginLeft: 'auto',
-                                    width: 6,
-                                    height: 6,
-                                    borderRadius: '50%',
-                                    background: 'rgba(255,255,255,0.7)',
-                                }} />
-                            )}
+                            {active && <ActiveDot />}
                         </Link>
                     );
                 })}
