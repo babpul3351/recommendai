@@ -37,7 +37,7 @@ public class Recommendation {
     @Column(nullable = false, length = 20)
     private String tpo;
 
-    @Column(length = 20)
+    @Column(length = 100)
     private String style;
 
     @Column(columnDefinition = "TEXT")
