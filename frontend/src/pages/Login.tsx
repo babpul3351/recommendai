@@ -2,6 +2,29 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../api/api';
 
+const styles: Record<string, React.CSSProperties> = {
+    container: {
+        display: 'flex', justifyContent: 'center',
+        alignItems: 'center', height: '100vh', backgroundColor: '#f5f5f5'
+    },
+    box: {
+        backgroundColor: 'white', padding: '40px', borderRadius: '12px',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.1)', width: '360px', textAlign: 'center'
+    },
+    title: { fontSize: '28px', fontWeight: 'bold', color: '#333', marginBottom: '8px' },
+    subtitle: { fontSize: '14px', color: '#888', marginBottom: '32px' },
+    input: {
+        width: '100%', padding: '12px', marginBottom: '12px',
+        borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box'
+    },
+    button: {
+        width: '100%', padding: '12px', backgroundColor: '#333', color: 'white',
+        border: 'none', borderRadius: '8px', fontSize: '16px', cursor: 'pointer', marginTop: '8px'
+    },
+    error: { color: 'red', fontSize: '13px', marginBottom: '8px' },
+    link: { marginTop: '20px', fontSize: '14px', color: '#666' }
+};
+
 function Login() {
     const navigate = useNavigate();
     const [form, setForm] = useState({ loginId: '', password: '' });
@@ -65,28 +88,5 @@ function Login() {
         </div>
     );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-    container: {
-        display: 'flex', justifyContent: 'center',
-        alignItems: 'center', height: '100vh', backgroundColor: '#f5f5f5'
-    },
-    box: {
-        backgroundColor: 'white', padding: '40px', borderRadius: '12px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.1)', width: '360px', textAlign: 'center'
-    },
-    title: { fontSize: '28px', fontWeight: 'bold', color: '#333', marginBottom: '8px' },
-    subtitle: { fontSize: '14px', color: '#888', marginBottom: '32px' },
-    input: {
-        width: '100%', padding: '12px', marginBottom: '12px',
-        borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box'
-    },
-    button: {
-        width: '100%', padding: '12px', backgroundColor: '#333', color: 'white',
-        border: 'none', borderRadius: '8px', fontSize: '16px', cursor: 'pointer', marginTop: '8px'
-    },
-    error: { color: 'red', fontSize: '13px', marginBottom: '8px' },
-    link: { marginTop: '20px', fontSize: '14px', color: '#666' }
-};
 
 export default Login;

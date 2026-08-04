@@ -45,11 +45,6 @@ function Wardrobe() {
 
     const categories = ['전체', '상의', '하의', '아우터', '원피스', '기타'];
 
-    useEffect(() => {
-        fetchWardrobe();
-        fetchUserColorType();
-    }, []);
-
     const fetchUserColorType = async () => {
         try {
             const res = await userAPI.getProfile();
@@ -67,6 +62,11 @@ function Wardrobe() {
         } catch (err) { console.error(err); }
         finally { setLoading(false); }
     };
+
+    useEffect(() => {
+        fetchWardrobe();
+        fetchUserColorType();
+    }, []);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
