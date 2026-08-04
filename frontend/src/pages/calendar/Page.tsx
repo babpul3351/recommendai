@@ -73,11 +73,11 @@ function Calendar() {
     const daysInMonth = dayjs().year(calYear).month(calMonth).daysInMonth();
     const firstDay = dayjs().year(calYear).month(calMonth).date(1).day();
 
-    const prevMonth = () => {
+    const handlePrevMonth = () => {
         if (calMonth === 0) { setCalYear(y => y - 1); setCalMonth(11); }
         else setCalMonth(m => m - 1);
     };
-    const nextMonth = () => {
+    const handleNextMonth = () => {
         if (calMonth === 11) { setCalYear(y => y + 1); setCalMonth(0); }
         else setCalMonth(m => m + 1);
     };
@@ -133,7 +133,7 @@ function Calendar() {
                                 {calYear}년 {calMonth + 1}월
                             </span>
                             <div style={{ display: 'flex', gap: 2 }}>
-                                {[{ fn: prevMonth, ch: '‹' }, { fn: nextMonth, ch: '›' }].map(({ fn, ch }) => (
+                                {[{ fn: handlePrevMonth, ch: '‹' }, { fn: handleNextMonth, ch: '›' }].map(({ fn, ch }) => (
                                     <button key={ch} onClick={fn} style={{ ...btnBase, width: 24, height: 24, borderRadius: 6, color: '#71b3e5', fontSize: 15 }}>{ch}</button>
                                 ))}
                             </div>
