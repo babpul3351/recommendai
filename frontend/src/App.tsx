@@ -5,7 +5,7 @@ import Signup from './pages/Signup';
 import Home from './pages/Home';
 import Wardrobe from './pages/Wardrobe';
 import Recommend from './pages/Recommend';
-import Calendar from './pages/Calendar';
+import Calendar from './pages/calendar/Page';
 import MyPage from './pages/MyPage';
 import Navbar from './components/Navbar';
 import api from './api/api';

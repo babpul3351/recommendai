@@ -1,43 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { theme } from '../styles/theme';
-import { calendarAPI, recommendationAPI } from '../api/api';
-import { WardrobeIcon } from '../components/Icons';
+import { theme } from '../../styles/theme';
+import { calendarAPI, recommendationAPI } from '../../api/api';
+import { WardrobeIcon } from '../../components/Icons';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
+import { TPO_OPTIONS, WEEKDAYS, DAY_EN, TPO_COLORS, START_HOUR, END_HOUR, HOUR_H } from './constants';
+import { CalendarEvent, Outfit, EventForm } from './types';
 dayjs.locale('ko');
-
-const TPO_OPTIONS = ['데이트', '직장', '캐주얼', '운동', '파티', '여행', '일상', '격식'];
-const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
-const DAY_EN = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-
-const TPO_COLORS: Record<string, string> = {
-    '데이트': '#FF6B9D', '직장': '#5B8FF9', '캐주얼': '#5AD8A6',
-    '운동': '#F6AE2D', '파티': '#9B59B6', '여행': '#1ABC9C', '일상': '#8C9BAB', '격식': '#4A5568',
-};
-
-const START_HOUR = 8;
-const END_HOUR = 22;
-const HOUR_H = 64;
-
-interface CalendarEvent {
-    eventId: number;
-    eventName: string;
-    eventDatetime: string;
-    tpoKeyword: string;
-}
-
-interface Outfit {
-    outfitDate: string;
-    style?: string;
-    description?: string;
-    matchedItems?: { imageUrl?: string }[];
-}
-
-interface EventForm {
-    eventName: string;
-    eventDatetime: string;
-    tpoKeyword: string;
-}
 
 function getWeekMonday(date: Date): Date {
     const d = new Date(date);
@@ -290,12 +259,9 @@ function Calendar() {
                                 const isTod = dayjs(day).isSame(dayjs(), 'day');
                                 return (
                                     <div key={colIdx} style={{ borderRight: colIdx < 6 ? '1px solid #eaedf2' : 'none', position: 'relative', background: isTod ? 'rgba(113,179,229,0.02)' : 'transparent' }}>
-                                        {/* Hour rows */}
                                         {hours.map(h => (
                                             <div key={h} style={{ height: HOUR_H, borderBottom: '1px solid #f8f9fc' }} />
                                         ))}
-
-                                        {/* Events */}
                                         {dayEvents.map((evt, ei) => {
                                             const color = TPO_COLORS[evt.tpoKeyword] || '#71b3e5';
                                             const top = getEventTop(evt.eventDatetime);
@@ -318,8 +284,6 @@ function Calendar() {
                                                 </div>
                                             );
                                         })}
-
-                                        {/* Outfit badge */}
                                         {dayOutfits.length > 0 && (
                                             <div style={{ position: 'absolute', bottom: 6, right: 4, background: 'rgba(230,37,198,0.1)', borderRadius: 6, padding: '2px 7px', pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
                                                 <WardrobeIcon color="#e625c6" size={11} />
