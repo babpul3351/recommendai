@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { theme } from '../styles/theme';
 import { usePageAnimation } from '../hooks/usePageAnimation';
 import { useNavigate } from 'react-router-dom';
 import { userAPI, recommendationAPI, colorAssistantAPI, wardrobeAPI } from '../api/api';
@@ -185,23 +186,23 @@ function ColorTest({ onResult }: { onResult: (result: string) => void }) {
                 <div style={{ flex: 1, height: 5, backgroundColor: '#eaedf2', borderRadius: 4, overflow: 'hidden' }}>
                     <div style={{ width: `${progress}%`, height: '100%', background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)', borderRadius: 4, transition: 'width 0.35s ease' }} />
                 </div>
-                <span style={{ fontSize: 12, color: '#888', whiteSpace: 'nowrap', fontFamily: 'Inter, sans-serif' }}>{step + 1} / {PLATES.length}</span>
+                <span style={{ fontSize: 12, color: '#888', whiteSpace: 'nowrap', fontFamily: theme.fontFamily.body }}>{step + 1} / {PLATES.length}</span>
             </div>
-            <div style={{ display: 'inline-block', padding: '3px 12px', background: 'rgba(113,179,229,0.12)', color: '#71b3e5', borderRadius: 20, fontSize: 11, fontWeight: 700, marginBottom: 12, fontFamily: 'Kedebideri, sans-serif' }}>
+            <div style={{ display: 'inline-block', padding: '3px 12px', background: 'rgba(113,179,229,0.12)', color: '#71b3e5', borderRadius: 20, fontSize: 11, fontWeight: 700, marginBottom: 12, fontFamily: theme.fontFamily.ui }}>
                 {plate.category}
             </div>
-            <p style={{ fontSize: 15, fontWeight: 600, color: '#1a1a2e', marginBottom: 18, fontFamily: 'Hahmlet, sans-serif' }}>{plate.question}</p>
+            <p style={{ fontSize: 15, fontWeight: 600, color: '#1a1a2e', marginBottom: 18, fontFamily: theme.fontFamily.heading }}>{plate.question}</p>
             <div style={{ position: 'relative', display: 'inline-block', marginBottom: 20 }}>
                 {!rendered && (
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f7fafc', borderRadius: '50%', zIndex: 1 }}>
-                        <span style={{ fontSize: 12, color: '#888', fontFamily: 'Inter, sans-serif' }}>로딩 중...</span>
+                        <span style={{ fontSize: 12, color: '#888', fontFamily: theme.fontFamily.body }}>로딩 중...</span>
                     </div>
                 )}
                 <canvas ref={canvasRef} width={400} height={400} style={{ width: 220, height: 220, borderRadius: '50%', boxShadow: '0 6px 24px rgba(0,0,0,0.18)', display: 'block' }} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {plate.options.map(opt => (
-                    <button key={opt} onClick={() => handleAnswer(opt)} style={{ width: '100%', padding: '13px 18px', border: '1.5px solid #eaedf2', borderRadius: 12, backgroundColor: 'white', fontSize: 15, fontWeight: 500, color: '#1a1a2e', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12, fontFamily: 'Inter, sans-serif', transition: 'border-color 0.15s' }}>
+                    <button key={opt} onClick={() => handleAnswer(opt)} style={{ width: '100%', padding: '13px 18px', border: '1.5px solid #eaedf2', borderRadius: 12, backgroundColor: 'white', fontSize: 15, fontWeight: 500, color: '#1a1a2e', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12, fontFamily: theme.fontFamily.body, transition: 'border-color 0.15s' }}>
                         <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid #eaedf2', flexShrink: 0 }} />
                         {opt}
                     </button>
@@ -307,22 +308,22 @@ function MyPage() {
 
     if (!profile) return (
         <div style={{ padding: '32px 36px' }}>
-            <p style={{ textAlign: 'center', marginTop: 60, color: '#888', fontFamily: 'Inter, sans-serif' }}>불러오는 중...</p>
+            <p style={{ textAlign: 'center', marginTop: 60, color: '#888', fontFamily: theme.fontFamily.body }}>불러오는 중...</p>
         </div>
     );
 
     const cardStyle: React.CSSProperties = { background: 'white', borderRadius: 20, padding: '24px 28px', border: '1px solid #eaedf2', marginBottom: 20 };
-    const btnPrimary: React.CSSProperties = { padding: '8px 18px', background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)', color: 'white', border: 'none', borderRadius: 999, fontSize: 13, cursor: 'pointer', fontFamily: 'Kedebideri, sans-serif', fontWeight: 600 };
-    const btnSecondary: React.CSSProperties = { padding: '8px 18px', background: 'rgba(113,179,229,0.12)', color: '#71b3e5', border: 'none', borderRadius: 999, fontSize: 13, cursor: 'pointer', fontFamily: 'Kedebideri, sans-serif', fontWeight: 500 };
-    const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #eaedf2', fontSize: 14, boxSizing: 'border-box', fontFamily: 'Inter, sans-serif', marginBottom: 10 };
+    const btnPrimary: React.CSSProperties = { padding: '8px 18px', background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)', color: 'white', border: 'none', borderRadius: 999, fontSize: 13, cursor: 'pointer', fontFamily: theme.fontFamily.ui, fontWeight: 600 };
+    const btnSecondary: React.CSSProperties = { padding: '8px 18px', background: 'rgba(113,179,229,0.12)', color: '#71b3e5', border: 'none', borderRadius: 999, fontSize: 13, cursor: 'pointer', fontFamily: theme.fontFamily.ui, fontWeight: 500 };
+    const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #eaedf2', fontSize: 14, boxSizing: 'border-box', fontFamily: theme.fontFamily.body, marginBottom: 10 };
 
     return (
         <div ref={pageRef} style={{ padding: '70px 36px', maxWidth: 1100, width: '100%' }}>
             <div style={{ marginBottom: 28 }}>
                 <div style={{ overflow: 'hidden' }}>
-                    <h1 style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 28, color: '#1a1a2e', margin: 0, letterSpacing: '-0.5px' }}>마이페이지</h1>
+                    <h1 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 28, color: '#1a1a2e', margin: 0, letterSpacing: '-0.5px' }}>마이페이지</h1>
                 </div>
-                <p data-sub style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: 14, color: '#888', margin: '6px 0 0' }}>계정과 앱 설정을 관리하세요</p>
+                <p data-sub style={{ fontFamily: theme.fontFamily.body, fontWeight: 400, fontSize: 14, color: '#888', margin: '6px 0 0' }}>계정과 앱 설정을 관리하세요</p>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 24, alignItems: 'start' }}>
@@ -334,9 +335,9 @@ function MyPage() {
                             <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg, #5a9fd4, #bae3ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, border: '4px solid white', marginTop: -36, marginBottom: 12 }}>
                                 {profile.nickname?.charAt(0).toUpperCase()}
                             </div>
-                            <h2 style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 20, color: '#1a1a2e', margin: 0 }}>{profile.nickname}</h2>
-                            <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: 13, color: '#aaa', margin: '4px 0 16px' }}>@{profile.loginId}</p>
-                            <button onClick={handleLogout} style={{ width: '100%', background: 'none', border: '1px solid #ffcdd2', borderRadius: 10, padding: 10, fontFamily: 'Kedebideri, sans-serif', fontWeight: 600, fontSize: 13, color: '#e57373', cursor: 'pointer' }}>
+                            <h2 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 20, color: '#1a1a2e', margin: 0 }}>{profile.nickname}</h2>
+                            <p style={{ fontFamily: theme.fontFamily.body, fontWeight: 400, fontSize: 13, color: '#aaa', margin: '4px 0 16px' }}>@{profile.loginId}</p>
+                            <button onClick={handleLogout} style={{ width: '100%', background: 'none', border: '1px solid #ffcdd2', borderRadius: 10, padding: 10, fontFamily: theme.fontFamily.ui, fontWeight: 600, fontSize: 13, color: '#e57373', cursor: 'pointer' }}>
                                 로그아웃
                             </button>
                         </div>
@@ -344,7 +345,7 @@ function MyPage() {
 
                     {/* Quick stats */}
                     <div style={cardStyle}>
-                        <h3 style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 14, color: '#1a1a2e', margin: '0 0 16px' }}>나의 통계</h3>
+                        <h3 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 14, color: '#1a1a2e', margin: '0 0 16px' }}>나의 통계</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                             {[
                                 { label: 'AI 추천 횟수', value: history.length, Icon: SparkleIcon, color: '#71b3e5' },
@@ -355,8 +356,8 @@ function MyPage() {
                                     <span style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                         <Icon color={color} size={20} />
                                     </span>
-                                    <span style={{ fontFamily: 'Kedebideri, sans-serif', fontWeight: 400, fontSize: 13, color: '#555', flex: 1 }}>{label}</span>
-                                    <span style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 13, color }}>{value}</span>
+                                    <span style={{ fontFamily: theme.fontFamily.ui, fontWeight: 400, fontSize: 13, color: '#555', flex: 1 }}>{label}</span>
+                                    <span style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 13, color }}>{value}</span>
                                 </div>
                             ))}
                         </div>
@@ -364,7 +365,7 @@ function MyPage() {
 
                     {/* Notification settings */}
                     <div style={cardStyle}>
-                        <h3 style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 14, color: '#1a1a2e', margin: '0 0 4px' }}>알림 설정</h3>
+                        <h3 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 14, color: '#1a1a2e', margin: '0 0 4px' }}>알림 설정</h3>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             {([
                                 { key: 'codi', label: '코디 추천 알림', desc: '매일 아침 오늘의 코디를 알려드려요', state: notifCodi, toggle: () => setNotifCodi(p => !p) },
@@ -373,8 +374,8 @@ function MyPage() {
                             ] as const).map(({ key, label, desc, state, toggle }, i, arr) => (
                                 <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: i < arr.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
                                     <div style={{ flex: 1, minWidth: 0, paddingRight: 12 }}>
-                                        <p style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 600, fontSize: 14, color: '#1a1a2e', margin: 0 }}>{label}</p>
-                                        <p style={{ fontFamily: 'Kedebideri, sans-serif', fontWeight: 400, fontSize: 12, color: '#aaa', margin: '4px 0 0' }}>{desc}</p>
+                                        <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 600, fontSize: 14, color: '#1a1a2e', margin: 0 }}>{label}</p>
+                                        <p style={{ fontFamily: theme.fontFamily.ui, fontWeight: 400, fontSize: 12, color: '#aaa', margin: '4px 0 0' }}>{desc}</p>
                                     </div>
                                     <button
                                         onClick={toggle}
@@ -396,7 +397,7 @@ function MyPage() {
                             <button key={t} onClick={() => setTab(t)} style={{
                                 flex: 1, padding: '11px', background: tab === t ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : 'none',
                                 border: 'none', borderRadius: 10, fontSize: 13, cursor: 'pointer',
-                                fontFamily: 'Kedebideri, sans-serif', fontWeight: tab === t ? 700 : 400,
+                                fontFamily: theme.fontFamily.ui, fontWeight: tab === t ? 700 : 400,
                                 color: tab === t ? 'white' : '#888', transition: 'all 0.15s',
                             }}>
                                 {t}
@@ -408,7 +409,7 @@ function MyPage() {
                     {tab === '프로필' && (
                         <div style={cardStyle}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                                <h3 style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 16, color: '#1a1a2e', margin: 0 }}>내 프로필</h3>
+                                <h3 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 16, color: '#1a1a2e', margin: 0 }}>내 프로필</h3>
                                 {!editMode ? (
                                     <button onClick={() => setEditMode(true)} style={btnSecondary}>수정</button>
                                 ) : (
@@ -428,40 +429,40 @@ function MyPage() {
                                         { label: '성별', value: profile.gender },
                                     ].map(row => (
                                         <div key={row.label} style={{ display: 'flex', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f0f0f0' }}>
-                                            <span style={{ width: 90, fontSize: 13, color: '#888', flexShrink: 0, fontFamily: 'Inter, sans-serif' }}>{row.label}</span>
-                                            <span style={{ fontSize: 14, color: '#1a1a2e', fontWeight: 500, fontFamily: 'Hahmlet, sans-serif' }}>{row.value}</span>
+                                            <span style={{ width: 90, fontSize: 13, color: '#888', flexShrink: 0, fontFamily: theme.fontFamily.body }}>{row.label}</span>
+                                            <span style={{ fontSize: 14, color: '#1a1a2e', fontWeight: 500, fontFamily: theme.fontFamily.heading }}>{row.value}</span>
                                         </div>
                                     ))}
                                     <div style={{ display: 'flex', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f0f0f0' }}>
-                                        <span style={{ width: 90, fontSize: 13, color: '#888', flexShrink: 0, fontFamily: 'Inter, sans-serif' }}>색각 유형</span>
+                                        <span style={{ width: 90, fontSize: 13, color: '#888', flexShrink: 0, fontFamily: theme.fontFamily.body }}>색각 유형</span>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                            <span style={{ fontSize: 14, color: '#1a1a2e', fontWeight: 500, fontFamily: 'Hahmlet, sans-serif' }}>{COLOR_TYPE_LABELS[profile.colorType] || '미설정'}</span>
+                                            <span style={{ fontSize: 14, color: '#1a1a2e', fontWeight: 500, fontFamily: theme.fontFamily.heading }}>{COLOR_TYPE_LABELS[profile.colorType] || '미설정'}</span>
                                             <button onClick={() => { setShowColorTest(true); setTestActive(true); setTestResult(null); }} style={btnPrimary}>
                                                 {profile.colorType ? '재검사' : '테스트 시작'}
                                             </button>
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', padding: '12px 0' }}>
-                                        <span style={{ width: 90, fontSize: 13, color: '#888', flexShrink: 0, fontFamily: 'Inter, sans-serif' }}>선호 스타일</span>
+                                        <span style={{ width: 90, fontSize: 13, color: '#888', flexShrink: 0, fontFamily: theme.fontFamily.body }}>선호 스타일</span>
                                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                                             {(profile.styles || []).map(s => (
-                                                <span key={s} style={{ padding: '4px 12px', background: 'rgba(113,179,229,0.12)', borderRadius: 999, fontSize: 12, color: '#71b3e5', fontFamily: 'Kedebideri, sans-serif', fontWeight: 500 }}>{STYLE_LABELS[s] || s}</span>
+                                                <span key={s} style={{ padding: '4px 12px', background: 'rgba(113,179,229,0.12)', borderRadius: 999, fontSize: 12, color: '#71b3e5', fontFamily: theme.fontFamily.ui, fontWeight: 500 }}>{STYLE_LABELS[s] || s}</span>
                                             ))}
                                         </div>
                                     </div>
                                     {showColorTest && (
                                         <div style={{ marginTop: 20, background: 'rgba(113,179,229,0.05)', borderRadius: 16, padding: 20, border: '1px solid rgba(113,179,229,0.2)' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                                <p style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 15, color: '#1a1a2e', margin: 0 }}>색각 유형 판별 테스트</p>
+                                                <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 15, color: '#1a1a2e', margin: 0 }}>색각 유형 판별 테스트</p>
                                                 <button onClick={() => { setShowColorTest(false); setTestActive(false); setTestResult(null); }} style={{ background: 'none', border: 'none', fontSize: 16, color: '#999', cursor: 'pointer' }}>✕</button>
                                             </div>
-                                            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#888', marginBottom: 16 }}>의료 진단이 아닌 보조적 목적의 간이 테스트입니다. (총 8문항)</p>
+                                            <p style={{ fontFamily: theme.fontFamily.body, fontSize: 12, color: '#888', marginBottom: 16 }}>의료 진단이 아닌 보조적 목적의 간이 테스트입니다. (총 8문항)</p>
                                             {testActive && !testResult && <ColorTest onResult={(r) => { setTestResult(r); setTestActive(false); }} />}
                                             {testResult && (
                                                 <div style={{ background: 'white', borderRadius: 12, padding: 20, textAlign: 'center', marginTop: 16 }}>
-                                                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#71b3e5', margin: '0 0 8px' }}>테스트 결과</p>
-                                                    <p style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 20, color: '#1a1a2e', margin: '0 0 8px' }}>{COLOR_TYPE_LABELS[testResult]}</p>
-                                                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#888', margin: '0 0 16px' }}>{COLOR_TYPE_DESCS[testResult]}</p>
+                                                    <p style={{ fontFamily: theme.fontFamily.body, fontSize: 13, color: '#71b3e5', margin: '0 0 8px' }}>테스트 결과</p>
+                                                    <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 20, color: '#1a1a2e', margin: '0 0 8px' }}>{COLOR_TYPE_LABELS[testResult]}</p>
+                                                    <p style={{ fontFamily: theme.fontFamily.body, fontSize: 13, color: '#888', margin: '0 0 16px' }}>{COLOR_TYPE_DESCS[testResult]}</p>
                                                     <div style={{ display: 'flex', gap: 8 }}>
                                                         <button onClick={() => handleSaveColorType(testResult)} style={{ ...btnPrimary, flex: 1 }}>이 결과로 저장</button>
                                                         <button onClick={() => { setTestResult(null); setTestActive(true); }} style={{ flex: 1, padding: '8px 18px', background: '#f5f7fa', color: '#888', border: 'none', borderRadius: 999, fontSize: 13, cursor: 'pointer' }}>다시 테스트</button>
@@ -473,22 +474,22 @@ function MyPage() {
                                 </div>
                             ) : (
                                 <div>
-                                    <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 6, fontFamily: 'Inter, sans-serif' }}>닉네임</label>
+                                    <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 6, fontFamily: theme.fontFamily.body }}>닉네임</label>
                                     <input style={inputStyle} value={editForm.nickname} onChange={e => setEditForm({ ...editForm, nickname: e.target.value })} maxLength={20} />
-                                    <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 6, fontFamily: 'Inter, sans-serif' }}>연령대</label>
+                                    <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 6, fontFamily: theme.fontFamily.body }}>연령대</label>
                                     <select style={inputStyle} value={editForm.ageGroup} onChange={e => setEditForm({ ...editForm, ageGroup: e.target.value })}>
                                         {AGE_GROUPS.map(a => <option key={a} value={a}>{a}</option>)}
                                     </select>
-                                    <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 6, fontFamily: 'Inter, sans-serif' }}>성별</label>
+                                    <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 6, fontFamily: theme.fontFamily.body }}>성별</label>
                                     <select style={inputStyle} value={editForm.gender} onChange={e => setEditForm({ ...editForm, gender: e.target.value })}>
                                         <option value="여성">여성</option>
                                         <option value="남성">남성</option>
                                     </select>
-                                    <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 6, fontFamily: 'Inter, sans-serif' }}>선호 스타일 (최대 3개)</label>
+                                    <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 6, fontFamily: theme.fontFamily.body }}>선호 스타일 (최대 3개)</label>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
                                         {STYLES.map(s => (
                                             <button key={s} type="button" onClick={() => toggleStyle(s)} style={{
-                                                padding: '8px 14px', borderRadius: 999, border: 'none', cursor: 'pointer', fontSize: 13, fontFamily: 'Kedebideri, sans-serif', fontWeight: 500,
+                                                padding: '8px 14px', borderRadius: 999, border: 'none', cursor: 'pointer', fontSize: 13, fontFamily: theme.fontFamily.ui, fontWeight: 500,
                                                 background: editForm.styles.includes(s) ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : '#f5f7fa',
                                                 color: editForm.styles.includes(s) ? 'white' : '#555',
                                             }}>
@@ -550,17 +551,17 @@ function MyPage() {
                                         { label: '옷장 아이템', value: wardrobeItems.length, unit: '개', color: '#F5A623' },
                                     ].map(({ label, value, unit, color }) => (
                                         <div key={label} style={{ background: 'white', borderRadius: 16, padding: '18px 16px', border: '1px solid #eaedf2', textAlign: 'center' }}>
-                                            <p style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 800, fontSize: 26, color, margin: 0, lineHeight: 1 }}>{value}<span style={{ fontSize: 13, fontWeight: 500, color: '#aaa', marginLeft: 2 }}>{unit}</span></p>
-                                            <p style={{ fontFamily: 'Kedebideri, sans-serif', fontWeight: 400, fontSize: 12, color: '#888', margin: '8px 0 0' }}>{label}</p>
+                                            <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 800, fontSize: 26, color, margin: 0, lineHeight: 1 }}>{value}<span style={{ fontSize: 13, fontWeight: 500, color: '#aaa', marginLeft: 2 }}>{unit}</span></p>
+                                            <p style={{ fontFamily: theme.fontFamily.ui, fontWeight: 400, fontSize: 12, color: '#888', margin: '8px 0 0' }}>{label}</p>
                                         </div>
                                     ))}
                                 </div>
 
                                 {/* TPO 활용 현황 */}
                                 <div style={{ ...cardStyle, marginBottom: 16 }}>
-                                    <h3 style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 15, color: '#1a1a2e', margin: '0 0 18px' }}>TPO 활용 현황</h3>
+                                    <h3 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 15, color: '#1a1a2e', margin: '0 0 18px' }}>TPO 활용 현황</h3>
                                     {sortedTpo.length === 0 ? (
-                                        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>아직 추천 기록이 없어요</p>
+                                        <p style={{ fontFamily: theme.fontFamily.body, fontSize: 13, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>아직 추천 기록이 없어요</p>
                                     ) : (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                             {sortedTpo.map(([tpo, count]) => {
@@ -569,8 +570,8 @@ function MyPage() {
                                                 return (
                                                     <div key={tpo}>
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                                                            <span style={{ fontFamily: 'Kedebideri, sans-serif', fontWeight: 600, fontSize: 13, color: '#1a1a2e' }}>{tpo}</span>
-                                                            <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: 13, color }}>{count}회</span>
+                                                            <span style={{ fontFamily: theme.fontFamily.ui, fontWeight: 600, fontSize: 13, color: '#1a1a2e' }}>{tpo}</span>
+                                                            <span style={{ fontFamily: theme.fontFamily.body, fontWeight: 700, fontSize: 13, color }}>{count}회</span>
                                                         </div>
                                                         <div style={{ height: 8, background: '#f0f2f5', borderRadius: 4, overflow: 'hidden' }}>
                                                             <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 4, transition: 'width 0.4s ease' }} />
@@ -585,15 +586,15 @@ function MyPage() {
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 0 }}>
                                     {/* 자주 추천된 스타일 */}
                                     <div style={cardStyle}>
-                                        <h3 style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 15, color: '#1a1a2e', margin: '0 0 14px' }}>자주 추천된 스타일</h3>
+                                        <h3 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 15, color: '#1a1a2e', margin: '0 0 14px' }}>자주 추천된 스타일</h3>
                                         {sortedStyles.length === 0 ? (
-                                            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#bbb', padding: '12px 0' }}>데이터가 없어요</p>
+                                            <p style={{ fontFamily: theme.fontFamily.body, fontSize: 13, color: '#bbb', padding: '12px 0' }}>데이터가 없어요</p>
                                         ) : (
                                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                                                 {sortedStyles.map(([style, count], i) => (
                                                     <div key={style} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 999, background: i === 0 ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : '#f5f7fa', border: i === 0 ? 'none' : '1px solid #eaedf2' }}>
-                                                        <span style={{ fontFamily: 'Kedebideri, sans-serif', fontWeight: 600, fontSize: 12, color: i === 0 ? 'white' : '#555' }}>{style}</span>
-                                                        <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: 11, color: i === 0 ? 'rgba(255,255,255,0.8)' : '#aaa' }}>{count}</span>
+                                                        <span style={{ fontFamily: theme.fontFamily.ui, fontWeight: 600, fontSize: 12, color: i === 0 ? 'white' : '#555' }}>{style}</span>
+                                                        <span style={{ fontFamily: theme.fontFamily.body, fontWeight: 700, fontSize: 11, color: i === 0 ? 'rgba(255,255,255,0.8)' : '#aaa' }}>{count}</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -602,9 +603,9 @@ function MyPage() {
 
                                     {/* 옷장 카테고리 구성 */}
                                     <div style={cardStyle}>
-                                        <h3 style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 15, color: '#1a1a2e', margin: '0 0 14px' }}>옷장 카테고리 구성</h3>
+                                        <h3 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 15, color: '#1a1a2e', margin: '0 0 14px' }}>옷장 카테고리 구성</h3>
                                         {wardrobeItems.length === 0 ? (
-                                            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#bbb', padding: '12px 0' }}>옷장에 아이템이 없어요</p>
+                                            <p style={{ fontFamily: theme.fontFamily.body, fontSize: 13, color: '#bbb', padding: '12px 0' }}>옷장에 아이템이 없어요</p>
                                         ) : (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                                                 {Object.entries(catCounts).sort((a, b) => b[1] - a[1]).map(([cat, cnt]) => {
@@ -613,11 +614,11 @@ function MyPage() {
                                                     return (
                                                         <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                                             <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                                                            <span style={{ fontFamily: 'Kedebideri, sans-serif', fontSize: 12, color: '#555', width: 44, flexShrink: 0 }}>{cat}</span>
+                                                            <span style={{ fontFamily: theme.fontFamily.ui, fontSize: 12, color: '#555', width: 44, flexShrink: 0 }}>{cat}</span>
                                                             <div style={{ flex: 1, height: 6, background: '#f0f2f5', borderRadius: 3, overflow: 'hidden' }}>
                                                                 <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 3 }} />
                                                             </div>
-                                                            <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: 11, color: '#aaa', width: 30, textAlign: 'right', flexShrink: 0 }}>{cnt}개</span>
+                                                            <span style={{ fontFamily: theme.fontFamily.body, fontWeight: 700, fontSize: 11, color: '#aaa', width: 30, textAlign: 'right', flexShrink: 0 }}>{cnt}개</span>
                                                         </div>
                                                     );
                                                 })}
@@ -629,7 +630,7 @@ function MyPage() {
                                 {/* 최근 코디 타임라인 */}
                                 {history.length > 0 && (
                                     <div style={{ ...cardStyle, marginTop: 16 }}>
-                                        <h3 style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 15, color: '#1a1a2e', margin: '0 0 16px' }}>최근 추천 타임라인</h3>
+                                        <h3 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 15, color: '#1a1a2e', margin: '0 0 16px' }}>최근 추천 타임라인</h3>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                                             {history.slice(0, 6).map((rec, i) => {
                                                 const color = TPO_COLORS[rec.tpo] || '#71b3e5';
@@ -645,10 +646,10 @@ function MyPage() {
                                                         </div>
                                                         <div style={{ flex: 1, paddingBottom: i < Math.min(history.length, 6) - 1 ? 6 : 0 }}>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                                                                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#aaa' }}>{label}</span>
-                                                                <span style={{ fontFamily: 'Kedebideri, sans-serif', fontWeight: 700, fontSize: 11, color, background: color + '18', padding: '2px 8px', borderRadius: 20 }}>{rec.tpo}</span>
-                                                                {style && <span style={{ fontFamily: 'Kedebideri, sans-serif', fontSize: 11, color: '#555' }}>{style}</span>}
-                                                                {accepted && <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: '#71b3e5', background: 'rgba(113,179,229,0.1)', padding: '1px 7px', borderRadius: 20 }}>수락</span>}
+                                                                <span style={{ fontFamily: theme.fontFamily.body, fontSize: 11, color: '#aaa' }}>{label}</span>
+                                                                <span style={{ fontFamily: theme.fontFamily.ui, fontWeight: 700, fontSize: 11, color, background: color + '18', padding: '2px 8px', borderRadius: 20 }}>{rec.tpo}</span>
+                                                                {style && <span style={{ fontFamily: theme.fontFamily.ui, fontSize: 11, color: '#555' }}>{style}</span>}
+                                                                {accepted && <span style={{ fontFamily: theme.fontFamily.body, fontSize: 10, color: '#71b3e5', background: 'rgba(113,179,229,0.1)', padding: '1px 7px', borderRadius: 20 }}>수락</span>}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -665,35 +666,35 @@ function MyPage() {
                     {tab === '색상 어시스턴트' && (
                         <div>
                             <div style={cardStyle}>
-                                <h3 style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 16, color: '#1a1a2e', margin: '0 0 16px' }}>색상 어시스턴트</h3>
+                                <h3 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 16, color: '#1a1a2e', margin: '0 0 16px' }}>색상 어시스턴트</h3>
                                 <div style={{ background: 'rgba(113,179,229,0.07)', border: '1px solid rgba(113,179,229,0.2)', borderRadius: 14, padding: 16, marginBottom: 20 }}>
-                                    <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: 12, color: '#71b3e5', margin: '0 0 6px' }}>내 색각 유형</p>
-                                    <p style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 16, color: '#1a1a2e', margin: 0 }}>{COLOR_TYPE_LABELS[profile.colorType] || '미설정'}</p>
-                                    {!profile.colorType && <p style={{ fontSize: 12, color: '#aaa', margin: '4px 0 0', fontFamily: 'Inter, sans-serif' }}>프로필 탭에서 색각 유형 테스트를 진행해주세요</p>}
+                                    <p style={{ fontFamily: theme.fontFamily.body, fontWeight: 600, fontSize: 12, color: '#71b3e5', margin: '0 0 6px' }}>내 색각 유형</p>
+                                    <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 16, color: '#1a1a2e', margin: 0 }}>{COLOR_TYPE_LABELS[profile.colorType] || '미설정'}</p>
+                                    {!profile.colorType && <p style={{ fontSize: 12, color: '#aaa', margin: '4px 0 0', fontFamily: theme.fontFamily.body }}>프로필 탭에서 색각 유형 테스트를 진행해주세요</p>}
                                 </div>
 
-                                <h4 style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 15, color: '#1a1a2e', margin: '0 0 8px' }}>내 스타일 색상 조합 추천</h4>
-                                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#888', margin: '0 0 16px' }}>선호 스타일을 기반으로 어울리는 색상 조합을 추천드려요</p>
+                                <h4 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 15, color: '#1a1a2e', margin: '0 0 8px' }}>내 스타일 색상 조합 추천</h4>
+                                <p style={{ fontFamily: theme.fontFamily.body, fontSize: 13, color: '#888', margin: '0 0 16px' }}>선호 스타일을 기반으로 어울리는 색상 조합을 추천드려요</p>
                                 {(profile.styles || []).length === 0 ? (
-                                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#bbb', textAlign: 'center', padding: '24px 0' }}>프로필에서 선호 스타일을 설정해주세요.</p>
+                                    <p style={{ fontFamily: theme.fontFamily.body, fontSize: 14, color: '#bbb', textAlign: 'center', padding: '24px 0' }}>프로필에서 선호 스타일을 설정해주세요.</p>
                                 ) : (
                                     (profile.styles || []).map(styleKey => {
                                         const palette = STYLE_COLOR_PALETTES[styleKey];
                                         if (!palette) return null;
                                         return (
                                             <div key={styleKey} style={{ marginBottom: 20 }}>
-                                                <p style={{ fontFamily: 'Kedebideri, sans-serif', fontWeight: 600, fontSize: 13, color: '#888', margin: '0 0 12px', paddingBottom: 6, borderBottom: '1px solid #eaedf2' }}>{STYLE_LABELS[styleKey]} 스타일 추천 색상</p>
+                                                <p style={{ fontFamily: theme.fontFamily.ui, fontWeight: 600, fontSize: 13, color: '#888', margin: '0 0 12px', paddingBottom: 6, borderBottom: '1px solid #eaedf2' }}>{STYLE_LABELS[styleKey]} 스타일 추천 색상</p>
                                                 {palette.palettes.map((p, pi) => (
                                                     <div key={pi} style={{ background: '#f8f9fc', borderRadius: 12, padding: 14, marginBottom: 10, border: '1px solid #eaedf2' }}>
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                                            <p style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 600, fontSize: 14, color: '#1a1a2e', margin: 0 }}>{p.name}</p>
+                                                            <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 600, fontSize: 14, color: '#1a1a2e', margin: 0 }}>{p.name}</p>
                                                             <div style={{ display: 'flex', gap: 6 }}>
                                                                 {p.colors.map((c, ci) => (
                                                                     <div key={ci} style={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: c, border: ['#ffffff', '#f5f5f5'].includes(c) ? '1px solid #e0e0e0' : 'none' }} />
                                                                 ))}
                                                             </div>
                                                         </div>
-                                                        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#888', margin: 0, lineHeight: 1.5 }}>{p.desc}</p>
+                                                        <p style={{ fontFamily: theme.fontFamily.body, fontSize: 12, color: '#888', margin: 0, lineHeight: 1.5 }}>{p.desc}</p>
                                                     </div>
                                                 ))}
                                             </div>
@@ -703,17 +704,17 @@ function MyPage() {
 
                                 {profile.colorType && profile.colorType !== 'normal' && COLOR_TYPE_WARN[profile.colorType] && (
                                     <div style={{ marginTop: 24 }}>
-                                        <h4 style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 15, color: '#e74c3c', margin: '0 0 8px' }}>⚠️ {COLOR_TYPE_WARN[profile.colorType]!.label}</h4>
-                                        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#888', margin: '0 0 16px' }}>색각 유형에 따라 아래 색상 조합은 코디 시 주의해주세요.</p>
+                                        <h4 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 15, color: '#e74c3c', margin: '0 0 8px' }}>⚠️ {COLOR_TYPE_WARN[profile.colorType]!.label}</h4>
+                                        <p style={{ fontFamily: theme.fontFamily.body, fontSize: 13, color: '#888', margin: '0 0 16px' }}>색각 유형에 따라 아래 색상 조합은 코디 시 주의해주세요.</p>
                                         {COLOR_TYPE_WARN[profile.colorType]!.items.map((item, wi) => (
                                             <div key={wi} style={{ background: '#FFF5F5', borderRadius: 12, padding: 14, marginBottom: 10, border: '1px solid #FECACA' }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                                    <p style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 600, fontSize: 14, color: '#1a1a2e', margin: 0 }}>{item.name}</p>
+                                                    <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 600, fontSize: 14, color: '#1a1a2e', margin: 0 }}>{item.name}</p>
                                                     <div style={{ display: 'flex', gap: 6 }}>
                                                         {item.colors.map((c, ci) => <div key={ci} style={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: c, border: '1px solid rgba(0,0,0,0.1)' }} />)}
                                                     </div>
                                                 </div>
-                                                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#888', margin: 0, lineHeight: 1.5 }}>{item.desc}</p>
+                                                <p style={{ fontFamily: theme.fontFamily.body, fontSize: 12, color: '#888', margin: 0, lineHeight: 1.5 }}>{item.desc}</p>
                                             </div>
                                         ))}
                                     </div>
@@ -722,11 +723,11 @@ function MyPage() {
 
                             {profile.colorType && profile.colorType !== 'normal' && (
                                 <div style={cardStyle}>
-                                    <h4 style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 15, color: '#1a1a2e', margin: '0 0 8px' }}>색약 보정 뷰어</h4>
-                                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#888', margin: '0 0 16px' }}>의류 이미지를 업로드하면 색각 이상 시뮬레이션과 보정 결과를 비교할 수 있습니다.</p>
+                                    <h4 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 15, color: '#1a1a2e', margin: '0 0 8px' }}>색약 보정 뷰어</h4>
+                                    <p style={{ fontFamily: theme.fontFamily.body, fontSize: 13, color: '#888', margin: '0 0 16px' }}>의류 이미지를 업로드하면 색각 이상 시뮬레이션과 보정 결과를 비교할 수 있습니다.</p>
                                     <button onClick={() => fileInputRef.current?.click()} style={btnPrimary}>이미지 업로드</button>
                                     <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} />
-                                    {daltonizing && <p style={{ fontFamily: 'Inter, sans-serif', color: '#888', fontSize: 14, textAlign: 'center', marginTop: 12 }}>보정 처리 중...</p>}
+                                    {daltonizing && <p style={{ fontFamily: theme.fontFamily.body, color: '#888', fontSize: 14, textAlign: 'center', marginTop: 12 }}>보정 처리 중...</p>}
                                     {daltonizeResult && (
                                         <>
                                             <button onClick={() => fileInputRef.current?.click()} style={{ ...btnSecondary, marginTop: 12, marginLeft: 8 }}>다른 사진 보정하기</button>
@@ -737,7 +738,7 @@ function MyPage() {
                                                     { label: '보정 후', src: daltonizeResult.corrected },
                                                 ].map(item => (
                                                     <div key={item.label} style={{ flex: 1, minWidth: 140, textAlign: 'center' }}>
-                                                        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#888', fontWeight: 600, marginBottom: 8 }}>{item.label}</p>
+                                                        <p style={{ fontFamily: theme.fontFamily.body, fontSize: 12, color: '#888', fontWeight: 600, marginBottom: 8 }}>{item.label}</p>
                                                         <img src={item.src} alt={item.label} style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: 12 }} />
                                                     </div>
                                                 ))}

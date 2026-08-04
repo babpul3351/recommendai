@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { theme } from '../styles/theme';
 import { HomeIcon, WardrobeIcon, CalendarIcon, SparkleIcon, UserIcon } from './Icons';
 
 const navItems: { path: string; label: string; icon: React.ComponentType<{ color?: string }> }[] = [
@@ -37,7 +38,7 @@ function Navbar() {
             <div style={{ padding: '70px 24px 20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{
-                        fontFamily: 'Hahmlet, sans-serif',
+                        fontFamily: theme.fontFamily.heading,
                         fontWeight: 700,
                         fontSize: 28,
                         color: '#1a1a2e',
@@ -51,7 +52,7 @@ function Navbar() {
             {/* Nav */}
             <nav style={{ flex: 1, padding: '0 12px' }}>
                 <p style={{
-                    fontFamily: 'Inter, sans-serif',
+                    fontFamily: theme.fontFamily.body,
                     fontWeight: 600,
                     fontSize: 12,
                     color: '#aaa',
@@ -86,7 +87,7 @@ function Navbar() {
                                 <Icon color={active ? 'white' : '#555'} />
                             </span>
                             <span style={{
-                                fontFamily: 'Kedebideri, sans-serif',
+                                fontFamily: theme.fontFamily.ui,
                                 fontWeight: active ? 600 : 400,
                                 fontSize: 14,
                                 color: active ? 'white' : '#444',
@@ -119,7 +120,7 @@ function Navbar() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{
-                            fontFamily: 'Hahmlet, sans-serif',
+                            fontFamily: theme.fontFamily.heading,
                             fontWeight: 600,
                             fontSize: 15,
                             color: '#1a1a2e',

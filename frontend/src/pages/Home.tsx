@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { theme } from '../styles/theme';
 import { useNavigate } from 'react-router-dom';
 import { usePageAnimation } from '../hooks/usePageAnimation';
 import { weatherAPI, wardrobeAPI, calendarAPI, recommendationAPI } from '../api/api';
@@ -148,7 +149,7 @@ function Home() {
             <div style={{ marginBottom: 28 }}>
                 <div style={{ overflow: 'hidden' }}>
                     <h1 style={{
-                        fontFamily: 'Hahmlet, sans-serif',
+                        fontFamily: theme.fontFamily.heading,
                         fontWeight: 700,
                         fontSize: 28,
                         color: '#1a1a2e',
@@ -158,7 +159,7 @@ function Home() {
                         안녕하세요, {nickname}님
                     </h1>
                 </div>
-                <p data-sub style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: 14, color: '#888', margin: '6px 0 0' }}>
+                <p data-sub style={{ fontFamily: theme.fontFamily.body, fontWeight: 400, fontSize: 14, color: '#888', margin: '6px 0 0' }}>
                     오늘의 날씨와 일정을 기반으로 코디를 추천해 드려요
                 </p>
             </div>
@@ -179,14 +180,14 @@ function Home() {
                     </div>
                     {weather ? (
                         <>
-                            <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: 500, fontSize: 12, opacity: 0.8, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <p style={{ fontFamily: theme.fontFamily.body, fontWeight: 500, fontSize: 12, opacity: 0.8, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: 4 }}>
                                 <PinIcon color="white" size={13} /> {weather.city} · 오늘
                             </p>
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                                <span style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 64, lineHeight: 1 }}>{Math.round(weather.temp)}</span>
-                                <span style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 400, fontSize: 36 }}>℃</span>
+                                <span style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 64, lineHeight: 1 }}>{Math.round(weather.temp)}</span>
+                                <span style={{ fontFamily: theme.fontFamily.heading, fontWeight: 400, fontSize: 36 }}>℃</span>
                             </div>
-                            <p style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 400, fontSize: 16, margin: '6px 0 0', opacity: 0.9 }}>
+                            <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 400, fontSize: 16, margin: '6px 0 0', opacity: 0.9 }}>
                                 {weather.desc}
                                 {weather.humidity != null ? ` · 습도 ${weather.humidity}%` : ''}
                             </p>
@@ -197,14 +198,14 @@ function Home() {
                                     { label: '최저', val: weather.tempMin != null ? `${Math.round(weather.tempMin)}℃` : '-' },
                                 ].map(({ label, val }) => (
                                     <div key={label} style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 10, padding: '6px 12px', textAlign: 'center' }}>
-                                        <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: 10, opacity: 0.8, margin: 0 }}>{label}</p>
-                                        <p style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 600, fontSize: 14, margin: '2px 0 0' }}>{val}</p>
+                                        <p style={{ fontFamily: theme.fontFamily.body, fontWeight: 400, fontSize: 10, opacity: 0.8, margin: 0 }}>{label}</p>
+                                        <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 600, fontSize: 14, margin: '2px 0 0' }}>{val}</p>
                                     </div>
                                 ))}
                             </div>
                         </>
                     ) : (
-                        <p style={{ fontFamily: 'Hahmlet, sans-serif', fontSize: 16, opacity: 0.8 }}>날씨 불러오는 중...</p>
+                        <p style={{ fontFamily: theme.fontFamily.heading, fontSize: 16, opacity: 0.8 }}>날씨 불러오는 중...</p>
                     )}
                 </div>
 
@@ -229,10 +230,10 @@ function Home() {
                                 <SparkleIcon color="white" size={26} />
                             </div>
                             <div>
-                                <p style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 16, color: '#1a1a2e', margin: 0 }}>
+                                <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 16, color: '#1a1a2e', margin: 0 }}>
                                     AI 코디 추천
                                 </p>
-                                <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: 12, color: '#888', margin: '3px 0 0' }}>
+                                <p style={{ fontFamily: theme.fontFamily.body, fontWeight: 400, fontSize: 12, color: '#888', margin: '3px 0 0' }}>
                                     오늘 일정에 딱 맞는 스타일
                                 </p>
                             </div>
@@ -247,24 +248,24 @@ function Home() {
                                             { label: '아우터', item: recommendation.outfit.outer },
                                         ].filter(({ item }) => item).map(({ label, item }) => (
                                             <div key={label} style={{ background: 'rgba(113,179,229,0.1)', borderRadius: 10, padding: '6px 12px' }}>
-                                                <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: 10, color: '#71b3e5', margin: 0 }}>{label}</p>
-                                                <p style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 600, fontSize: 13, color: '#1a1a2e', margin: '2px 0 0' }}>{item?.type}</p>
+                                                <p style={{ fontFamily: theme.fontFamily.body, fontWeight: 600, fontSize: 10, color: '#71b3e5', margin: 0 }}>{label}</p>
+                                                <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 600, fontSize: 13, color: '#1a1a2e', margin: '2px 0 0' }}>{item?.type}</p>
                                             </div>
                                         ))}
                                     </div>
                                 )}
                                 {recommendation.outfit?.description && (
-                                    <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: 12, color: '#666', lineHeight: 1.6, margin: 0 }}>
+                                    <p style={{ fontFamily: theme.fontFamily.body, fontWeight: 400, fontSize: 12, color: '#666', lineHeight: 1.6, margin: 0 }}>
                                         {recommendation.outfit.description}
                                     </p>
                                 )}
                             </div>
                         ) : loading ? (
-                            <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: 13, color: '#71b3e5' }}>
+                            <p style={{ fontFamily: theme.fontFamily.body, fontWeight: 400, fontSize: 13, color: '#71b3e5' }}>
                                 AI가 코디를 분석 중이에요...
                             </p>
                         ) : (
-                            <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: 13, color: '#666', lineHeight: 1.6, margin: 0 }}>
+                            <p style={{ fontFamily: theme.fontFamily.body, fontWeight: 400, fontSize: 13, color: '#666', lineHeight: 1.6, margin: 0 }}>
                                 {weather && (
                                     <><strong style={{ color: '#71b3e5' }}>{Math.round(weather.temp)}℃ {weather.desc}</strong>
                                     {todayEvents[0] && <> 과 오늘 일정 <strong style={{ color: '#d6408e' }}>{todayEvents[0].eventName}</strong></>}
@@ -281,7 +282,7 @@ function Home() {
                                 background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)',
                                 border: 'none', borderRadius: 12,
                                 padding: '13px 20px',
-                                fontFamily: 'Kedebideri, sans-serif', fontWeight: 600, fontSize: 14,
+                                fontFamily: theme.fontFamily.ui, fontWeight: 600, fontSize: 14,
                                 color: 'white', cursor: 'pointer', marginTop: 16,
                             }}
                         >
@@ -294,7 +295,7 @@ function Home() {
                                 background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)',
                                 border: 'none', borderRadius: 12,
                                 padding: '13px 20px',
-                                fontFamily: 'Kedebideri, sans-serif', fontWeight: 600, fontSize: 14,
+                                fontFamily: theme.fontFamily.ui, fontWeight: 600, fontSize: 14,
                                 color: 'white', cursor: 'pointer', marginTop: 16,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                             }}
@@ -309,7 +310,7 @@ function Home() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                 {/* Weekly outfit check */}
                 <div style={{ background: 'white', borderRadius: 20, padding: '24px 28px', border: '1px solid #eaedf2' }}>
-                    <h2 style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 600, fontSize: 16, color: '#1a1a2e', margin: '0 0 18px' }}>
+                    <h2 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 600, fontSize: 16, color: '#1a1a2e', margin: '0 0 18px' }}>
                         주간 날씨 & 코디
                     </h2>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -338,21 +339,21 @@ function Home() {
                                     </div>
                                     <div style={{ flex: 1 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                            <span style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>
+                                            <span style={{ fontFamily: theme.fontFamily.heading, fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>
                                                 {date.getMonth() + 1}/{date.getDate()} ({WEEKDAYS[dow]})
                                             </span>
                                             {isToday && (
-                                                <span style={{ background: '#71b3e5', color: 'white', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: 10, padding: '1px 7px', borderRadius: 20 }}>
+                                                <span style={{ background: '#71b3e5', color: 'white', fontFamily: theme.fontFamily.body, fontWeight: 600, fontSize: 10, padding: '1px 7px', borderRadius: 20 }}>
                                                     오늘
                                                 </span>
                                             )}
                                         </div>
-                                        <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: 12, color: '#888', margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <p style={{ fontFamily: theme.fontFamily.body, fontWeight: 400, fontSize: 12, color: '#888', margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
                                             {dayEvts[0] ? <><CalendarIcon color="#888" size={12} /> {dayEvts[0].eventName}</> : dayOutfits[0] ? <><WardrobeIcon color="#888" size={12} /> 코디 저장됨</> : '일정 없음'}
                                         </p>
                                     </div>
                                     {dayWeather && (
-                                        <span style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 18, color: '#1a1a2e' }}>
+                                        <span style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 18, color: '#1a1a2e' }}>
                                             {Math.round(dayWeather.temp)}℃
                                         </span>
                                     )}
@@ -366,7 +367,7 @@ function Home() {
                             width: '100%', marginTop: 16,
                             background: 'none', border: '1px dashed #d0d8e4',
                             borderRadius: 12, padding: '11px',
-                            fontFamily: 'Kedebideri, sans-serif', fontWeight: 400, fontSize: 13,
+                            fontFamily: theme.fontFamily.ui, fontWeight: 400, fontSize: 13,
                             color: '#aaa', cursor: 'pointer',
                         }}
                     >
@@ -376,13 +377,13 @@ function Home() {
 
                 {/* Today's schedule */}
                 <div style={{ background: 'white', borderRadius: 20, padding: '24px 28px', border: '1px solid #eaedf2' }}>
-                    <h2 style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 600, fontSize: 16, color: '#1a1a2e', margin: '0 0 18px' }}>
+                    <h2 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 600, fontSize: 16, color: '#1a1a2e', margin: '0 0 18px' }}>
                         오늘의 일정
                     </h2>
                     {todayEvents.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '32px 0' }}>
                             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><CalendarIcon color="#ccc" size={44} /></div>
-                            <p style={{ fontFamily: 'Kedebideri, sans-serif', fontWeight: 400, fontSize: 14, color: '#bbb', margin: 0 }}>
+                            <p style={{ fontFamily: theme.fontFamily.ui, fontWeight: 400, fontSize: 14, color: '#bbb', margin: 0 }}>
                                 오늘 일정이 없어요
                             </p>
                         </div>
@@ -397,22 +398,22 @@ function Home() {
                                         borderRadius: 14, borderLeft: `4px solid ${color}`,
                                     }}>
                                         <div>
-                                            <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: 12, color, display: 'block' }}>
+                                            <span style={{ fontFamily: theme.fontFamily.body, fontWeight: 700, fontSize: 12, color, display: 'block' }}>
                                                 {formatTime(ev.eventDatetime)}
                                             </span>
                                         </div>
                                         <div style={{ flex: 1 }}>
-                                            <p style={{ fontFamily: 'Kedebideri, sans-serif', fontWeight: 700, fontSize: 14, color: '#1a1a2e', margin: 0 }}>
+                                            <p style={{ fontFamily: theme.fontFamily.ui, fontWeight: 700, fontSize: 14, color: '#1a1a2e', margin: 0 }}>
                                                 {ev.eventName}
                                             </p>
-                                            <p style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: 12, color: '#888', margin: '2px 0 0' }}>
+                                            <p style={{ fontFamily: theme.fontFamily.body, fontWeight: 400, fontSize: 12, color: '#888', margin: '2px 0 0' }}>
                                                 {ev.tpoKeyword}
                                             </p>
                                         </div>
                                         <span style={{
                                             background: color + '20', border: `1px solid ${color}`,
                                             borderRadius: 20, padding: '2px 10px',
-                                            fontFamily: 'Kedebideri, sans-serif', fontWeight: 400, fontSize: 11, color,
+                                            fontFamily: theme.fontFamily.ui, fontWeight: 400, fontSize: 11, color,
                                         }}>
                                             {ev.tpoKeyword}
                                         </span>
@@ -427,7 +428,7 @@ function Home() {
                             width: '100%', marginTop: 14,
                             background: 'none', border: '1px dashed #d0d8e4',
                             borderRadius: 12, padding: '11px',
-                            fontFamily: 'Kedebideri, sans-serif', fontWeight: 400, fontSize: 13,
+                            fontFamily: theme.fontFamily.ui, fontWeight: 400, fontSize: 13,
                             color: '#aaa', cursor: 'pointer',
                         }}
                     >

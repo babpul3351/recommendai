@@ -3,6 +3,7 @@ import { usePageAnimation } from '../hooks/usePageAnimation';
 import { wardrobeAPI, userAPI } from '../api/api';
 import DaltonizedImage from '../components/DaltonizedImage';
 import { ColorType } from '../daltonization';
+import { theme } from '../styles/theme';
 
 const CATEGORIES = ['상의', '하의', '아우터', '원피스', '기타'];
 const COLORS = ['블랙', '화이트', '그레이', '네이비', '블루', '레드', '핑크',
@@ -163,18 +164,18 @@ function Wardrobe() {
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 28 }}>
                 <div>
                     <div style={{ overflow: 'hidden' }}>
-                        <h1 style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 28, color: '#1a1a2e', margin: 0, letterSpacing: '-0.5px' }}>
+                        <h1 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 28, color: '#1a1a2e', margin: 0, letterSpacing: '-0.5px' }}>
                             내 옷장
                         </h1>
                     </div>
-                    <p data-sub style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: 14, color: '#888', margin: '6px 0 0' }}>
+                    <p data-sub style={{ fontFamily: theme.fontFamily.body, fontWeight: 400, fontSize: 14, color: '#888', margin: '6px 0 0' }}>
                         {items.length}개의 아이템이 등록되어 있어요
                     </p>
                 </div>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                     {hasColorDeficiency && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: correctionEnabled ? 'rgba(113,179,229,0.1)' : '#f5f5f5', border: `1px solid ${correctionEnabled ? '#71b3e5' : '#e0e0e0'}`, borderRadius: 12, padding: '8px 14px' }}>
-                            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: correctionEnabled ? '#71b3e5' : '#888' }}>
+                            <span style={{ fontFamily: theme.fontFamily.body, fontSize: 12, fontWeight: 600, color: correctionEnabled ? '#71b3e5' : '#888' }}>
                                 색약 보정 {correctionEnabled ? 'ON' : 'OFF'}
                             </span>
                             <button
@@ -193,9 +194,9 @@ function Wardrobe() {
                 {statsData.map(({ label, value, color }) => (
                     <div data-card key={label} style={{ background: 'white', borderRadius: 16, padding: '18px 20px', border: '1px solid #eaedf2', display: 'flex', alignItems: 'center', gap: 14 }}>
                         <div style={{ width: 44, height: 44, borderRadius: 12, background: color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <span style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 18, color }}>{value}</span>
+                            <span style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 18, color }}>{value}</span>
                         </div>
-                        <span style={{ fontFamily: 'Kedebideri, sans-serif', fontWeight: 400, fontSize: 13, color: '#666' }}>{label}</span>
+                        <span style={{ fontFamily: theme.fontFamily.ui, fontWeight: 400, fontSize: 13, color: '#666' }}>{label}</span>
                     </div>
                 ))}
             </div>
@@ -208,7 +209,7 @@ function Wardrobe() {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="아이템 검색..."
-                        style={{ border: 'none', outline: 'none', fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: 14, color: '#333', background: 'transparent', flex: 1, minWidth: 0 }}
+                        style={{ border: 'none', outline: 'none', fontFamily: theme.fontFamily.body, fontWeight: 400, fontSize: 14, color: '#333', background: 'transparent', flex: 1, minWidth: 0 }}
                     />
                 </div>
 
@@ -223,7 +224,7 @@ function Wardrobe() {
                                     background: isActive ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : 'white',
                                     border: isActive ? 'none' : '1px solid #eaedf2',
                                     borderRadius: 10, padding: '8px 16px',
-                                    fontFamily: 'Kedebideri, sans-serif', fontWeight: isActive ? 600 : 400,
+                                    fontFamily: theme.fontFamily.ui, fontWeight: isActive ? 600 : 400,
                                     fontSize: 13, color: isActive ? 'white' : '#555', cursor: 'pointer', whiteSpace: 'nowrap',
                                 }}
                             >
@@ -237,7 +238,7 @@ function Wardrobe() {
                         style={{
                             background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)',
                             border: 'none', borderRadius: 10, padding: '8px 16px',
-                            fontFamily: 'Kedebideri, sans-serif', fontWeight: 600, fontSize: 13,
+                            fontFamily: theme.fontFamily.ui, fontWeight: 600, fontSize: 13,
                             color: 'white', cursor: 'pointer', whiteSpace: 'nowrap',
                         }}
                     >
@@ -250,15 +251,15 @@ function Wardrobe() {
             {/* Grid */}
             {loading ? (
                 <div style={{ textAlign: 'center', padding: '60px 0' }}>
-                    <p style={{ fontFamily: 'Kedebideri, sans-serif', color: '#aaa', fontSize: 14 }}>불러오는 중...</p>
+                    <p style={{ fontFamily: theme.fontFamily.ui, color: '#aaa', fontSize: 14 }}>불러오는 중...</p>
                 </div>
             ) : filteredItems.length === 0 ? (
                 <div style={{ background: 'white', borderRadius: 20, padding: '60px', textAlign: 'center', border: '1px solid #eaedf2' }}>
                     <p style={{ fontSize: 48, margin: '0 0 12px' }}>👗</p>
-                    <p style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 600, fontSize: 16, color: '#1a1a2e', margin: '0 0 8px' }}>
+                    <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 600, fontSize: 16, color: '#1a1a2e', margin: '0 0 8px' }}>
                         {selectedCategory === '전체' ? '옷장이 비어있어요' : `${selectedCategory} 카테고리에 아이템이 없어요`}
                     </p>
-                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#aaa', margin: 0 }}>
+                    <p style={{ fontFamily: theme.fontFamily.body, fontSize: 13, color: '#aaa', margin: 0 }}>
                         위 버튼으로 아이템을 추가해보세요
                     </p>
                 </div>
@@ -293,15 +294,15 @@ function Wardrobe() {
                                 </div>
                             )}
                             <div style={{ padding: '12px 14px' }}>
-                                <p style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 600, fontSize: 13, color: '#1a1a2e', margin: 0 }}>
+                                <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 600, fontSize: 13, color: '#1a1a2e', margin: 0 }}>
                                     {item.type || '아이템'}
                                 </p>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
-                                    <span style={{ background: 'rgba(113,179,229,0.12)', borderRadius: 8, padding: '2px 8px', fontFamily: 'Kedebideri, sans-serif', fontWeight: 400, fontSize: 10, color: '#71b3e5' }}>
+                                    <span style={{ background: 'rgba(113,179,229,0.12)', borderRadius: 8, padding: '2px 8px', fontFamily: theme.fontFamily.ui, fontWeight: 400, fontSize: 10, color: '#71b3e5' }}>
                                         {normalizeCategory(item.category)}
                                     </span>
                                     {item.color && (
-                                        <span style={{ background: 'rgba(113,179,229,0.12)', borderRadius: 8, padding: '2px 8px', fontFamily: 'Kedebideri, sans-serif', fontWeight: 400, fontSize: 10, color: '#71b3e5' }}>
+                                        <span style={{ background: 'rgba(113,179,229,0.12)', borderRadius: 8, padding: '2px 8px', fontFamily: theme.fontFamily.ui, fontWeight: 400, fontSize: 10, color: '#71b3e5' }}>
                                             {item.color}
                                         </span>
                                     )}
@@ -319,13 +320,13 @@ function Wardrobe() {
                         onClick={() => { setSelectedItem(null); setEditMode(false); }} />
                     <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', borderRadius: 24, width: 380, maxWidth: '90vw', maxHeight: '85vh', overflowY: 'auto', zIndex: 201, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 20px 0', marginBottom: 16 }}>
-                            <h2 style={{ fontFamily: 'Hahmlet, sans-serif', fontWeight: 700, fontSize: 18, color: '#1a1a2e', margin: 0 }}>옷 상세 정보</h2>
+                            <h2 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 18, color: '#1a1a2e', margin: 0 }}>옷 상세 정보</h2>
                             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                                 {!editMode ? (
-                                    <button onClick={() => setEditMode(true)} style={{ padding: '6px 14px', background: 'rgba(113,179,229,0.12)', color: '#71b3e5', border: 'none', borderRadius: 999, fontSize: 13, cursor: 'pointer', fontFamily: 'Kedebideri, sans-serif', fontWeight: 500 }}>수정</button>
+                                    <button onClick={() => setEditMode(true)} style={{ padding: '6px 14px', background: 'rgba(113,179,229,0.12)', color: '#71b3e5', border: 'none', borderRadius: 999, fontSize: 13, cursor: 'pointer', fontFamily: theme.fontFamily.ui, fontWeight: 500 }}>수정</button>
                                 ) : (
                                     <>
-                                        <button onClick={handleEdit} style={{ padding: '6px 14px', background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)', color: 'white', border: 'none', borderRadius: 999, fontSize: 13, cursor: 'pointer', fontFamily: 'Kedebideri, sans-serif', fontWeight: 600 }}>저장</button>
+                                        <button onClick={handleEdit} style={{ padding: '6px 14px', background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)', color: 'white', border: 'none', borderRadius: 999, fontSize: 13, cursor: 'pointer', fontFamily: theme.fontFamily.ui, fontWeight: 600 }}>저장</button>
                                         <button onClick={() => setEditMode(false)} style={{ padding: '6px 14px', background: '#f5f7fa', color: '#888', border: 'none', borderRadius: 999, fontSize: 13, cursor: 'pointer' }}>취소</button>
                                     </>
                                 )}
@@ -358,25 +359,25 @@ function Wardrobe() {
                                     { label: '소재', value: selectedItem.material || '-' },
                                 ].map(row => (
                                     <div key={row.label} style={{ display: 'flex', alignItems: 'center', padding: '11px 0', borderBottom: '1px solid #f0f0f0' }}>
-                                        <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0, fontFamily: 'Inter, sans-serif' }}>{row.label}</span>
-                                        <span style={{ fontSize: 14, color: '#1a1a2e', fontWeight: 500, fontFamily: 'Hahmlet, sans-serif' }}>{row.value}</span>
+                                        <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0, fontFamily: theme.fontFamily.body }}>{row.label}</span>
+                                        <span style={{ fontSize: 14, color: '#1a1a2e', fontWeight: 500, fontFamily: theme.fontFamily.heading }}>{row.value}</span>
                                     </div>
                                 ))}
                             </div>
                         ) : (
                             <div style={{ padding: '0 20px', marginBottom: 16 }}>
                                 <div style={{ display: 'flex', alignItems: 'flex-start', padding: '11px 0', borderBottom: '1px solid #f0f0f0', gap: 12 }}>
-                                    <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0, paddingTop: 2, fontFamily: 'Inter, sans-serif' }}>카테고리</span>
+                                    <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0, paddingTop: 2, fontFamily: theme.fontFamily.body }}>카테고리</span>
                                     <select style={{ flex: 1, padding: '8px 10px', borderRadius: 10, border: '1px solid #eaedf2', fontSize: 14, background: 'white' }} value={editForm.category} onChange={e => setEditForm({ ...editForm, category: e.target.value })}>
                                         {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'flex-start', padding: '11px 0', borderBottom: '1px solid #f0f0f0', gap: 12 }}>
-                                    <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0, paddingTop: 2, fontFamily: 'Inter, sans-serif' }}>종류</span>
+                                    <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0, paddingTop: 2, fontFamily: theme.fontFamily.body }}>종류</span>
                                     <input style={{ flex: 1, padding: '8px 10px', borderRadius: 10, border: '1px solid #eaedf2', fontSize: 14, boxSizing: 'border-box' }} value={editForm.type} onChange={e => setEditForm({ ...editForm, type: e.target.value })} placeholder="예: 티셔츠, 청바지" />
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'flex-start', padding: '11px 0', borderBottom: '1px solid #f0f0f0', gap: 12 }}>
-                                    <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0, paddingTop: 2, fontFamily: 'Inter, sans-serif' }}>색상</span>
+                                    <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0, paddingTop: 2, fontFamily: theme.fontFamily.body }}>색상</span>
                                     <div style={{ flex: 1 }}>
                                         <select style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid #eaedf2', fontSize: 14, background: 'white', marginBottom: 6 }} value={editForm.color} onChange={e => setEditForm({ ...editForm, color: e.target.value })}>
                                             <option value="">선택</option>
@@ -386,7 +387,7 @@ function Wardrobe() {
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'flex-start', padding: '11px 0', gap: 12 }}>
-                                    <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0, paddingTop: 2, fontFamily: 'Inter, sans-serif' }}>소재</span>
+                                    <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0, paddingTop: 2, fontFamily: theme.fontFamily.body }}>소재</span>
                                     <select style={{ flex: 1, padding: '8px 10px', borderRadius: 10, border: '1px solid #eaedf2', fontSize: 14, background: 'white' }} value={editForm.material} onChange={e => setEditForm({ ...editForm, material: e.target.value })}>
                                         <option value="">선택</option>
                                         {MATERIALS.map(m => <option key={m} value={m}>{m}</option>)}
@@ -397,7 +398,7 @@ function Wardrobe() {
 
                         <button
                             onClick={() => handleDelete(selectedItem.id)}
-                            style={{ width: 'calc(100% - 40px)', margin: '0 20px 20px', padding: 12, background: 'white', color: '#FF5A5A', border: '1px solid #FF5A5A', borderRadius: 12, fontSize: 14, cursor: 'pointer', fontFamily: 'Kedebideri, sans-serif', fontWeight: 500 }}
+                            style={{ width: 'calc(100% - 40px)', margin: '0 20px 20px', padding: 12, background: 'white', color: '#FF5A5A', border: '1px solid #FF5A5A', borderRadius: 12, fontSize: 14, cursor: 'pointer', fontFamily: theme.fontFamily.ui, fontWeight: 500 }}
                         >
                             옷장에서 삭제
                         </button>
