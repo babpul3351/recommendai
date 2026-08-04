@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { theme } from '../styles/theme';
 import { usePageAnimation } from '../hooks/usePageAnimation';
 import { useNavigate } from 'react-router-dom';
@@ -89,46 +89,47 @@ interface Plate {
     bg: string[]; fg: string[];
 }
 
+const PLATES: Plate[] = [
+    { id: 1, text: '29', question: '원 안의 숫자를 읽어주세요', category: '적록 판별', options: ['29', '70', '21', '보기 어려움'], answer: '29', weight: 'deutan', bg: ['#9eaa68', '#b0b977', '#8f9b5e', '#c0bd80'], fg: ['#bd694d', '#ca7a5a', '#a95743', '#d18a69'] },
+    { id: 2, text: '45', question: '원 안의 숫자를 읽어주세요', category: '적색 판별', options: ['45', '15', '48', '보기 어려움'], answer: '45', weight: 'protan', bg: ['#c67a68', '#b9685c', '#d08d75', '#b75f51'], fg: ['#728f5b', '#668453', '#83a168', '#5a744a'] },
+    { id: 3, text: '7', question: '원 안의 숫자를 읽어주세요', category: '청황 판별', options: ['7', '1', '3', '보기 어려움'], answer: '7', weight: 'tritan', bg: ['#c4b45f', '#d1c36f', '#b9a753', '#d8ca83'], fg: ['#536fab', '#46619b', '#657fba', '#3d558a'] },
+    { id: 4, text: '12', question: '원 안의 숫자를 읽어주세요', category: '기준 확인', options: ['12', '17', '21', '보기 어려움'], answer: '12', weight: 'normal', bg: ['#d4bd72', '#c7a961', '#e0ca87', '#b99b58'], fg: ['#405c86', '#324b73', '#536f98', '#253d61'] },
+    { id: 5, text: '5', question: '원 안의 숫자를 읽어주세요', category: '적색 판별', options: ['5', '6', '8', '보기 어려움'], answer: '5', weight: 'protan', bg: ['#cf9077', '#c57d6d', '#d9a08a', '#b96c60'], fg: ['#6f8d69', '#5e7c5e', '#82a17a', '#537052'] },
+    { id: 6, text: 'RED', isWord: true, question: '원 안에 숨겨진 영단어를 찾아주세요', category: '적록 판별', options: ['RED', 'BED', 'REB', '보기 어려움'], answer: 'RED', weight: 'deutan', bg: ['#c8d090', '#b8c070', '#d8e0a0', '#e0e8b0', '#a8b860'], fg: ['#d06040', '#c04828', '#e07050', '#b83820'] },
+    { id: 7, text: 'GO', isWord: true, question: '원 안에 숨겨진 영단어를 찾아주세요', category: '녹색 판별', options: ['GO', 'DO', '보이지 않음', '보기 어려움'], answer: 'GO', weight: 'protan', bg: ['#a8c8a8', '#98b898', '#b8d8b8', '#88a888', '#c0d8c0'], fg: ['#c04040', '#d05050', '#b03030', '#c84848'] },
+    { id: 8, text: 'B', isWord: true, question: '원 안에 숨겨진 알파벳을 찾아주세요', category: '청황 판별', options: ['B', 'E', 'R', '보기 어려움'], answer: 'B', weight: 'tritan', bg: ['#a0c8e0', '#80b0d0', '#c0d8f0', '#b0c8e8', '#90b8d8'], fg: ['#e08020', '#d06010', '#f09030', '#c07008'] },
+];
+
+function createTextMask(W: number, text: string, isWord: boolean): CanvasRenderingContext2D {
+    const mc = document.createElement('canvas'); mc.width = W; mc.height = W;
+    const mctx = mc.getContext('2d')!;
+    mctx.clearRect(0, 0, W, W); mctx.fillStyle = '#000';
+    mctx.textAlign = 'center'; mctx.textBaseline = 'middle';
+    const fontSize = isWord ? (text.length === 1 ? Math.round(W * 0.62) : Math.round(W * 0.34)) : (text.length > 1 ? Math.round(W * 0.40) : Math.round(W * 0.52));
+    mctx.font = `900 ${fontSize}px Arial, sans-serif`;
+    mctx.fillText(text, W / 2, W / 2 + fontSize * 0.04);
+    return mctx;
+}
+function isTextPixel(maskCtx: CanvasRenderingContext2D, x: number, y: number): boolean {
+    try { return maskCtx.getImageData(Math.max(0, Math.min(Math.floor(x), maskCtx.canvas.width - 1)), Math.max(0, Math.min(Math.floor(y), maskCtx.canvas.height - 1)), 1, 1).data[3] > 16; }
+    catch (e) { return false; }
+}
+function randColor(colors: string[]): string { return colors[Math.floor(Math.random() * colors.length)]; }
+function drawDot(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, colors: string[]) {
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = randColor(colors); ctx.fill();
+}
+function randomInCircle(cx: number, cy: number, radius: number): { x: number; y: number } {
+    const angle = Math.random() * Math.PI * 2, dist = Math.sqrt(Math.random()) * radius;
+    return { x: cx + Math.cos(angle) * dist, y: cy + Math.sin(angle) * dist };
+}
+
 function ColorTest({ onResult }: { onResult: (result: string) => void }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [step, setStep] = useState(0);
     const [answers, setAnswers] = useState<string[]>([]);
     const [rendered, setRendered] = useState(false);
 
-    const PLATES: Plate[] = [
-        { id: 1, text: '29', question: '원 안의 숫자를 읽어주세요', category: '적록 판별', options: ['29', '70', '21', '보기 어려움'], answer: '29', weight: 'deutan', bg: ['#9eaa68', '#b0b977', '#8f9b5e', '#c0bd80'], fg: ['#bd694d', '#ca7a5a', '#a95743', '#d18a69'] },
-        { id: 2, text: '45', question: '원 안의 숫자를 읽어주세요', category: '적색 판별', options: ['45', '15', '48', '보기 어려움'], answer: '45', weight: 'protan', bg: ['#c67a68', '#b9685c', '#d08d75', '#b75f51'], fg: ['#728f5b', '#668453', '#83a168', '#5a744a'] },
-        { id: 3, text: '7', question: '원 안의 숫자를 읽어주세요', category: '청황 판별', options: ['7', '1', '3', '보기 어려움'], answer: '7', weight: 'tritan', bg: ['#c4b45f', '#d1c36f', '#b9a753', '#d8ca83'], fg: ['#536fab', '#46619b', '#657fba', '#3d558a'] },
-        { id: 4, text: '12', question: '원 안의 숫자를 읽어주세요', category: '기준 확인', options: ['12', '17', '21', '보기 어려움'], answer: '12', weight: 'normal', bg: ['#d4bd72', '#c7a961', '#e0ca87', '#b99b58'], fg: ['#405c86', '#324b73', '#536f98', '#253d61'] },
-        { id: 5, text: '5', question: '원 안의 숫자를 읽어주세요', category: '적색 판별', options: ['5', '6', '8', '보기 어려움'], answer: '5', weight: 'protan', bg: ['#cf9077', '#c57d6d', '#d9a08a', '#b96c60'], fg: ['#6f8d69', '#5e7c5e', '#82a17a', '#537052'] },
-        { id: 6, text: 'RED', isWord: true, question: '원 안에 숨겨진 영단어를 찾아주세요', category: '적록 판별', options: ['RED', 'BED', 'REB', '보기 어려움'], answer: 'RED', weight: 'deutan', bg: ['#c8d090', '#b8c070', '#d8e0a0', '#e0e8b0', '#a8b860'], fg: ['#d06040', '#c04828', '#e07050', '#b83820'] },
-        { id: 7, text: 'GO', isWord: true, question: '원 안에 숨겨진 영단어를 찾아주세요', category: '녹색 판별', options: ['GO', 'DO', '보이지 않음', '보기 어려움'], answer: 'GO', weight: 'protan', bg: ['#a8c8a8', '#98b898', '#b8d8b8', '#88a888', '#c0d8c0'], fg: ['#c04040', '#d05050', '#b03030', '#c84848'] },
-        { id: 8, text: 'B', isWord: true, question: '원 안에 숨겨진 알파벳을 찾아주세요', category: '청황 판별', options: ['B', 'E', 'R', '보기 어려움'], answer: 'B', weight: 'tritan', bg: ['#a0c8e0', '#80b0d0', '#c0d8f0', '#b0c8e8', '#90b8d8'], fg: ['#e08020', '#d06010', '#f09030', '#c07008'] },
-    ];
-
-    function createTextMask(W: number, text: string, isWord: boolean): CanvasRenderingContext2D {
-        const mc = document.createElement('canvas'); mc.width = W; mc.height = W;
-        const mctx = mc.getContext('2d')!;
-        mctx.clearRect(0, 0, W, W); mctx.fillStyle = '#000';
-        mctx.textAlign = 'center'; mctx.textBaseline = 'middle';
-        const fontSize = isWord ? (text.length === 1 ? Math.round(W * 0.62) : Math.round(W * 0.34)) : (text.length > 1 ? Math.round(W * 0.40) : Math.round(W * 0.52));
-        mctx.font = `900 ${fontSize}px Arial, sans-serif`;
-        mctx.fillText(text, W / 2, W / 2 + fontSize * 0.04);
-        return mctx;
-    }
-    function isTextPixel(maskCtx: CanvasRenderingContext2D, x: number, y: number): boolean {
-        try { return maskCtx.getImageData(Math.max(0, Math.min(Math.floor(x), maskCtx.canvas.width - 1)), Math.max(0, Math.min(Math.floor(y), maskCtx.canvas.height - 1)), 1, 1).data[3] > 16; }
-        catch (e) { return false; }
-    }
-    function randColor(colors: string[]): string { return colors[Math.floor(Math.random() * colors.length)]; }
-    function drawDot(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, colors: string[]) {
-        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = randColor(colors); ctx.fill();
-    }
-    function randomInCircle(cx: number, cy: number, radius: number): { x: number; y: number } {
-        const angle = Math.random() * Math.PI * 2, dist = Math.sqrt(Math.random()) * radius;
-        return { x: cx + Math.cos(angle) * dist, y: cy + Math.sin(angle) * dist };
-    }
-    function drawPlate(canvas: HTMLCanvasElement, plate: Plate) {
+    const drawPlate = useCallback((canvas: HTMLCanvasElement, plate: Plate) => {
         const W = canvas.width, cx = W / 2, cy = W / 2, radius = W * 0.45;
         const ctx = canvas.getContext('2d')!;
         ctx.clearRect(0, 0, W, W); ctx.fillStyle = '#f7fafc'; ctx.fillRect(0, 0, W, W);
@@ -148,15 +149,14 @@ function ColorTest({ onResult }: { onResult: (result: string) => void }) {
         }
         ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.lineWidth = 6; ctx.strokeStyle = '#d7dee6'; ctx.stroke();
         setRendered(true);
-    }
+    }, []);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         if (!canvasRef.current) return;
         setRendered(false);
         const raf = requestAnimationFrame(() => { if (canvasRef.current) drawPlate(canvasRef.current, PLATES[step]); });
         return () => cancelAnimationFrame(raf);
-    }, [step]);
+    }, [step, drawPlate]);
 
     const analyze = (ans: string[]) => {
         const miss: Record<'protan' | 'deutan' | 'tritan', number> = { protan: 0, deutan: 0, tritan: 0 };
@@ -241,12 +241,6 @@ function MyPage() {
     const [daltonizing, setDaltonizing] = useState(false);
     const [wardrobeItems, setWardrobeItems] = useState<{ id: number; category?: string; type?: string; color?: string }[]>([]);
 
-    const handleLogout = () => {
-        if (window.confirm('로그아웃 하시겠습니까?')) { localStorage.clear(); navigate('/login'); }
-    };
-
-    useEffect(() => { fetchProfile(); fetchHistory(); fetchWardrobe(); }, []);
-
     const fetchProfile = async () => {
         try {
             const res = await userAPI.getProfile();
@@ -262,6 +256,12 @@ function MyPage() {
 
     const fetchWardrobe = async () => {
         try { const res = await wardrobeAPI.getWardrobe(); setWardrobeItems(res.data); } catch {}
+    };
+
+    useEffect(() => { fetchProfile(); fetchHistory(); fetchWardrobe(); }, []);
+
+    const handleLogout = () => {
+        if (window.confirm('로그아웃 하시겠습니까?')) { localStorage.clear(); navigate('/login'); }
     };
 
     const handleSave = async () => {
