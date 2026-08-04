@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { theme } from '../styles/theme';
 import { HomeIcon, WardrobeIcon, CalendarIcon, SparkleIcon, UserIcon } from './Icons';
 
@@ -12,7 +12,6 @@ const navItems: { path: string; label: string; icon: React.ComponentType<{ color
 ];
 
 function Navbar() {
-    const navigate = useNavigate();
     const location = useLocation();
     const nickname = localStorage.getItem('nickname') || '사용자';
 
@@ -66,9 +65,9 @@ function Navbar() {
                 {navItems.map(({ path, label, icon: Icon }) => {
                     const active = isActive(path);
                     return (
-                        <button
+                        <Link
                             key={path}
-                            onClick={() => navigate(path)}
+                            to={path}
                             style={{
                                 width: '100%',
                                 display: 'flex',
@@ -76,9 +75,8 @@ function Navbar() {
                                 gap: 12,
                                 padding: '10px 12px',
                                 borderRadius: 10,
-                                border: 'none',
+                                textDecoration: 'none',
                                 background: active ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : 'transparent',
-                                cursor: 'pointer',
                                 marginBottom: 2,
                                 transition: 'background 0.15s',
                             }}
@@ -103,7 +101,7 @@ function Navbar() {
                                     background: 'rgba(255,255,255,0.7)',
                                 }} />
                             )}
-                        </button>
+                        </Link>
                     );
                 })}
             </nav>
