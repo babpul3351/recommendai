@@ -1,30 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { getDaltonizedImageUrl } from '../daltonization';
+import { getDaltonizedImageUrl, ColorType } from '../daltonization';
 
 interface DaltonizedImageProps {
     src: string;
     alt: string;
-    colorType: string;
+    colorType: ColorType | 'normal';
     correctionEnabled: boolean;
     style?: React.CSSProperties;
     imgStyle?: React.CSSProperties;
     className?: string;
 }
 
-/*
- * 변경 사항 (기존 대비)
- * ------------------
- * 컴포넌트 언마운트 시 Blob URL을 자동으로 해제(revokeObjectURL)하던
- * 로직을 제거했습니다.
- *
- * 이유: daltonization.js에 캐싱이 추가되면서, 같은 이미지의 Blob URL이
- * 여러 컴포넌트/여러 화면 진입에서 재사용됩니다. 기존처럼 언마운트 시
- * 자동 해제하면, 캐시에 저장된 URL이 무효화되어 다음에 캐시를 사용할 때
- * 깨진 이미지가 표시됩니다.
- *
- * Blob URL 해제는 이제 daltonization.js의 clearDaltonizationCache()가
- * 전담합니다. (예: 로그아웃 시점 등에서 필요하면 호출)
- */
 export default function DaltonizedImage({
     src,
     alt,
@@ -46,7 +32,7 @@ export default function DaltonizedImage({
         let cancelled = false;
         setLoading(true);
 
-        getDaltonizedImageUrl(src, colorType as 'protanopia' | 'deuteranopia' | 'tritanopia')
+        getDaltonizedImageUrl(src, colorType)
             .then((url) => {
                 if (!cancelled) setDisplaySrc(url);
             })
@@ -57,8 +43,6 @@ export default function DaltonizedImage({
                 if (!cancelled) setLoading(false);
             });
 
-        // Blob URL은 캐시가 소유하므로 여기서 revoke하지 않습니다.
-        // 컴포넌트가 언마운트되어도 상태 업데이트만 막습니다.
         return () => {
             cancelled = true;
         };

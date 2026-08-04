@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { usePageAnimation } from '../hooks/usePageAnimation';
 import { wardrobeAPI, userAPI } from '../api/api';
 import DaltonizedImage from '../components/DaltonizedImage';
+import { ColorType } from '../daltonization';
 
 const CATEGORIES = ['상의', '하의', '아우터', '원피스', '기타'];
 const COLORS = ['블랙', '화이트', '그레이', '네이비', '블루', '레드', '핑크',
@@ -38,7 +39,7 @@ function Wardrobe() {
     const [editMode, setEditMode] = useState(false);
     const [editForm, setEditForm] = useState<EditForm>({ category: '', type: '', color: '', material: '' });
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [colorType, setColorType] = useState<string | null>(null);
+    const [colorType, setColorType] = useState<ColorType | 'normal' | null>(null);
     const [correctionEnabled, setCorrectionEnabled] = useState(false);
 
     const categories = ['전체', '상의', '하의', '아우터', '원피스', '기타'];
@@ -51,7 +52,7 @@ function Wardrobe() {
     const fetchUserColorType = async () => {
         try {
             const res = await userAPI.getProfile();
-            const ct: string = res.data.colorType;
+            const ct: ColorType | 'normal' = res.data.colorType;
             setColorType(ct);
             if (ct && ct !== 'normal') setCorrectionEnabled(true);
         } catch (err) { console.error(err); }

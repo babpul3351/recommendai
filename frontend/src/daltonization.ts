@@ -1,6 +1,6 @@
 import api, { colorAssistantAPI } from './api/api';
 
-type ColorType = 'protanopia' | 'deuteranopia' | 'tritanopia';
+export type ColorType = 'protanopia' | 'deuteranopia' | 'tritanopia';
 
 const MATRICES: Record<ColorType, number[][]> = {
     protanopia: [
