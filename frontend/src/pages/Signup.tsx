@@ -8,6 +8,31 @@ const STYLE_LABELS: Record<string, string> = {
     lovely: '러블리', feminine: '페미닌', sporty: '스포티', comfort: '컴포트'
 };
 
+const styles: Record<string, React.CSSProperties> = {
+    container: {
+        display: 'flex', justifyContent: 'center',
+        alignItems: 'center', minHeight: '100vh', backgroundColor: '#f5f5f5'
+    },
+    box: {
+        backgroundColor: 'white', padding: '40px', borderRadius: '12px',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.1)', width: '360px'
+    },
+    title: { fontSize: '24px', fontWeight: 'bold', textAlign: 'center', marginBottom: '24px' },
+    input: {
+        width: '100%', padding: '12px', marginBottom: '12px',
+        borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box'
+    },
+    label: { fontSize: '14px', color: '#555', marginBottom: '8px' },
+    styleGrid: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' },
+    styleBtn: { padding: '8px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '13px' },
+    button: {
+        width: '100%', padding: '12px', backgroundColor: '#333', color: 'white',
+        border: 'none', borderRadius: '8px', fontSize: '16px', cursor: 'pointer'
+    },
+    error: { color: 'red', fontSize: '13px', marginBottom: '8px' },
+    link: { marginTop: '20px', fontSize: '14px', color: '#666', textAlign: 'center' }
+};
+
 interface SignupForm {
     loginId: string;
     nickname: string;
@@ -131,30 +156,5 @@ function Signup() {
         </div>
     );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-    container: {
-        display: 'flex', justifyContent: 'center',
-        alignItems: 'center', minHeight: '100vh', backgroundColor: '#f5f5f5'
-    },
-    box: {
-        backgroundColor: 'white', padding: '40px', borderRadius: '12px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.1)', width: '360px'
-    },
-    title: { fontSize: '24px', fontWeight: 'bold', textAlign: 'center', marginBottom: '24px' },
-    input: {
-        width: '100%', padding: '12px', marginBottom: '12px',
-        borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box'
-    },
-    label: { fontSize: '14px', color: '#555', marginBottom: '8px' },
-    styleGrid: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' },
-    styleBtn: { padding: '8px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '13px' },
-    button: {
-        width: '100%', padding: '12px', backgroundColor: '#333', color: 'white',
-        border: 'none', borderRadius: '8px', fontSize: '16px', cursor: 'pointer'
-    },
-    error: { color: 'red', fontSize: '13px', marginBottom: '8px' },
-    link: { marginTop: '20px', fontSize: '14px', color: '#666', textAlign: 'center' }
-};
 
 export default Signup;
