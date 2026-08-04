@@ -8,6 +8,9 @@ import { TPO_OPTIONS, WEEKDAYS, DAY_EN, TPO_COLORS, START_HOUR, END_HOUR, HOUR_H
 import { CalendarEvent, Outfit, EventForm } from './types';
 dayjs.locale('ko');
 
+const hours = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
+const btnBase: React.CSSProperties = { background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' };
+
 function Calendar() {
     const today = new Date();
     const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -110,10 +113,6 @@ function Calendar() {
     const tpoStats = Object.entries(TPO_COLORS)
         .map(([tpo, color]) => ({ tpo, color, count: events.filter(e => e.tpoKeyword === tpo).length }))
         .filter(s => s.count > 0);
-
-    const hours = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
-
-    const btnBase: React.CSSProperties = { background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' };
 
     return (
         <div style={{ padding: '70px 28px', width: '100%' }}>
