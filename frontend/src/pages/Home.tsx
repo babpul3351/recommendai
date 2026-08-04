@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { theme } from '../styles/theme';
 import { useNavigate } from 'react-router-dom';
 import { usePageAnimation } from '../hooks/usePageAnimation';
@@ -64,22 +64,16 @@ function Home() {
     const [loading, setLoading] = useState(false);
     const [weekWeathers, setWeekWeathers] = useState<Record<string, Weather>>({});
 
-    const today = new Date();
+    const today = useMemo(() => new Date(), []);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => { fetchWeather(); fetchCalendarData(); }, []);
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => { if (weather) setWeekWeathers(prev => ({ ...prev, [toDateStr(today)]: weather! })); }, [weather]);
-
-    const fetchWeather = async () => {
+    const fetchWeather = useCallback(async () => {
         try {
             const res = await weatherAPI.getWeather();
             setWeather(res.data);
         } catch (err) { console.error(err); }
-    };
+    }, []);
 
-    const fetchCalendarData = async () => {
+    const fetchCalendarData = useCallback(async () => {
         try {
             const res = await calendarAPI.getEvents();
             const allEvents: CalendarEvent[] = res.data;
@@ -113,7 +107,7 @@ function Home() {
             }
             setWeekWeathers(prev => ({ ...prev, ...weatherMap }));
         } catch (err) { console.error(err); }
-    };
+    }, [today]);
 
     const fetchRecommendation = async () => {
         setLoading(true);
@@ -125,6 +119,10 @@ function Home() {
         } catch (err) { console.error(err); }
         finally { setLoading(false); }
     };
+
+    useEffect(() => { fetchWeather(); fetchCalendarData(); }, [fetchWeather, fetchCalendarData]);
+
+    useEffect(() => { if (weather) setWeekWeathers(prev => ({ ...prev, [toDateStr(today)]: weather! })); }, [weather, today]);
 
     const weekDays = Array.from({ length: 3 }).map((_, i) => {
         const d = new Date(today);

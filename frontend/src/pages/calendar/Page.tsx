@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { theme } from '../../styles/theme';
 import { calendarAPI, recommendationAPI } from '../../api/api';
 import { WardrobeIcon } from '../../components/Icons';
@@ -7,15 +7,6 @@ import 'dayjs/locale/ko';
 import { TPO_OPTIONS, WEEKDAYS, DAY_EN, TPO_COLORS, START_HOUR, END_HOUR, HOUR_H } from './constants';
 import { CalendarEvent, Outfit, EventForm } from './types';
 dayjs.locale('ko');
-
-function getWeekMonday(date: Date): Date {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = day === 0 ? -6 : 1 - day;
-    d.setDate(d.getDate() + diff);
-    d.setHours(0, 0, 0, 0);
-    return d;
-}
 
 function Calendar() {
     const today = new Date();
@@ -28,27 +19,26 @@ function Calendar() {
     const [form, setForm] = useState<EventForm>({ eventName: '', eventDatetime: '', tpoKeyword: '일상' });
     const [activeEvent, setActiveEvent] = useState<CalendarEvent | null>(null);
 
+    const fetchEvents = useCallback(async () => {
+        try { const res = await calendarAPI.getEvents(); setEvents(res.data); } catch (err) { console.error(err); }
+    }, []);
+
+    const fetchOutfits = useCallback(async () => {
+        try {
+            const now = new Date();
+            const res = await recommendationAPI.getWeekOutfits(`${now.getFullYear()}-01-01`, `${now.getFullYear()}-12-31`);
+            setOutfits(res.data || []);
+        } catch (err) { console.error(err); }
+    }, []);
+
+    useEffect(() => { fetchEvents(); fetchOutfits(); }, [fetchEvents, fetchOutfits]);
+
     const weekStart = getWeekMonday(weekBase);
     const weekDays = Array.from({ length: 7 }, (_, i) => {
         const d = new Date(weekStart);
         d.setDate(weekStart.getDate() + i);
         return d;
     });
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => { fetchEvents(); fetchOutfits(); }, []);
-
-    const fetchEvents = async () => {
-        try { const res = await calendarAPI.getEvents(); setEvents(res.data); } catch (err) { console.error(err); }
-    };
-
-    const fetchOutfits = async () => {
-        try {
-            const now = new Date();
-            const res = await recommendationAPI.getWeekOutfits(`${now.getFullYear()}-01-01`, `${now.getFullYear()}-12-31`);
-            setOutfits(res.data || []);
-        } catch (err) { console.error(err); }
-    };
 
     const handleAddEvent = async () => {
         if (!form.eventName || !form.eventDatetime) { alert('일정 이름과 날짜를 입력해주세요.'); return; }
@@ -375,3 +365,12 @@ function Calendar() {
 }
 
 export default Calendar;
+
+function getWeekMonday(date: Date): Date {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+}

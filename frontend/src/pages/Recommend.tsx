@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { theme } from '../styles/theme';
 import { usePageAnimation } from '../hooks/usePageAnimation';
 import { wardrobeAPI, weatherAPI, calendarAPI, recommendationAPI } from '../api/api';
@@ -67,13 +67,6 @@ const TPO_COLORS: Record<string, string> = {
     '운동': '#F5A623', '파티': '#BD10E0', '여행': '#50E3C2', '일상': '#9B9B9B', '격식': '#4A4A4A',
 };
 
-const formatOutfitDate = (dateStr: string): string => {
-    if (!dateStr) return '';
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const dt = new Date(y, m - 1, d);
-    return `${m}월 ${d}일 (${WEEKDAYS[dt.getDay()]})`;
-};
-
 interface HistoryItem { id?: number; imageUrl?: string; type?: string; category?: string; }
 interface OutfitInfoH { style?: string; description?: string; }
 interface HistoryRecord { recId: number; tpo: string; retryCount?: number; createdAt: string; outfitDate?: string; temperature?: number; weatherCondition?: string; description?: string; allOutfitGroups?: Record<string, HistoryItem[]>; outfitInfos?: Record<number, OutfitInfoH>; acceptedOutfitIndex?: number; }
@@ -81,7 +74,7 @@ interface HistoryRecord { recId: number; tpo: string; retryCount?: number; creat
 function Recommend() {
     const pageRef = useRef<HTMLDivElement>(null);
     usePageAnimation(pageRef);
-    const today = new Date();
+    const today = useMemo(() => new Date(), []);
     const [weather, setWeather] = useState<Weather | null>(null);
     const [weatherUnavailable, setWeatherUnavailable] = useState(false);
     const [allEvents, setAllEvents] = useState<CalendarEvent[]>([]);
@@ -98,33 +91,23 @@ function Recommend() {
     const [tpoPromptVisible, setTpoPromptVisible] = useState(false);
     const [showFullTpo, setShowFullTpo] = useState(false);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => { fetchWeather(); fetchAllEvents(); fetchHistory(); }, []);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => { updateTodayEvents(); }, [allEvents]);
-
-    const fetchWeather = async () => {
+    const fetchWeather = useCallback(async () => {
         try {
             const r = await weatherAPI.getWeather();
             setWeather(r.data);
             setWeatherUnavailable(false);
         } catch { setWeatherUnavailable(true); }
-    };
+    }, []);
 
-    const fetchAllEvents = async () => {
+    const fetchAllEvents = useCallback(async () => {
         try { const r = await calendarAPI.getEvents(); setAllEvents(r.data); } catch {}
-    };
+    }, []);
 
-    const fetchHistory = async () => {
+    const fetchHistory = useCallback(async () => {
         try { const r = await recommendationAPI.getHistory(); setHistory(r.data); } catch {}
-    };
+    }, []);
 
-    const handleChangeAccept = async (recId: number, outfitIndex: number, info?: OutfitInfoH) => {
-        try { await recommendationAPI.acceptOutfit(recId, { outfitIndex, style: info?.style || '', description: info?.description || '' }); await fetchHistory(); }
-        catch { alert('변경에 실패했습니다.'); }
-    };
-
-    const updateTodayEvents = () => {
+    const updateTodayEvents = useCallback(() => {
         const evts = allEvents.filter(e => {
             const d = new Date(e.eventDatetime);
             return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
@@ -140,6 +123,14 @@ function Recommend() {
             setTpoPromptVisible(false);
             setShowFullTpo(false);
         }
+    }, [allEvents, today]);
+
+    useEffect(() => { fetchWeather(); fetchAllEvents(); fetchHistory(); }, [fetchWeather, fetchAllEvents, fetchHistory]);
+    useEffect(() => { updateTodayEvents(); }, [updateTodayEvents]);
+
+    const handleChangeAccept = async (recId: number, outfitIndex: number, info?: OutfitInfoH) => {
+        try { await recommendationAPI.acceptOutfit(recId, { outfitIndex, style: info?.style || '', description: info?.description || '' }); await fetchHistory(); }
+        catch { alert('변경에 실패했습니다.'); }
     };
 
     const handleRecommend = async () => {
@@ -549,3 +540,10 @@ function Recommend() {
 }
 
 export default Recommend;
+
+function formatOutfitDate(dateStr: string): string {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    return `${m}월 ${d}일 (${WEEKDAYS[dt.getDay()]})`;
+}
