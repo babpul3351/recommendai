@@ -1,7 +1,7 @@
 import React from 'react';
 import { theme } from '../../styles/theme';
 import { WEEKDAYS, TPO_COLORS } from './constants';
-import { CalendarEvent } from './types';
+import { CalendarEvent, Outfit } from './types';
 import dayjs from 'dayjs';
 
 const btnBase: React.CSSProperties = { background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' };
@@ -12,12 +12,13 @@ interface Props {
     today: Date;
     weekDays: Date[];
     events: CalendarEvent[];
+    outfits?: Outfit[];
     onPrevMonth: () => void;
     onNextMonth: () => void;
     onDayClick: (date: Date) => void;
 }
 
-function MiniCalendar({ calYear, calMonth, today, weekDays, events, onPrevMonth, onNextMonth, onDayClick }: Props) {
+function MiniCalendar({ calYear, calMonth, today, weekDays, events, outfits = [], onPrevMonth, onNextMonth, onDayClick }: Props) {
     const daysInMonth = dayjs().year(calYear).month(calMonth).daysInMonth();
     const firstDay = dayjs().year(calYear).month(calMonth).date(1).day();
 
@@ -51,17 +52,22 @@ function MiniCalendar({ calYear, calMonth, today, weekDays, events, onPrevMonth,
                         const d = new Date(e.eventDatetime);
                         return d.getFullYear() === calYear && d.getMonth() === calMonth && d.getDate() === day;
                     });
+                    const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const hasOutfit = outfits.some(o => o.outfitDate === dateStr);
                     return (
                         <div key={day} onClick={() => onDayClick(new Date(calYear, calMonth, day))} style={{
                             textAlign: 'center', padding: '3px 1px', cursor: 'pointer', borderRadius: 6,
                             background: isToday ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : inWeek ? 'rgba(113,179,229,0.1)' : 'transparent',
                         }}>
                             <span style={{ fontSize: 11, fontFamily: theme.fontFamily.heading, display: 'block', fontWeight: isToday || inWeek ? 700 : 400, color: isToday ? 'white' : dow === 0 ? '#e74c3c' : dow === 6 ? '#3498db' : '#1a1a2e' }}>{day}</span>
-                            {evtsOnDay.length > 0 && (
+                            {(evtsOnDay.length > 0 || hasOutfit) && (
                                 <div style={{ display: 'flex', justifyContent: 'center', gap: 2, marginTop: 1 }}>
                                     {evtsOnDay.slice(0, 2).map((ev, ei) => (
                                         <div key={ei} style={{ width: 3, height: 3, borderRadius: '50%', background: isToday ? 'rgba(255,255,255,0.8)' : (TPO_COLORS[ev.tpoKeyword] || '#71b3e5') }} />
                                     ))}
+                                    {hasOutfit && (
+                                        <div style={{ width: 3, height: 3, borderRadius: '50%', background: isToday ? 'rgba(255,255,255,0.6)' : '#71b3e5', outline: '1px solid rgba(113,179,229,0.4)' }} />
+                                    )}
                                 </div>
                             )}
                         </div>

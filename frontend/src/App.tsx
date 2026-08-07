@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Home from './pages/Home';
@@ -12,6 +12,8 @@ import api from './api/api';
 
 function AuthLayout() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const isHome = location.pathname === '/';
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -29,6 +31,14 @@ function AuthLayout() {
 
     const token = localStorage.getItem('token');
     if (!token) return <Navigate to="/login" replace />;
+
+    if (isHome) {
+        return (
+            <div style={{ minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
+                <Outlet />
+            </div>
+        );
+    }
 
     return (
         <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f7fa', fontFamily: 'Inter, sans-serif' }}>
