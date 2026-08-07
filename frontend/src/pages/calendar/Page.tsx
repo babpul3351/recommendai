@@ -115,6 +115,7 @@ function Calendar() {
                         today={today}
                         weekDays={weekDays}
                         events={events}
+                        outfits={outfits}
                         onPrevMonth={handlePrevMonth}
                         onNextMonth={handleNextMonth}
                         onDayClick={setWeekBase}

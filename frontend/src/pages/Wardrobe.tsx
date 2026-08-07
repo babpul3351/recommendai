@@ -269,16 +269,9 @@ function Wardrobe() {
                         <div
                             data-scroll-card
                             key={item.id}
-                            style={{ background: 'white', border: '1px solid #eaedf2', borderRadius: 18, overflow: 'hidden', cursor: 'pointer', transition: 'box-shadow 0.2s, transform 0.2s' }}
+                            className="wardrobe-card"
+                            style={{ background: 'white', border: '1px solid #eaedf2', borderRadius: 18, overflow: 'hidden', cursor: 'pointer' }}
                             onClick={() => openPopup(item)}
-                            onMouseEnter={(e) => {
-                                (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 24px rgba(0,0,0,0.1)';
-                                (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
-                            }}
-                            onMouseLeave={(e) => {
-                                (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-                                (e.currentTarget as HTMLElement).style.transform = 'none';
-                            }}
                         >
                             {item.imageUrl ? (
                                 <DaltonizedImage
