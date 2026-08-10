@@ -268,9 +268,11 @@ function Home() {
                 WebkitBackdropFilter: 'blur(14px)',
                 borderBottom: '1px solid rgba(0,0,0,0.06)',
             }}>
-                <span style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 20, color: '#1a1a2e', letterSpacing: '-0.3px' }}>
-                    Look at Life
-                </span>
+                <img
+                    src="/logo%203.svg"
+                    alt="Look at Life"
+                    style={{ height: 120, width: 'auto' }}
+                />
                 <div style={{ display: 'flex', gap: 36 }}>
                     {([
                         { label: 'WEATHER',    fn: () => scrollTo('weather') },

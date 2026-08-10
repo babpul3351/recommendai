@@ -47,7 +47,12 @@ function Navbar() {
         }}>
             {/* Logo */}
             <div style={{ padding: '70px 24px 20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <img
+                        src="/logo.svg"
+                        alt="Look at life"
+                        style={{ width: 55, height: 55, flexShrink: 0 }}
+                    />
                     <span style={{
                         fontFamily: theme.fontFamily.heading,
                         fontWeight: 700,
@@ -55,7 +60,7 @@ function Navbar() {
                         color: '#1a1a2e',
                         letterSpacing: '-0.3px',
                     }}>
-                        Look at Life
+                        lookatlife
                     </span>
                 </div>
             </div>
