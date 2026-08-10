@@ -55,7 +55,11 @@ function Login() {
     return (
         <div style={styles.container}>
             <div style={styles.box}>
-                <h1 style={styles.title}>Look at Life</h1>
+                <img
+                    src="/logo%203.svg"
+                    alt="Look at Life"
+                    style={{ width: 200, height: 'auto', marginBottom: '16px' }}
+                />
                 <p style={styles.subtitle}>AI 스마트 옷장 추천 서비스</p>
                 <form onSubmit={handleSubmit}>
                     <input
