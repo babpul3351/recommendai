@@ -283,7 +283,7 @@ function Home() {
                     {([
                         { label: 'WEATHER',    fn: () => scrollTo('weather') },
                         { label: 'MY CLOSET',  fn: () => navigate('/wardrobe') },
-                        { label: 'STUDIO',     fn: () => scrollTo('studio') },
+                        { label: 'STUDIO',     fn: () => navigate('/studio') },
                         { label: 'CALENDAR',   fn: () => navigate('/calendar') },
                         { label: 'PROFILE',    fn: () => navigate('/mypage') },
                     ] as { label: string; fn: () => void }[]).map(({ label, fn }) => (
