@@ -2,13 +2,16 @@ package com.capstone.recommendai.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "wardrobe_item")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class WardrobeItem {
 
@@ -32,21 +35,36 @@ public class WardrobeItem {
     @Column(length = 30)
     private String material;
 
+    /*
+     * Gemini Vision이 분석한 스타일 태그
+     *
+     * 예:
+     * "캐주얼,스트릿"
+     * "미니멀,모던"
+     */
+    @Column(name = "style_tags", columnDefinition = "TEXT")
+    private String styleTags;
+
     @Column(name = "image_thumbnail", length = 500)
     private String imageThumbnail;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @OneToOne(mappedBy = "wardrobeItem",
-            cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(
+            mappedBy = "wardrobeItem",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
     private WardrobeEmbedding embedding;
 
     @PrePersist
     public void prePersist() {
+
         if (this.itemId == null) {
             this.itemId = UUID.randomUUID().toString();
         }
+
         this.createdAt = LocalDateTime.now();
     }
 }
