@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { theme } from '../styles/theme';
 import { weatherAPI, wardrobeAPI, calendarAPI, recommendationAPI } from '../api/api';
 import { toDateStr } from '../utils/date';
-import { WeatherIcon, SparkleIcon, CalendarIcon, WardrobeIcon, TpoIcon, CheckIcon } from '../components/Icons';
+import { WeatherIcon, SparkleIcon, CalendarIcon, WardrobeIcon, TpoIcon, CheckIcon, StudioIcon } from '../components/Icons';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -78,6 +78,7 @@ const SECTION_DEFS = [
     { id: 'recommendation', label: '03 RECOMMENDATION' },
     { id: 'closet',         label: '04 CLOSET' },
     { id: 'calendar',       label: '05 CALENDAR' },
+    { id: 'studio',         label: '06 STUDIO' },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -117,6 +118,7 @@ function Home() {
     const [todayEvents, setTodayEvents]     = useState<CalendarEvent[]>([]);
     const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
     const [wardrobeItems, setWardrobeItems] = useState<WardrobeItem[]>([]);
+    const [savedOutfits, setSavedOutfits]   = useState<WardrobeItem[]>([]);
     const [recentOutfits, setRecentOutfits] = useState<WeekOutfit[]>([]);
     const [selectedTpo, setSelectedTpo]     = useState<string>('일상');
     const [loading, setLoading]             = useState(false);
@@ -130,6 +132,7 @@ function Home() {
     const recommendRef      = useRef<HTMLElement>(null);
     const closetRef         = useRef<HTMLElement>(null);
     const calendarSecRef    = useRef<HTMLElement>(null);
+    const studioRef         = useRef<HTMLElement>(null);
 
     const sectionRefMap = useMemo(() => ({
         hero:           heroRef,
@@ -138,6 +141,7 @@ function Home() {
         recommendation: recommendRef,
         closet:         closetRef,
         calendar:       calendarSecRef,
+        studio:         studioRef,
     }), []);
 
     // ── Data fetching ──────────────────────────────────────────────────────────
@@ -164,7 +168,9 @@ function Home() {
     const fetchWardrobeItems = useCallback(async () => {
         try {
             const res = await wardrobeAPI.getWardrobe();
-            setWardrobeItems((res.data || []).slice(0, 6));
+            const all: WardrobeItem[] = res.data || [];
+            setSavedOutfits(all.filter(i => i.category === '저장한 코디').slice(0, 4));
+            setWardrobeItems(all.filter(i => i.category !== '저장한 코디').slice(0, 6));
         } catch {}
     }, []);
 
@@ -277,6 +283,7 @@ function Home() {
                     {([
                         { label: 'WEATHER',    fn: () => scrollTo('weather') },
                         { label: 'MY CLOSET',  fn: () => navigate('/wardrobe') },
+                        { label: 'STUDIO',     fn: () => scrollTo('studio') },
                         { label: 'CALENDAR',   fn: () => navigate('/calendar') },
                         { label: 'PROFILE',    fn: () => navigate('/mypage') },
                     ] as { label: string; fn: () => void }[]).map(({ label, fn }) => (
@@ -745,6 +752,119 @@ function Home() {
                     onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = 'white'; b.style.color = '#71b3e5'; }}>
                         캘린더에서 보기 →
                     </button>
+                </div>
+            </section>
+
+            {/* ── 06 STUDIO ────────────────────────────────────────────────── */}
+            <section ref={studioRef} style={{ padding: '100px 80px 100px 120px', background: 'white' }}>
+                <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+                    <p data-animate style={{ fontFamily: theme.fontFamily.body, fontWeight: 700, fontSize: 10, color: '#71b3e5', letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 16px' }}>
+                        06 STUDIO
+                    </p>
+                    <h2 data-animate style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 40, color: '#1a1a2e', margin: '0 0 16px', lineHeight: 1.3 }}>
+                        내 옷장 아이템으로<br />직접 코디를 완성해 보세요.
+                    </h2>
+                    <p data-animate style={{ fontFamily: theme.fontFamily.body, fontSize: 16, color: '#888', margin: '0 0 64px', lineHeight: 1.7 }}>
+                        드래그 한 번으로 배경이 제거되고, 완성된 코디는 옷장에 바로 저장돼요.
+                    </p>
+
+                    {/* 3-step flow */}
+                    <div data-animate style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginBottom: 64 }}>
+                        {[
+                            {
+                                num: '01',
+                                icon: <WardrobeIcon color="#71b3e5" size={36} />,
+                                title: '아이템 드래그',
+                                desc: '내 옷장에서 원하는 아이템을 캔버스로 드래그해요',
+                            },
+                            {
+                                num: '02',
+                                icon: <SparkleIcon color="#71b3e5" size={36} />,
+                                title: 'AI 배경 제거',
+                                desc: 'SAM이 자동으로 배경을 제거해 깔끔한 스티커로 만들어요',
+                            },
+                            {
+                                num: '03',
+                                icon: <StudioIcon color="#71b3e5" size={36} />,
+                                title: '코디 저장',
+                                desc: '완성된 코디를 내 옷장 "저장한 코디"에 바로 저장해요',
+                            },
+                        ].map(({ num, icon, title, desc }, i) => (
+                            <div key={i} style={{
+                                background: '#f5f7fa',
+                                borderRadius: 24,
+                                padding: '36px 32px',
+                                position: 'relative',
+                                border: '1px solid #eaedf2',
+                            }}>
+                                <span style={{
+                                    position: 'absolute', top: 28, right: 28,
+                                    fontFamily: theme.fontFamily.heading,
+                                    fontWeight: 800, fontSize: 48,
+                                    color: 'rgba(113,179,229,0.12)',
+                                    lineHeight: 1,
+                                }}>{num}</span>
+                                <div style={{ marginBottom: 20 }}>{icon}</div>
+                                <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 18, color: '#1a1a2e', margin: '0 0 10px' }}>{title}</p>
+                                <p style={{ fontFamily: theme.fontFamily.body, fontSize: 14, color: '#888', margin: 0, lineHeight: 1.7 }}>{desc}</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* 저장된 코디 미리보기 */}
+                    {savedOutfits.length > 0 && (
+                        <>
+                            <p data-animate style={{ fontFamily: theme.fontFamily.body, fontWeight: 600, fontSize: 13, color: '#aaa', margin: '0 0 20px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                                저장한 코디
+                            </p>
+                            <div data-animate style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 48 }}>
+                                {savedOutfits.map(item => (
+                                    <div key={item.id} className="wardrobe-card" style={{
+                                        background: '#f5f7fa', borderRadius: 20, overflow: 'hidden',
+                                        border: '1px solid #eaedf2', cursor: 'pointer',
+                                    }} onClick={() => navigate('/wardrobe')}>
+                                        <div style={{ height: 180, overflow: 'hidden', background: 'linear-gradient(135deg, #d4eaf9, #e8f4fd)' }}>
+                                            {item.imageUrl
+                                                ? <img src={item.imageUrl} alt="저장한 코디" className="wardrobe-card-img" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                                                : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><StudioIcon color="#71b3e5" size={48} /></div>
+                                            }
+                                        </div>
+                                        <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <StudioIcon color="#71b3e5" size={14} />
+                                            <span style={{ fontFamily: theme.fontFamily.ui, fontWeight: 600, fontSize: 12, color: '#71b3e5' }}>저장한 코디</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
+
+                    <div data-animate style={{ display: 'flex', gap: 14 }}>
+                        <button onClick={() => navigate('/studio')} style={{
+                            background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)',
+                            border: 'none', borderRadius: 999,
+                            padding: '16px 40px', cursor: 'pointer',
+                            fontFamily: theme.fontFamily.ui, fontWeight: 700, fontSize: 15,
+                            color: 'white', boxShadow: '0 8px 28px rgba(113,179,229,0.4)',
+                            display: 'inline-flex', alignItems: 'center', gap: 10,
+                        }}>
+                            <StudioIcon color="white" size={18} />
+                            스튜디오 열기
+                        </button>
+                        {savedOutfits.length > 0 && (
+                            <button onClick={() => navigate('/wardrobe')} style={{
+                                background: 'white', border: '2px solid #71b3e5', borderRadius: 999,
+                                padding: '16px 32px', cursor: 'pointer',
+                                fontFamily: theme.fontFamily.ui, fontWeight: 600, fontSize: 15,
+                                color: '#71b3e5',
+                                transition: 'background 0.2s, color 0.2s',
+                            }}
+                            onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = '#71b3e5'; b.style.color = 'white'; }}
+                            onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = 'white'; b.style.color = '#71b3e5'; }}>
+                                저장한 코디 보기 →
+                            </button>
+                        )}
+                    </div>
                 </div>
             </section>
 
