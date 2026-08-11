@@ -5,7 +5,7 @@ import DaltonizedImage from '../components/DaltonizedImage';
 import { ColorType } from '../daltonization';
 import { theme } from '../styles/theme';
 
-const CATEGORIES = ['상의', '하의', '아우터', '원피스', '기타'];
+const CATEGORIES = ['상의', '하의', '아우터', '원피스', '기타', '저장한 코디'];
 const COLORS = ['블랙', '화이트', '그레이', '네이비', '블루', '레드', '핑크',
     '옐로우', '그린', '카키', '브라운', '갈색', '베이지', '퍼플', '오렌지',
     '와인', '민트', '코랄', '머스타드', '아이보리'];
@@ -43,7 +43,7 @@ function Wardrobe() {
     const [colorType, setColorType] = useState<ColorType | 'normal' | null>(null);
     const [correctionEnabled, setCorrectionEnabled] = useState(false);
 
-    const categories = ['전체', '상의', '하의', '아우터', '원피스', '기타'];
+    const categories = ['전체', '상의', '하의', '아우터', '원피스', '기타', '저장한 코디'];
 
     const fetchUserColorType = async () => {
         try {
@@ -154,7 +154,7 @@ function Wardrobe() {
 
     const statsData = [
         { label: '전체 아이템', value: items.length, color: '#71b3e5' },
-        { label: '즐겨찾기', value: getCategoryCount('즐겨찾기'), color: '#84c98e' },
+        { label: '저장한 코디', value: getCategoryCount('저장한 코디'), color: '#84c98e' },
         { label: '이번달 착용', value: getCategoryCount('이번달 착용'), color: '#d45acc' },
     ];
 

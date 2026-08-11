@@ -286,6 +286,16 @@ export function WarningIcon({ color = '#e74c3c', size = 22 }: IconProps) {
     );
 }
 
+export function StudioIcon({ color = '#555', size = 22 }: IconProps) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 30 30" fill="none">
+            <rect x="4" y="14" width="22" height="13" rx="3" stroke={color} strokeWidth="2.2" />
+            <rect x="7" y="8" width="16" height="13" rx="3" stroke={color} strokeWidth="2.2" />
+            <rect x="10" y="3" width="10" height="11" rx="2.5" stroke={color} strokeWidth="2.2" />
+        </svg>
+    );
+}
+
 export function CloseIcon({ color = '#aaa', size = 18 }: IconProps) {
     return (
         <svg width={size} height={size} viewBox="0 0 30 30" fill="none">

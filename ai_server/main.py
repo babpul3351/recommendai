@@ -22,7 +22,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8080"],
+    allow_origins=["http://localhost:8080", "http://localhost:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -59,10 +59,12 @@ class EmbedItemRequest(BaseModel):
     type: Optional[str] = ""
     imageB64: str
 
-# [신규] 색각 보정 요청 모델
 class DaltonizeRequest(BaseModel):
     imageB64: str
     colorType: str
+
+class RemoveBackgroundRequest(BaseModel):
+    imageB64: str
 
 # ─────────────────────────────────────────────
 # 헬스 체크
@@ -180,5 +182,14 @@ async def daltonize(req: DaltonizeRequest):
         from services.daltonization_service import simulate_color_blindness
         corrected = simulate_color_blindness(req.imageB64, req.colorType)
         return {"corrected": corrected}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/ai/remove-background")
+async def remove_background(req: RemoveBackgroundRequest):
+    try:
+        from services.sam_service import remove_background_b64
+        result_b64, confidence = remove_background_b64(req.imageB64)
+        return {"resultB64": result_b64, "confidence": confidence}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
