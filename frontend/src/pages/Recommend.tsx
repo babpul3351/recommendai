@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { theme } from '../styles/theme';
-import { usePageAnimation } from '../hooks/usePageAnimation';
 import { wardrobeAPI, weatherAPI, calendarAPI, recommendationAPI } from '../api/api';
 import { toDateStr } from '../utils/date';
 import { getTpoColor } from '../utils/format';
@@ -72,8 +71,6 @@ interface OutfitInfoH { style?: string; description?: string; }
 interface HistoryRecord { recId: number; tpo: string; retryCount?: number; createdAt: string; outfitDate?: string; temperature?: number; weatherCondition?: string; description?: string; allOutfitGroups?: Record<string, HistoryItem[]>; outfitInfos?: Record<number, OutfitInfoH>; acceptedOutfitIndex?: number; }
 
 function Recommend() {
-    const pageRef = useRef<HTMLDivElement>(null);
-    usePageAnimation(pageRef);
     const today = useMemo(() => new Date(), []);
     const [weather, setWeather] = useState<Weather | null>(null);
     const [weatherUnavailable, setWeatherUnavailable] = useState(false);
@@ -177,21 +174,19 @@ function Recommend() {
     })();
 
     return (
-        <div ref={pageRef} style={{ padding: '70px 36px', maxWidth: 1100, width: '100%' }}>
+        <div style={{ padding: '70px 36px', maxWidth: 1100, width: '100%' }}>
             {/* Header */}
             <div style={{ marginBottom: 28 }}>
-                <div style={{ overflow: 'hidden' }}>
-                    <h1 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 28, color: '#1a1a2e', margin: 0, letterSpacing: '-0.5px' }}>
-                        AI 코디 추천
-                    </h1>
-                </div>
-                <p data-sub style={{ fontFamily: theme.fontFamily.body, fontWeight: 400, fontSize: 14, color: '#888', margin: '6px 0 0' }}>
+                <h1 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 28, color: '#1a1a2e', margin: 0, letterSpacing: '-0.5px' }}>
+                    AI 코디 추천
+                </h1>
+                <p style={{ fontFamily: theme.fontFamily.body, fontWeight: 400, fontSize: 14, color: '#888', margin: '6px 0 0' }}>
                     날씨와 일정을 분석해 최적의 코디를 제안해 드려요
                 </p>
             </div>
 
             {/* Left / Right layout */}
-            <div data-card style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
 
                 {/* LEFT: Weather + Events */}
                 <div style={{ width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -271,7 +266,7 @@ function Recommend() {
                                             return (
                                                 <button key={t.key} onClick={() => setSelectedTpo(t.key)} style={{
                                                     display: 'inline-flex', alignItems: 'center', gap: 8,
-                                                    padding: '10px 18px', borderRadius: 999, cursor: 'pointer', transition: 'all 0.15s',
+                                                    padding: '10px 18px', borderRadius: 999, cursor: 'pointer',
                                                     border: active ? `2px solid ${t.color}` : '1.5px solid #e8ecf0',
                                                     background: active ? `${t.color}18` : '#f5f7fa',
                                                 }}>
@@ -289,7 +284,7 @@ function Recommend() {
                                         <div style={{ display: 'flex', gap: 10 }}>
                                             {[2, 3].map(n => (
                                                 <button key={n} onClick={() => setNumOutfits(n)} style={{
-                                                    flex: 1, padding: '10px', borderRadius: 999, fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
+                                                    flex: 1, padding: '10px', borderRadius: 999, fontSize: 14, fontWeight: 600, cursor: 'pointer',
                                                     border: numOutfits === n ? 'none' : '1.5px solid #e8ecf0',
                                                     background: numOutfits === n ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : '#f5f7fa',
                                                     color: numOutfits === n ? 'white' : '#888', fontFamily: theme.fontFamily.ui,
@@ -306,7 +301,7 @@ function Recommend() {
                                 <div style={{ display: 'flex', gap: 12 }}>
                                     {[2, 3].map(n => (
                                         <button key={n} onClick={() => { setNumOutfits(n); setTpoPromptVisible(true); }} style={{
-                                            flex: 1, padding: '18px', borderRadius: 16, border: 'none', cursor: 'pointer', transition: 'all 0.18s',
+                                            flex: 1, padding: '18px', borderRadius: 16, border: 'none', cursor: 'pointer',
                                             background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)',
                                             color: 'white', fontFamily: theme.fontFamily.ui, fontWeight: 700, fontSize: 15,
                                             boxShadow: '0 4px 16px rgba(113,179,229,0.35)',
@@ -333,7 +328,7 @@ function Recommend() {
                                         return (
                                             <button key={t.key} onClick={() => setSelectedTpo(t.key)} style={{
                                                 display: 'inline-flex', alignItems: 'center', gap: 8,
-                                                padding: '10px 18px', borderRadius: 999, cursor: 'pointer', transition: 'all 0.15s',
+                                                padding: '10px 18px', borderRadius: 999, cursor: 'pointer',
                                                 border: active ? `2px solid ${t.color}` : '1.5px solid #e8ecf0',
                                                 background: active ? `${t.color}18` : '#f5f7fa',
                                             }}>
@@ -389,7 +384,7 @@ function Recommend() {
                                     background: isAccepted ? 'linear-gradient(135deg, #d4eaf9 0%, #f0f7ff 100%)' : 'white',
                                     border: `2px solid ${isAccepted ? '#71b3e5' : '#eaedf2'}`,
                                     borderRadius: 20, overflow: 'hidden',
-                                    opacity: isOtherAccepted ? 0.55 : 1, transition: 'all 0.2s',
+                                    opacity: isOtherAccepted ? 0.55 : 1,
                                 }}>
                                     <div style={{ padding: '24px 28px', borderBottom: '1px solid #eaedf2' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: slots.length > 0 ? 16 : 0 }}>

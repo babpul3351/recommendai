@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { usePageAnimation } from '../hooks/usePageAnimation';
 import { wardrobeAPI, userAPI } from '../api/api';
 import DaltonizedImage from '../components/DaltonizedImage';
 import { ColorType } from '../daltonization';
@@ -29,8 +28,6 @@ interface EditForm {
 }
 
 function Wardrobe() {
-    const pageRef = useRef<HTMLDivElement>(null);
-    usePageAnimation(pageRef);
     const [items, setItems] = useState<WardrobeItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -159,16 +156,14 @@ function Wardrobe() {
     ];
 
     return (
-        <div ref={pageRef} style={{ padding: '70px 36px', maxWidth: 1100, width: '100%' }}>
+        <div style={{ padding: '70px 36px', maxWidth: 1100, width: '100%' }}>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 28 }}>
                 <div>
-                    <div style={{ overflow: 'hidden' }}>
-                        <h1 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 28, color: '#1a1a2e', margin: 0, letterSpacing: '-0.5px' }}>
-                            내 옷장
-                        </h1>
-                    </div>
-                    <p data-sub style={{ fontFamily: theme.fontFamily.body, fontWeight: 400, fontSize: 14, color: '#888', margin: '6px 0 0' }}>
+                    <h1 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 28, color: '#1a1a2e', margin: 0, letterSpacing: '-0.5px' }}>
+                        내 옷장
+                    </h1>
+                    <p style={{ fontFamily: theme.fontFamily.body, fontWeight: 400, fontSize: 14, color: '#888', margin: '6px 0 0' }}>
                         {items.length}개의 아이템이 등록되어 있어요
                     </p>
                 </div>
@@ -180,9 +175,9 @@ function Wardrobe() {
                             </span>
                             <button
                                 onClick={() => setCorrectionEnabled(p => !p)}
-                                style={{ width: 36, height: 20, borderRadius: 10, background: correctionEnabled ? '#71b3e5' : '#ccc', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}
+                                style={{ width: 36, height: 20, borderRadius: 10, background: correctionEnabled ? '#71b3e5' : '#ccc', border: 'none', cursor: 'pointer', position: 'relative' }}
                             >
-                                <div style={{ position: 'absolute', top: 2, left: correctionEnabled ? 18 : 2, width: 16, height: 16, borderRadius: '50%', background: 'white', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+                                <div style={{ position: 'absolute', top: 2, left: correctionEnabled ? 18 : 2, width: 16, height: 16, borderRadius: '50%', background: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
                             </button>
                         </div>
                     )}
@@ -192,7 +187,7 @@ function Wardrobe() {
             {/* Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
                 {statsData.map(({ label, value, color }) => (
-                    <div data-card key={label} style={{ background: 'white', borderRadius: 16, padding: '18px 20px', border: '1px solid #eaedf2', display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div key={label} style={{ background: 'white', borderRadius: 16, padding: '18px 20px', border: '1px solid #eaedf2', display: 'flex', alignItems: 'center', gap: 14 }}>
                         <div style={{ width: 44, height: 44, borderRadius: 12, background: color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             <span style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 18, color }}>{value}</span>
                         </div>
@@ -267,7 +262,6 @@ function Wardrobe() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 16 }}>
                     {filteredItems.map(item => (
                         <div
-                            data-scroll-card
                             key={item.id}
                             className="wardrobe-card"
                             style={{ background: 'white', border: '1px solid #eaedf2', borderRadius: 18, overflow: 'hidden', cursor: 'pointer' }}
