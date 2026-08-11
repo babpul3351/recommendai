@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../api/api';
+import { theme } from '../styles/theme';
 
 const STYLES = ['casual', 'formal', 'business', 'lovely', 'feminine', 'sporty', 'comfort'];
 const STYLE_LABELS: Record<string, string> = {
@@ -11,26 +12,39 @@ const STYLE_LABELS: Record<string, string> = {
 const styles: Record<string, React.CSSProperties> = {
     container: {
         display: 'flex', justifyContent: 'center',
-        alignItems: 'center', minHeight: '100vh', backgroundColor: '#f5f5f5'
+        alignItems: 'center', minHeight: '100vh', backgroundColor: theme.colors.background,
+        fontFamily: theme.fontFamily.body,
     },
     box: {
-        backgroundColor: 'white', padding: '40px', borderRadius: '12px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.1)', width: '360px'
+        backgroundColor: theme.colors.white, padding: '40px', borderRadius: theme.radius.md,
+        boxShadow: '0 4px 20px rgba(113,179,229,0.15)', width: '360px'
     },
-    title: { fontSize: '24px', fontWeight: 'bold', textAlign: 'center', marginBottom: '24px' },
+    title: {
+        fontSize: theme.font.xl, fontWeight: 'bold', textAlign: 'center',
+        marginBottom: '24px', color: theme.colors.text, fontFamily: theme.fontFamily.heading,
+    },
     input: {
         width: '100%', padding: '12px', marginBottom: '12px',
-        borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box'
+        borderRadius: theme.radius.sm, border: `1px solid ${theme.colors.border}`,
+        fontSize: theme.font.md, boxSizing: 'border-box', fontFamily: theme.fontFamily.body,
+        outline: 'none',
     },
-    label: { fontSize: '14px', color: '#555', marginBottom: '8px' },
+    label: { fontSize: theme.font.sm, color: theme.colors.textSub, marginBottom: '8px' },
     styleGrid: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' },
-    styleBtn: { padding: '8px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '13px' },
-    button: {
-        width: '100%', padding: '12px', backgroundColor: '#333', color: 'white',
-        border: 'none', borderRadius: '8px', fontSize: '16px', cursor: 'pointer'
+    styleBtn: {
+        padding: '8px 14px', borderRadius: theme.radius.full,
+        border: 'none', cursor: 'pointer', fontSize: theme.font.sm,
+        fontFamily: theme.fontFamily.body,
     },
-    error: { color: 'red', fontSize: '13px', marginBottom: '8px' },
-    link: { marginTop: '20px', fontSize: '14px', color: '#666', textAlign: 'center' }
+    button: {
+        width: '100%', padding: '12px',
+        background: `linear-gradient(135deg, ${theme.colors.primary}, #5a9fd4)`,
+        color: theme.colors.white, border: 'none', borderRadius: theme.radius.sm,
+        fontSize: theme.font.md, cursor: 'pointer', fontFamily: theme.fontFamily.ui,
+        fontWeight: 600, letterSpacing: '0.5px',
+    },
+    error: { color: theme.colors.danger, fontSize: theme.font.sm, marginBottom: '8px' },
+    link: { marginTop: '20px', fontSize: theme.font.sm, color: theme.colors.textSub, textAlign: 'center' }
 };
 
 interface SignupForm {
@@ -135,8 +149,8 @@ function Signup() {
                             <button key={s} type="button"
                                     style={{
                                         ...styles.styleBtn,
-                                        backgroundColor: form.styles.includes(s) ? '#333' : '#f0f0f0',
-                                        color: form.styles.includes(s) ? 'white' : '#333'
+                                        backgroundColor: form.styles.includes(s) ? theme.colors.primary : '#eef4fa',
+                                        color: form.styles.includes(s) ? theme.colors.white : theme.colors.text,
                                     }}
                                     onClick={() => toggleStyle(s)}
                             >
@@ -150,7 +164,10 @@ function Signup() {
                     </button>
                 </form>
                 <p style={styles.link}>
-                    이미 계정이 있으신가요? <Link to="/login">로그인</Link>
+                    이미 계정이 있으신가요?{' '}
+                    <Link to="/login" style={{ color: theme.colors.primary, fontWeight: 600 }}>
+                        로그인
+                    </Link>
                 </p>
             </div>
         </div>
