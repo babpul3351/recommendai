@@ -63,6 +63,9 @@ public class WardrobeController {
 
         Map analyzed = aiService.analyzeImage(imageB64);
 
+        String style = (String) analyzed.get("style");
+        String styleTags = style != null ? "[\"" + style + "\"]" : null;
+
         WardrobeItemResponse response = wardrobeService.addItem(
                 userDetails.getUsername(),
                 (String) analyzed.get("imageB64"),
@@ -70,7 +73,8 @@ public class WardrobeController {
                 (String) analyzed.get("type"),
                 (String) analyzed.get("color"),
                 (String) analyzed.get("material"),
-                ""
+                "",
+                styleTags
         );
         return ResponseEntity.ok(response);
     }

@@ -32,6 +32,10 @@ public class WardrobeItem {
     @Column(length = 30)
     private String material;
 
+    // 스타일 태그 배열 방식 (예: ["casual","sporty"]) — JSON 문자열로 저장
+    @Column(name = "style_tags", length = 200)
+    private String styleTags;
+
     @Column(name = "image_thumbnail", length = 500)
     private String imageThumbnail;
 

@@ -58,7 +58,8 @@ public class WardrobeService {
     // 옷장 아이템 추가
     @Transactional
     public WardrobeItemResponse addItem(String userId, String imageB64,
-                                        String category, String type, String color, String material, String embedding) {
+                                        String category, String type, String color, String material,
+                                        String embedding, String styleTags) {
 
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("사용자 없음"));
@@ -75,6 +76,7 @@ public class WardrobeService {
                 .itemType(type != null ? type : "")
                 .color(color != null ? color : "")
                 .material(material)
+                .styleTags(styleTags)
                 .imageThumbnail(imageUrl)  // S3 URL 저장
                 .build();
 

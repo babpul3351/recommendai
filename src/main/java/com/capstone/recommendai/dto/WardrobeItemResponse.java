@@ -10,6 +10,7 @@ public class WardrobeItemResponse {
     private String type;
     private String color;
     private String material;
+    private String styleTags;  // JSON 배열 문자열 (예: ["casual","sporty"])
     private String imageUrl;   // S3로 저장 방식 변경하였으므로 imageB64 → imageUrl로 변경
 
     public WardrobeItemResponse(WardrobeItem item) {
@@ -18,6 +19,7 @@ public class WardrobeItemResponse {
         this.type = item.getItemType();
         this.color = item.getColor();
         this.material = item.getMaterial();
+        this.styleTags = item.getStyleTags();
         this.imageUrl = item.getImageThumbnail();  // S3 URL
     }
 }

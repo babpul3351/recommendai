@@ -104,10 +104,18 @@ def analyze_clothing(image_b64: str) -> dict:
     raw = gemini_vision(
         thumb,
         '이 옷을 분석하여 순수 JSON만 출력하세요. 마크다운 없이.\n'
-        '{"category":"상의/하의/아우터/원피스 중 하나","type":"아이템명","color":"색상","material":"소재"}'
+        '{"category":"상의/하의/아우터/원피스 중 하나",'
+        '"type":"아이템명",'
+        '"color":"색상",'
+        '"material":"소재",'
+        '"style":"casual/formal/business/lovely/feminine/sporty/comfort 중 이 옷에 가장 잘 맞는 것 하나만 영어 코드 그대로"}'
     )
     clean = raw.replace("```json", "").replace("```", "").strip()
     result = json.loads(clean)
+
+    VALID_STYLES = {"casual", "formal", "business", "lovely", "feminine", "sporty", "comfort"}
+    if result.get("style") not in VALID_STYLES:
+        result["style"] = None
 
     buf = BytesIO()
     thumb.save(buf, format="JPEG", quality=75)
