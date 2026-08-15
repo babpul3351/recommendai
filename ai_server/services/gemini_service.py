@@ -205,3 +205,44 @@ TPO·날씨·스타일에 맞는 서로 다른 {num_outfits}가지 코디를 구
     while len(outfits) < num_outfits:
         outfits.append(outfits[0].copy() if outfits else {})
     return outfits[:num_outfits]
+
+# ─────────────────────────────────────────────
+# 캘린더 일정 → TPO 자동 분류 (6번 작업)
+# ─────────────────────────────────────────────
+TPO_LIST = ["데이트", "직장", "캐주얼", "운동", "파티", "여행", "일상", "격식"]
+
+TPO_KEYWORD_MAP = {
+    "데이트": ["데이트", "소개팅"],
+    "직장":   ["회의", "미팅", "출근", "업무", "보고", "면접", "회식"],
+    "운동":   ["헬스", "필라테스", "PT", "요가", "런닝", "축구", "수영"],
+    "파티":   ["파티", "생일", "송년회", "회식"],
+    "여행":   ["여행", "휴가", "1박", "2박", "출장"],
+    "격식":   ["결혼식", "장례식", "졸업식", "돌잔치", "면접"],
+}
+
+
+def classify_tpo(event_name: str) -> dict:
+    """
+    일정 제목만으로 TPO(8개 카테고리)를 자동 판별합니다.
+    1) 키워드 규칙(무료) → 2) 미분류 시 Gemini 텍스트 분류(quota 소모) →
+    3) 그마저 실패/불확실하면 기본값("일상"). 사용자가 항상 수동으로
+    고칠 수 있는 드롭다운이 있다는 전제이므로, 실패해도 예외를 던지지 않습니다.
+    """
+    hits = [tpo for tpo, keywords in TPO_KEYWORD_MAP.items() if any(k in event_name for k in keywords)]
+    if hits:
+        return {"tpo": hits[0], "source": "keyword"}
+
+    try:
+        prompt = (
+            f'다음 일정 제목이 아래 8개 카테고리 중 어디에 가장 가까운지 하나만 고르세요.\n'
+            f'카테고리: {", ".join(TPO_LIST)}\n'
+            f'일정 제목: "{event_name}"\n'
+            f'카테고리 이름 하나만 정확히 출력하세요. 다른 설명 없이.'
+        )
+        result = gemini_text(prompt).strip()
+        if result in TPO_LIST:
+            return {"tpo": result, "source": "gemini"}
+    except Exception:
+        pass
+
+    return {"tpo": "일상", "source": "default"}

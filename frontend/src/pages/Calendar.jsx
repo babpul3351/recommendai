@@ -17,6 +17,7 @@ function Calendar() {
     const [popup, setPopup] = useState(null);
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState({ eventName: '', eventDatetime: '', tpoKeyword: '일상' });
+    const [tpoTouched, setTpoTouched] = useState(false);
 
     useEffect(() => { fetchEvents(); fetchOutfits(); }, []);
 
@@ -45,9 +46,19 @@ function Calendar() {
         try {
             await calendarAPI.addEvent(form);
             setForm({ eventName: '', eventDatetime: '', tpoKeyword: '일상' });
+            setTpoTouched(false);
             setShowForm(false);
             await fetchEvents();
         } catch (err) { alert('일정 추가 실패'); }
+    };
+
+    // 일정 이름 입력 후 포커스를 벗어나면 TPO를 자동 추천(사용자가 직접 고른 적 없을 때만)
+    const handleEventNameBlur = async () => {
+        if (!form.eventName || tpoTouched) return;
+        try {
+            const res = await calendarAPI.suggestTpo(form.eventName);
+            if (res.data?.tpo) setForm(f => ({ ...f, tpoKeyword: res.data.tpo }));
+        } catch (err) { /* 추천 실패해도 수동 선택 그대로 유지 */ }
     };
 
     const handleDelete = async (eventId) => {
@@ -149,7 +160,7 @@ function Calendar() {
                         }}>오늘</button>
                         <button style={styles.navBtn} onClick={prevMonth}>‹</button>
                         <button style={styles.navBtn} onClick={nextMonth}>›</button>
-                        <button style={styles.addBtn} onClick={() => { setShowForm(!showForm); setPopup(null); }}>
+                        <button style={styles.addBtn} onClick={() => { setShowForm(!showForm); setPopup(null); setTpoTouched(false); }}>
                             + 일정
                         </button>
                     </div>
@@ -183,12 +194,13 @@ function Calendar() {
                         <p style={styles.formTitle}>새 일정 추가</p>
                         <input style={styles.input} type="text" placeholder="일정 이름"
                                value={form.eventName}
-                               onChange={e => setForm({ ...form, eventName: e.target.value })} />
+                               onChange={e => setForm({ ...form, eventName: e.target.value })}
+                               onBlur={handleEventNameBlur} />
                         <input style={styles.input} type="datetime-local"
                                value={form.eventDatetime}
                                onChange={e => setForm({ ...form, eventDatetime: e.target.value })} />
                         <select style={styles.input} value={form.tpoKeyword}
-                                onChange={e => setForm({ ...form, tpoKeyword: e.target.value })}>
+                                onChange={e => { setForm({ ...form, tpoKeyword: e.target.value }); setTpoTouched(true); }}>
                             {TPO_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                         <div style={{ display: 'flex', gap: '8px' }}>
@@ -280,7 +292,7 @@ function Calendar() {
                             </div>
                             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                 <button style={styles.addEventOnDayBtn}
-                                        onClick={() => setShowForm(true)}>
+                                        onClick={() => { setShowForm(true); setTpoTouched(false); }}>
                                     + 일정 추가
                                 </button>
                                 <button style={styles.closeBtn} onClick={() => setPopup(null)}>✕</button>
@@ -331,12 +343,13 @@ function Calendar() {
                                 <div style={styles.inlineForm}>
                                     <input style={styles.input} type="text" placeholder="일정 이름"
                                            value={form.eventName} autoFocus
-                                           onChange={e => setForm({ ...form, eventName: e.target.value })} />
+                                           onChange={e => setForm({ ...form, eventName: e.target.value })}
+                                           onBlur={handleEventNameBlur} />
                                     <input style={styles.input} type="datetime-local"
                                            value={form.eventDatetime}
                                            onChange={e => setForm({ ...form, eventDatetime: e.target.value })} />
                                     <select style={styles.input} value={form.tpoKeyword}
-                                            onChange={e => setForm({ ...form, tpoKeyword: e.target.value })}>
+                                            onChange={e => { setForm({ ...form, tpoKeyword: e.target.value }); setTpoTouched(true); }}>
                                         {TPO_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
                                     </select>
                                     <div style={{ display: 'flex', gap: '8px' }}>

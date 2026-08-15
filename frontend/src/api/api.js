@@ -38,7 +38,8 @@ export const authAPI = {
 export const calendarAPI = {
     getEvents: () => api.get('/calendar'),
     addEvent: (data) => api.post('/calendar', data),
-    deleteEvent: (eventId) => api.delete(`/calendar/${eventId}`)
+    deleteEvent: (eventId) => api.delete(`/calendar/${eventId}`),
+    suggestTpo: (eventName) => api.get('/calendar/suggest-tpo', { params: { eventName } })
 };
 
 export const userAPI = {

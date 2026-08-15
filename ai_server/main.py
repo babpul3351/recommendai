@@ -65,6 +65,10 @@ class DaltonizeRequest(BaseModel):
     imageB64: str
     colorType: str
 
+# [신규] 캘린더 TPO 자동 분류 요청 모델
+class ClassifyTpoRequest(BaseModel):
+    eventName: str
+
 # ─────────────────────────────────────────────
 # 헬스 체크
 # ─────────────────────────────────────────────
@@ -183,3 +187,12 @@ async def daltonize(req: DaltonizeRequest):
         return {"corrected": corrected}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# ─────────────────────────────────────────────
+# [신규] 캘린더 일정 → TPO 자동 분류
+# Spring Boot(CalendarController.suggestTpo)가 이 엔드포인트를 호출합니다.
+# ─────────────────────────────────────────────
+@app.post("/ai/classify-tpo")
+async def classify_tpo_endpoint(req: ClassifyTpoRequest):
+    from services.gemini_service import classify_tpo
+    return classify_tpo(req.eventName)

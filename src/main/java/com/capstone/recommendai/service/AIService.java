@@ -49,6 +49,15 @@ public class AIService {
     }
 
     // ─────────────────────────────────────────────
+    // [신규] 캘린더 일정 → TPO 자동 분류 (6번 작업)
+    // ─────────────────────────────────────────────
+    public Map classifyTpo(String eventName) {
+        Map<String, String> body = new HashMap<>();
+        body.put("eventName", eventName);
+        return restTemplate.postForObject(aiServerUrl + "/ai/classify-tpo", body, Map.class);
+    }
+
+    // ─────────────────────────────────────────────
     // [신규] ChromaDB 임베딩 등록
     // 옷장 아이템 저장 직후 호출 (WardrobeService.addItem)
     // ─────────────────────────────────────────────
