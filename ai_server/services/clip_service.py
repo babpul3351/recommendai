@@ -74,6 +74,38 @@ def get_image_embedding(pil_img):
     return feat.tolist()
 
 
+STYLE_KO_TO_CODE = {
+    "캐주얼": "casual", "포멀": "formal", "비즈니스": "business",
+    "러블리": "lovely", "페미닌": "feminine", "스포티": "sporty",
+    "편안": "comfort", "베이직": "comfort",
+}
+
+
+def _style_matches(outfit_style: str, style_tags_json: str) -> bool:
+    """옷의 style_tags(JSON 배열 문자열)에 코디의 style이 포함되는지 확인합니다."""
+    if not style_tags_json:
+        return False
+    try:
+        tags = json.loads(style_tags_json)
+    except (json.JSONDecodeError, TypeError):
+        return False
+    key = (outfit_style or "").strip()
+    code = STYLE_KO_TO_CODE.get(key, key.lower())
+    return code in tags
+
+
+def _filter_by_style(candidates: list, outfit_style: str) -> list:
+    """
+    [실험 A: 포함/폴백 방식]
+    style_tags가 없는(비어있는) 옷은 스타일이 안 맞아도 후보에 포함시킵니다.
+    (스타일 태그가 아직 없는 기존 옷도 매칭 기회를 잃지 않도록 하는 방식)
+    """
+    return [
+        w for w in candidates
+        if not w.get("styleTags") or _style_matches(outfit_style, w.get("styleTags"))
+    ]
+
+
 def _empty_slot_result(cat: str, slot: dict) -> dict:
     """
     선택지 B — 실제 매칭되는 옷이 없을 때, Gemini가 생성한 설명만 담아 반환합니다.
@@ -93,6 +125,7 @@ def _empty_slot_result(cat: str, slot: dict) -> dict:
 
 def match_wardrobe(outfit: dict, wardrobe_items: list) -> list:
     matched = []
+    outfit_style = outfit.get("style", "")
     cat_map = {
         "top":    "상의",
         "bottom": "하의",
@@ -136,6 +169,12 @@ def match_wardrobe(outfit: dict, wardrobe_items: list) -> list:
             # 해당 카테고리에 등록된 옷이 아예 없음 → 선택지 B
             matched.append(_empty_slot_result(cat, slot))
             continue
+
+        style_candidates = _filter_by_style(candidates, outfit_style)
+        if style_candidates:
+            candidates = style_candidates
+        # style_candidates가 비어있으면(스타일 맞는 옷이 하나도 없으면) 카테고리 폴백으로
+        # 원래 candidates(카테고리만 일치)를 그대로 사용합니다.
 
         allowed_ids = {str(w["id"]) for w in candidates}
 

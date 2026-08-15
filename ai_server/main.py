@@ -39,6 +39,7 @@ class WardrobeItemData(BaseModel):
     imageB64: Optional[str] = ""
     imageUrl: Optional[str] = ""
     embedding: Optional[str] = ""
+    styleTags: Optional[str] = ""
 
 class RecommendRequest(BaseModel):
     tpo: str
