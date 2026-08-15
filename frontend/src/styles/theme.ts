@@ -20,11 +20,6 @@ export const theme = {
         xl: '24px',
         full: '999px',
     },
-    fontFamily: {
-        heading: 'Hahmlet, sans-serif',
-        ui:      'Kedebideri, sans-serif',
-        body:    'Inter, sans-serif',
-    },
     font: {
         xs: '11px',
         sm: '13px',

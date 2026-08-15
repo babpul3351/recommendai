@@ -49,10 +49,10 @@ function WeekView({ weekDays, weekLabel, events, outfits, onPrevWeek, onNextWeek
                     {[{ fn: onPrevWeek, ch: '‹' }, { fn: onNextWeek, ch: '›' }].map(({ fn, ch }) => (
                         <button key={ch} onClick={fn} style={{ ...btnBase, width: 30, height: 30, background: '#f5f7fa', borderRadius: 8, fontSize: 17, color: '#666' }}>{ch}</button>
                     ))}
-                    <span style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 16, color: '#1a1a2e' }}>{weekLabel}</span>
-                    <button onClick={onGoToToday} style={{ background: 'rgba(113,179,229,0.12)', border: 'none', borderRadius: 8, padding: '4px 10px', cursor: 'pointer', fontFamily: theme.fontFamily.ui, fontSize: 11, color: '#71b3e5', fontWeight: 600 }}>오늘</button>
+                    <span style={{  fontWeight: 700, fontSize: 16, color: '#1a1a2e' }}>{weekLabel}</span>
+                    <button onClick={onGoToToday} style={{ background: 'rgba(113,179,229,0.12)', border: 'none', borderRadius: 8, padding: '4px 10px', cursor: 'pointer',  fontSize: 11, color: '#71b3e5', fontWeight: 600 }}>오늘</button>
                 </div>
-                <button onClick={onOpenAddForm} style={{ background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)', border: 'none', borderRadius: 10, padding: '9px 16px', cursor: 'pointer', fontFamily: theme.fontFamily.ui, fontWeight: 700, fontSize: 13, color: 'white', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <button onClick={onOpenAddForm} style={{ background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)', border: 'none', borderRadius: 10, padding: '9px 16px', cursor: 'pointer',  fontWeight: 700, fontSize: 13, color: 'white', display: 'flex', alignItems: 'center', gap: 5 }}>
                     + 일정 추가
                 </button>
             </div>
@@ -67,11 +67,11 @@ function WeekView({ weekDays, weekLabel, events, outfits, onPrevWeek, onNextWeek
                     const outfitsOnDay = getOutfitsOnDay(day);
                     return (
                         <div key={i} style={{ textAlign: 'center', padding: '10px 4px 8px', borderRight: i < 6 ? '1px solid #eaedf2' : 'none' }}>
-                            <p style={{ fontFamily: theme.fontFamily.body, fontWeight: 600, fontSize: 10, margin: 0, letterSpacing: '0.07em', color: isTod ? '#71b3e5' : dow === 0 ? '#e74c3c' : dow === 6 ? '#3498db' : '#aaa' }}>
+                            <p style={{  fontWeight: 600, fontSize: 10, margin: 0, letterSpacing: '0.07em', color: isTod ? '#71b3e5' : dow === 0 ? '#e74c3c' : dow === 6 ? '#3498db' : '#aaa' }}>
                                 {DAY_EN[dow]}
                             </p>
                             <div style={{ width: 30, height: 30, borderRadius: '50%', margin: '3px auto 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: isTod ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : 'transparent' }}>
-                                <span style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 17, color: isTod ? 'white' : dow === 0 ? '#e74c3c' : dow === 6 ? '#3498db' : '#1a1a2e' }}>{day.getDate()}</span>
+                                <span style={{  fontWeight: 700, fontSize: 17, color: isTod ? 'white' : dow === 0 ? '#e74c3c' : dow === 6 ? '#3498db' : '#1a1a2e' }}>{day.getDate()}</span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'center', gap: 3, minHeight: 8 }}>
                                 {evtsOnDay.slice(0, 3).map((ev, ei) => (
@@ -91,7 +91,7 @@ function WeekView({ weekDays, weekLabel, events, outfits, onPrevWeek, onNextWeek
                     <div style={{ borderRight: '1px solid #eaedf2' }}>
                         {hours.map(h => (
                             <div key={h} style={{ height: HOUR_H, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end', paddingRight: 8, paddingTop: 5, borderBottom: '1px solid #f8f9fc' }}>
-                                <span style={{ fontFamily: theme.fontFamily.body, fontSize: 9, color: '#ccc', whiteSpace: 'nowrap' }}>{String(h).padStart(2, '0')}:00</span>
+                                <span style={{  fontSize: 9, color: '#ccc', whiteSpace: 'nowrap' }}>{String(h).padStart(2, '0')}:00</span>
                             </div>
                         ))}
                     </div>
@@ -123,15 +123,15 @@ function WeekView({ weekDays, weekLabel, events, outfits, onPrevWeek, onNextWeek
                                             cursor: 'pointer', transition: 'opacity 0.15s',
                                             zIndex: ei + 1,
                                         }}>
-                                            <p style={{ fontFamily: theme.fontFamily.ui, fontWeight: 700, fontSize: 11, color, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{evt.eventName}</p>
-                                            <p style={{ fontFamily: theme.fontFamily.body, fontSize: 10, color: '#999', margin: '4px 0 0' }}>{timeStr}</p>
+                                            <p style={{  fontWeight: 700, fontSize: 11, color, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{evt.eventName}</p>
+                                            <p style={{  fontSize: 10, color: '#999', margin: '4px 0 0' }}>{timeStr}</p>
                                         </div>
                                     );
                                 })}
                                 {dayOutfits.length > 0 && (
                                     <div style={{ position: 'absolute', bottom: 6, right: 4, background: 'rgba(230,37,198,0.1)', borderRadius: 6, padding: '2px 7px', pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
                                         <WardrobeIcon color="#e625c6" size={11} />
-                                        <span style={{ fontSize: 10, color: '#e625c6', fontFamily: theme.fontFamily.ui, fontWeight: 600 }}>코디</span>
+                                        <span style={{ fontSize: 10, color: '#e625c6',  fontWeight: 600 }}>코디</span>
                                     </div>
                                 )}
                             </div>

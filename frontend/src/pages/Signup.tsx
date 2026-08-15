@@ -13,7 +13,7 @@ const styles: Record<string, React.CSSProperties> = {
     container: {
         display: 'flex', justifyContent: 'center',
         alignItems: 'center', minHeight: '100vh', backgroundColor: theme.colors.background,
-        fontFamily: theme.fontFamily.body,
+        
     },
     box: {
         backgroundColor: theme.colors.white, padding: '40px', borderRadius: theme.radius.md,
@@ -21,12 +21,12 @@ const styles: Record<string, React.CSSProperties> = {
     },
     title: {
         fontSize: theme.font.xl, fontWeight: 'bold', textAlign: 'center',
-        marginBottom: '24px', color: theme.colors.text, fontFamily: theme.fontFamily.heading,
+        marginBottom: '24px', color: theme.colors.text, 
     },
     input: {
         width: '100%', padding: '12px', marginBottom: '12px',
         borderRadius: theme.radius.sm, border: `1px solid ${theme.colors.border}`,
-        fontSize: theme.font.md, boxSizing: 'border-box', fontFamily: theme.fontFamily.body,
+        fontSize: theme.font.md, boxSizing: 'border-box', 
         outline: 'none',
     },
     label: { fontSize: theme.font.sm, color: theme.colors.textSub, marginBottom: '8px' },
@@ -34,13 +34,13 @@ const styles: Record<string, React.CSSProperties> = {
     styleBtn: {
         padding: '8px 14px', borderRadius: theme.radius.full,
         border: 'none', cursor: 'pointer', fontSize: theme.font.sm,
-        fontFamily: theme.fontFamily.body,
+        
     },
     button: {
         width: '100%', padding: '12px',
         background: `linear-gradient(135deg, ${theme.colors.primary}, #5a9fd4)`,
         color: theme.colors.white, border: 'none', borderRadius: theme.radius.sm,
-        fontSize: theme.font.md, cursor: 'pointer', fontFamily: theme.fontFamily.ui,
+        fontSize: theme.font.md, cursor: 'pointer', 
         fontWeight: 600, letterSpacing: '0.5px',
     },
     error: { color: theme.colors.danger, fontSize: theme.font.sm, marginBottom: '8px' },

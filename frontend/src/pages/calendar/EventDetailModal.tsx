@@ -20,15 +20,15 @@ function EventDetailModal({ event, onClose, onDelete }: Props) {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <div style={{ width: 10, height: 10, borderRadius: 3, background: TPO_COLORS[event.tpoKeyword] || '#71b3e5' }} />
-                        <span style={{ fontFamily: theme.fontFamily.ui, fontWeight: 700, fontSize: 11, color: TPO_COLORS[event.tpoKeyword] || '#71b3e5' }}>{event.tpoKeyword}</span>
+                        <span style={{  fontWeight: 700, fontSize: 11, color: TPO_COLORS[event.tpoKeyword] || '#71b3e5' }}>{event.tpoKeyword}</span>
                     </div>
                     <button onClick={onClose} style={{ ...btnBase, fontSize: 18, color: '#aaa' }}>✕</button>
                 </div>
-                <h3 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 18, color: '#1a1a2e', margin: '0 0 8px' }}>{event.eventName}</h3>
-                <p style={{ fontFamily: theme.fontFamily.body, fontSize: 13, color: '#888', margin: '0 0 20px' }}>
+                <h3 style={{  fontWeight: 700, fontSize: 18, color: '#1a1a2e', margin: '0 0 8px' }}>{event.eventName}</h3>
+                <p style={{  fontSize: 13, color: '#888', margin: '0 0 20px' }}>
                     {dayjs(event.eventDatetime).format('YYYY년 M월 D일 (ddd) HH:mm')}
                 </p>
-                <button onClick={() => onDelete(event.eventId)} style={{ width: '100%', padding: 11, background: 'none', border: '1.5px solid #ffcdd2', borderRadius: 10, color: '#e57373', cursor: 'pointer', fontFamily: theme.fontFamily.ui, fontWeight: 600, fontSize: 13 }}>
+                <button onClick={() => onDelete(event.eventId)} style={{ width: '100%', padding: 11, background: 'none', border: '1.5px solid #ffcdd2', borderRadius: 10, color: '#e57373', cursor: 'pointer',  fontWeight: 600, fontSize: 13 }}>
                     삭제
                 </button>
             </div>

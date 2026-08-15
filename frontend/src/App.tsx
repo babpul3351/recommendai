@@ -35,14 +35,14 @@ function AuthLayout() {
 
     if (isHome) {
         return (
-            <div style={{ minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
+            <div style={{ minHeight: '100vh' }}>
                 <Outlet />
             </div>
         );
     }
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f7fa', fontFamily: 'Inter, sans-serif' }}>
+        <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f7fa' }}>
             <Navbar />
             <main style={{ flex: 1, overflowY: 'auto', minHeight: '100vh' }}>
                 <Outlet />

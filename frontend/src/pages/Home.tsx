@@ -289,7 +289,7 @@ function Home() {
                     ] as { label: string; fn: () => void }[]).map(({ label, fn }) => (
                         <button key={label} onClick={fn} style={{
                             background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
-                            fontFamily: theme.fontFamily.body, fontWeight: 600, fontSize: 11,
+                             fontWeight: 600, fontSize: 11,
                             color: '#666', letterSpacing: '0.09em',
                             transition: 'color 0.2s',
                         }}
@@ -320,7 +320,7 @@ function Home() {
                                 transition: 'width 0.3s ease, background 0.3s ease',
                             }} />
                             <span style={{
-                                fontFamily: theme.fontFamily.body, fontWeight: 700, fontSize: 8,
+                                 fontWeight: 700, fontSize: 8,
                                 color: active ? '#1a1a2e' : 'transparent',
                                 letterSpacing: '0.1em', whiteSpace: 'nowrap',
                                 transition: 'color 0.3s ease',
@@ -347,21 +347,21 @@ function Home() {
                     {/* Left */}
                     <div>
                         <p style={{
-                            fontFamily: theme.fontFamily.body, fontWeight: 600, fontSize: 11,
+                             fontWeight: 600, fontSize: 11,
                             color: heroSubColor, letterSpacing: '0.12em', textTransform: 'uppercase', margin: '0 0 20px',
                         }}>
                             {todayLabel}
                             {weather && <span style={{ marginLeft: 14 }}>{Math.round(weather.temp)}℃ · {weather.desc}</span>}
                         </p>
                         <h1 style={{
-                            fontFamily: theme.fontFamily.heading, fontWeight: 700,
+                             fontWeight: 700,
                             fontSize: 52, lineHeight: 1.15, color: heroTextColor,
                             margin: '0 0 24px', letterSpacing: '-1px',
                         }}>
                             안녕하세요,<br />{nickname}님
                         </h1>
                         <p style={{
-                            fontFamily: theme.fontFamily.body, fontWeight: 400, fontSize: 19,
+                             fontWeight: 400, fontSize: 19,
                             color: heroSubColor, margin: '0 0 44px', lineHeight: 1.65,
                         }}>
                             {weather
@@ -372,7 +372,7 @@ function Home() {
                             <button onClick={() => scrollTo('weather')} style={{
                                 background: 'white', border: 'none', borderRadius: 999,
                                 padding: '16px 36px', cursor: 'pointer',
-                                fontFamily: theme.fontFamily.ui, fontWeight: 700, fontSize: 15,
+                                 fontWeight: 700, fontSize: 15,
                                 color: '#71b3e5', boxShadow: '0 8px 32px rgba(0,0,0,0.14)',
                             }}>
                                 오늘의 코디 확인하기 ↓
@@ -382,7 +382,7 @@ function Home() {
                                     background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)',
                                     border: '1.5px solid rgba(255,255,255,0.45)', borderRadius: 999,
                                     padding: '16px 28px', cursor: 'pointer',
-                                    fontFamily: theme.fontFamily.ui, fontWeight: 600, fontSize: 14,
+                                     fontWeight: 600, fontSize: 14,
                                     color: heroTextColor,
                                 }}>
                                     {todayEvents[0].eventName} 코디
@@ -410,10 +410,10 @@ function Home() {
                             }}>
                                 <WeatherIcon desc={weather.desc} size={34} />
                                 <div>
-                                    <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 24, color: '#1a1a2e', margin: 0 }}>
+                                    <p style={{  fontWeight: 700, fontSize: 24, color: '#1a1a2e', margin: 0 }}>
                                         {Math.round(weather.temp)}℃
                                     </p>
-                                    <p style={{ fontFamily: theme.fontFamily.body, fontSize: 12, color: '#888', margin: '2px 0 0' }}>
+                                    <p style={{  fontSize: 12, color: '#888', margin: '2px 0 0' }}>
                                         {weather.city}
                                     </p>
                                 </div>
@@ -426,20 +426,20 @@ function Home() {
             {/* ── 01 WEATHER ───────────────────────────────────────────────── */}
             <section ref={weatherSecRef} style={{ padding: '100px 80px 100px 120px', background: 'white' }}>
                 <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-                    <p data-animate style={{ fontFamily: theme.fontFamily.body, fontWeight: 700, fontSize: 10, color: '#71b3e5', letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 16px' }}>
+                    <p data-animate style={{  fontWeight: 700, fontSize: 10, color: '#71b3e5', letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 16px' }}>
                         01 WEATHER
                     </p>
                     {weather ? (
                         <div data-animate style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 72, alignItems: 'center' }}>
                             <div style={{ textAlign: 'center' }}>
                                 <WeatherIcon desc={weather.desc} size={96} />
-                                <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 72, color: '#1a1a2e', margin: '12px 0 0', lineHeight: 1 }}>
+                                <p style={{  fontWeight: 700, fontSize: 72, color: '#1a1a2e', margin: '12px 0 0', lineHeight: 1 }}>
                                     {Math.round(weather.temp)}<span style={{ fontSize: 36 }}>℃</span>
                                 </p>
-                                <p style={{ fontFamily: theme.fontFamily.body, fontSize: 16, color: '#888', margin: '8px 0 0' }}>{weather.desc}</p>
+                                <p style={{  fontSize: 16, color: '#888', margin: '8px 0 0' }}>{weather.desc}</p>
                             </div>
                             <div>
-                                <h2 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 36, color: '#1a1a2e', lineHeight: 1.3, margin: '0 0 32px' }}>
+                                <h2 style={{  fontWeight: 700, fontSize: 36, color: '#1a1a2e', lineHeight: 1.3, margin: '0 0 32px' }}>
                                     {getWeatherMessage(weather.temp, weather.desc)}
                                 </h2>
                                 <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
@@ -450,15 +450,15 @@ function Home() {
                                         { label: '습도', val: weather.humidity  != null ? `${weather.humidity}%`               : '-' },
                                     ].map(({ label, val }) => (
                                         <div key={label} style={{ background: '#f5f7fa', borderRadius: 16, padding: '18px 28px', minWidth: 88 }}>
-                                            <p style={{ fontFamily: theme.fontFamily.body, fontSize: 11, color: '#aaa', margin: 0 }}>{label}</p>
-                                            <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 22, color: '#1a1a2e', margin: '6px 0 0' }}>{val}</p>
+                                            <p style={{  fontSize: 11, color: '#aaa', margin: 0 }}>{label}</p>
+                                            <p style={{  fontWeight: 700, fontSize: 22, color: '#1a1a2e', margin: '6px 0 0' }}>{val}</p>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         </div>
                     ) : (
-                        <p data-animate style={{ fontFamily: theme.fontFamily.body, fontSize: 16, color: '#aaa' }}>날씨 정보를 불러오는 중이에요...</p>
+                        <p data-animate style={{  fontSize: 16, color: '#aaa' }}>날씨 정보를 불러오는 중이에요...</p>
                     )}
                 </div>
             </section>
@@ -466,14 +466,14 @@ function Home() {
             {/* ── 02 TPO ───────────────────────────────────────────────────── */}
             <section ref={tpoRef} style={{ padding: '100px 80px 100px 120px', background: '#f5f7fa' }}>
                 <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-                    <p data-animate style={{ fontFamily: theme.fontFamily.body, fontWeight: 700, fontSize: 10, color: '#71b3e5', letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 16px' }}>
+                    <p data-animate style={{  fontWeight: 700, fontSize: 10, color: '#71b3e5', letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 16px' }}>
                         02 TPO
                     </p>
-                    <h2 data-animate style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 40, color: '#1a1a2e', margin: '0 0 14px' }}>
+                    <h2 data-animate style={{  fontWeight: 700, fontSize: 40, color: '#1a1a2e', margin: '0 0 14px' }}>
                         오늘은 어디에 가나요?
                     </h2>
                     {todayEvents.length > 0 && (
-                        <p data-animate style={{ fontFamily: theme.fontFamily.body, fontSize: 15, color: '#888', margin: '0 0 40px' }}>
+                        <p data-animate style={{  fontSize: 15, color: '#888', margin: '0 0 40px' }}>
                             오늘 일정: {todayEvents.map(e => e.eventName).join(', ')}
                         </p>
                     )}
@@ -490,7 +490,7 @@ function Home() {
                                 }}>
                                     <TpoIcon tpo={key} color={active ? color : '#bbb'} size={20} />
                                     <span style={{
-                                        fontFamily: theme.fontFamily.ui,
+                                        
                                         fontWeight: active ? 700 : 500, fontSize: 15,
                                         color: active ? color : '#666',
                                     }}>{key}</span>
@@ -502,7 +502,7 @@ function Home() {
                         background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)',
                         border: 'none', borderRadius: 999,
                         padding: '18px 48px', cursor: 'pointer',
-                        fontFamily: theme.fontFamily.ui, fontWeight: 700, fontSize: 16,
+                         fontWeight: 700, fontSize: 16,
                         color: 'white', boxShadow: '0 8px 28px rgba(113,179,229,0.4)',
                         display: 'inline-flex', alignItems: 'center', gap: 10,
                     }}>
@@ -515,10 +515,10 @@ function Home() {
             {/* ── 03 RECOMMENDATION ────────────────────────────────────────── */}
             <section ref={recommendRef} style={{ padding: '100px 80px 100px 120px', background: 'white' }}>
                 <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-                    <p data-animate style={{ fontFamily: theme.fontFamily.body, fontWeight: 700, fontSize: 10, color: '#71b3e5', letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 16px' }}>
+                    <p data-animate style={{  fontWeight: 700, fontSize: 10, color: '#71b3e5', letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 16px' }}>
                         03 RECOMMENDATION
                     </p>
-                    <h2 data-animate style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 40, color: '#1a1a2e', margin: '0 0 56px' }}>
+                    <h2 data-animate style={{  fontWeight: 700, fontSize: 40, color: '#1a1a2e', margin: '0 0 56px' }}>
                         AI 분석 과정
                     </h2>
 
@@ -543,11 +543,11 @@ function Home() {
                                     }}>
                                         {done
                                             ? <CheckIcon color="white" size={18} />
-                                            : <span style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 14, color: '#bbb' }}>{i + 1}</span>
+                                            : <span style={{  fontWeight: 700, fontSize: 14, color: '#bbb' }}>{i + 1}</span>
                                         }
                                     </div>
                                     <span style={{
-                                        fontFamily: theme.fontFamily.ui,
+                                        
                                         fontWeight: done ? 600 : 400, fontSize: 17,
                                         color: done ? '#1a1a2e' : '#bbb',
                                         transition: 'color 0.3s ease',
@@ -567,7 +567,7 @@ function Home() {
                             textAlign: 'center', border: '2px dashed #dde3ea',
                         }}>
                             <SparkleIcon color="#ccc" size={52} />
-                            <p style={{ fontFamily: theme.fontFamily.ui, fontSize: 16, color: '#ccc', margin: '16px 0 0' }}>
+                            <p style={{  fontSize: 16, color: '#ccc', margin: '16px 0 0' }}>
                                 위에서 TPO를 선택하고 추천받기를 눌러보세요
                             </p>
                         </div>
@@ -582,8 +582,8 @@ function Home() {
                                     <SparkleIcon color="white" size={22} />
                                 </div>
                                 <div>
-                                    <p style={{ fontFamily: theme.fontFamily.body, fontWeight: 700, fontSize: 11, color: '#71b3e5', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>오늘의 추천 코디</p>
-                                    <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 22, color: '#1a1a2e', margin: '4px 0 0' }}>{selectedTpo} 스타일</p>
+                                    <p style={{  fontWeight: 700, fontSize: 11, color: '#71b3e5', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>오늘의 추천 코디</p>
+                                    <p style={{  fontWeight: 700, fontSize: 22, color: '#1a1a2e', margin: '4px 0 0' }}>{selectedTpo} 스타일</p>
                                 </div>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 16, marginBottom: 28 }}>
@@ -595,15 +595,15 @@ function Home() {
                                                 : <WardrobeIcon color="#71b3e5" size={36} />
                                             }
                                         </div>
-                                        <p style={{ fontFamily: theme.fontFamily.body, fontWeight: 700, fontSize: 10, color: '#71b3e5', margin: '0 0 4px', textTransform: 'uppercase' }}>{label}</p>
-                                        <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 600, fontSize: 14, color: '#1a1a2e', margin: 0 }}>{item?.type}</p>
-                                        {item?.color && <p style={{ fontFamily: theme.fontFamily.body, fontSize: 11, color: '#aaa', margin: '4px 0 0' }}>{item.color}</p>}
+                                        <p style={{  fontWeight: 700, fontSize: 10, color: '#71b3e5', margin: '0 0 4px', textTransform: 'uppercase' }}>{label}</p>
+                                        <p style={{  fontWeight: 600, fontSize: 14, color: '#1a1a2e', margin: 0 }}>{item?.type}</p>
+                                        {item?.color && <p style={{  fontSize: 11, color: '#aaa', margin: '4px 0 0' }}>{item.color}</p>}
                                     </div>
                                 ))}
                             </div>
                             {recommendation.outfit?.description && (
                                 <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 16, padding: '20px 24px', borderLeft: '3px solid #71b3e5', marginBottom: 24 }}>
-                                    <p style={{ fontFamily: theme.fontFamily.ui, fontSize: 14, color: '#555', lineHeight: 1.7, margin: 0 }}>
+                                    <p style={{  fontSize: 14, color: '#555', lineHeight: 1.7, margin: 0 }}>
                                         "{recommendation.outfit.description}"
                                     </p>
                                 </div>
@@ -612,13 +612,13 @@ function Home() {
                                 <button onClick={() => navigate('/wardrobe')} style={{
                                     flex: 1, padding: '14px', background: 'white',
                                     border: '1.5px solid rgba(113,179,229,0.4)', borderRadius: 14,
-                                    fontFamily: theme.fontFamily.ui, fontWeight: 600, fontSize: 14,
+                                     fontWeight: 600, fontSize: 14,
                                     color: '#71b3e5', cursor: 'pointer',
                                 }}>내 옷장에 추가하기 →</button>
                                 <button onClick={() => navigate('/calendar')} style={{
                                     flex: 1, padding: '14px', background: 'white',
                                     border: '1.5px solid rgba(113,179,229,0.4)', borderRadius: 14,
-                                    fontFamily: theme.fontFamily.ui, fontWeight: 600, fontSize: 14,
+                                     fontWeight: 600, fontSize: 14,
                                     color: '#71b3e5', cursor: 'pointer',
                                 }}>캘린더에 저장하기 →</button>
                             </div>
@@ -633,13 +633,13 @@ function Home() {
                     <img src="/img/pexels-ron-lach-8346040.jpg" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div style={{ position: 'relative', maxWidth: 1100, margin: '0 auto' }}>
-                    <p data-animate style={{ fontFamily: theme.fontFamily.body, fontWeight: 700, fontSize: 10, color: '#71b3e5', letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 16px' }}>
+                    <p data-animate style={{  fontWeight: 700, fontSize: 10, color: '#71b3e5', letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 16px' }}>
                         04 CLOSET
                     </p>
-                    <h2 data-animate style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 40, color: 'white', margin: '0 0 16px', lineHeight: 1.3 }}>
+                    <h2 data-animate style={{  fontWeight: 700, fontSize: 40, color: 'white', margin: '0 0 16px', lineHeight: 1.3 }}>
                         새 옷을 사지 않아도<br />내 옷장 안에서<br />오늘의 답을 찾을 수 있어요.
                     </h2>
-                    <p data-animate style={{ fontFamily: theme.fontFamily.body, fontSize: 16, color: 'rgba(255,255,255,0.55)', margin: '0 0 48px', lineHeight: 1.7 }}>
+                    <p data-animate style={{  fontSize: 16, color: 'rgba(255,255,255,0.55)', margin: '0 0 48px', lineHeight: 1.7 }}>
                         AI가 내 옷장 속 아이템을 분석해 최적의 조합을 찾아드려요.
                     </p>
 
@@ -658,8 +658,8 @@ function Home() {
                                         }
                                     </div>
                                     <div style={{ padding: '12px 14px' }}>
-                                        <p style={{ fontFamily: theme.fontFamily.body, fontWeight: 600, fontSize: 10, color: '#71b3e5', margin: 0, textTransform: 'uppercase' }}>{item.category}</p>
-                                        <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 600, fontSize: 13, color: 'white', margin: '4px 0 0' }}>{item.type || '아이템'}</p>
+                                        <p style={{  fontWeight: 600, fontSize: 10, color: '#71b3e5', margin: 0, textTransform: 'uppercase' }}>{item.category}</p>
+                                        <p style={{  fontWeight: 600, fontSize: 13, color: 'white', margin: '4px 0 0' }}>{item.type || '아이템'}</p>
                                     </div>
                                 </div>
                             ))}
@@ -667,7 +667,7 @@ function Home() {
                     ) : (
                         <div data-animate style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 20, padding: '48px', textAlign: 'center', marginBottom: 48, border: '1px dashed rgba(255,255,255,0.15)' }}>
                             <WardrobeIcon color="rgba(255,255,255,0.2)" size={56} />
-                            <p style={{ fontFamily: theme.fontFamily.ui, fontSize: 15, color: 'rgba(255,255,255,0.35)', margin: '16px 0 0' }}>
+                            <p style={{  fontSize: 15, color: 'rgba(255,255,255,0.35)', margin: '16px 0 0' }}>
                                 아직 등록된 옷이 없어요
                             </p>
                         </div>
@@ -676,7 +676,7 @@ function Home() {
                     <button data-animate onClick={() => navigate('/wardrobe')} style={{
                         background: '#71b3e5', border: 'none', borderRadius: 999,
                         padding: '16px 36px', cursor: 'pointer',
-                        fontFamily: theme.fontFamily.ui, fontWeight: 700, fontSize: 15,
+                         fontWeight: 700, fontSize: 15,
                         color: 'white', boxShadow: '0 8px 24px rgba(113,179,229,0.4)',
                     }}>
                         내 옷장에 추가하기 →
@@ -687,13 +687,13 @@ function Home() {
             {/* ── 05 CALENDAR ──────────────────────────────────────────────── */}
             <section ref={calendarSecRef} style={{ padding: '100px 80px 100px 120px', background: '#f5f7fa' }}>
                 <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-                    <p data-animate style={{ fontFamily: theme.fontFamily.body, fontWeight: 700, fontSize: 10, color: '#71b3e5', letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 16px' }}>
+                    <p data-animate style={{  fontWeight: 700, fontSize: 10, color: '#71b3e5', letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 16px' }}>
                         05 CALENDAR
                     </p>
-                    <h2 data-animate style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 40, color: '#1a1a2e', margin: '0 0 16px', lineHeight: 1.3 }}>
+                    <h2 data-animate style={{  fontWeight: 700, fontSize: 40, color: '#1a1a2e', margin: '0 0 16px', lineHeight: 1.3 }}>
                         좋았던 코디는<br />다시 꺼내 입을 수 있도록<br />기록해요.
                     </h2>
-                    <p data-animate style={{ fontFamily: theme.fontFamily.body, fontSize: 16, color: '#888', margin: '0 0 56px', lineHeight: 1.7 }}>
+                    <p data-animate style={{  fontSize: 16, color: '#888', margin: '0 0 56px', lineHeight: 1.7 }}>
                         날짜별 코디를 기록하고 언제든 꺼내볼 수 있어요.
                     </p>
 
@@ -718,11 +718,11 @@ function Home() {
                                         <div style={{ padding: '16px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                                                 <CalendarIcon color="#71b3e5" size={14} />
-                                                <span style={{ fontFamily: theme.fontFamily.body, fontWeight: 600, fontSize: 12, color: '#71b3e5' }}>{label}</span>
+                                                <span style={{  fontWeight: 600, fontSize: 12, color: '#71b3e5' }}>{label}</span>
                                             </div>
                                             {outfit.description && (
                                                 <p style={{
-                                                    fontFamily: theme.fontFamily.ui, fontSize: 13, color: '#555',
+                                                     fontSize: 13, color: '#555',
                                                     margin: 0, lineHeight: 1.5,
                                                     overflow: 'hidden', display: '-webkit-box',
                                                     WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
@@ -736,7 +736,7 @@ function Home() {
                     ) : (
                         <div data-animate style={{ background: 'white', borderRadius: 24, padding: '56px', textAlign: 'center', border: '2px dashed #eaedf2', marginBottom: 48 }}>
                             <CalendarIcon color="#ddd" size={56} />
-                            <p style={{ fontFamily: theme.fontFamily.ui, fontSize: 16, color: '#ccc', margin: '16px 0 0' }}>
+                            <p style={{  fontSize: 16, color: '#ccc', margin: '16px 0 0' }}>
                                 아직 기록된 코디가 없어요
                             </p>
                         </div>
@@ -745,7 +745,7 @@ function Home() {
                     <button data-animate onClick={() => navigate('/calendar')} style={{
                         background: 'white', border: '2px solid #71b3e5', borderRadius: 999,
                         padding: '16px 36px', cursor: 'pointer',
-                        fontFamily: theme.fontFamily.ui, fontWeight: 700, fontSize: 15, color: '#71b3e5',
+                         fontWeight: 700, fontSize: 15, color: '#71b3e5',
                         transition: 'background 0.2s, color 0.2s',
                     }}
                     onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = '#71b3e5'; b.style.color = 'white'; }}
@@ -758,13 +758,13 @@ function Home() {
             {/* ── 06 STUDIO ────────────────────────────────────────────────── */}
             <section ref={studioRef} style={{ padding: '100px 80px 100px 120px', background: 'white' }}>
                 <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-                    <p data-animate style={{ fontFamily: theme.fontFamily.body, fontWeight: 700, fontSize: 10, color: '#71b3e5', letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 16px' }}>
+                    <p data-animate style={{  fontWeight: 700, fontSize: 10, color: '#71b3e5', letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 16px' }}>
                         06 STUDIO
                     </p>
-                    <h2 data-animate style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 40, color: '#1a1a2e', margin: '0 0 16px', lineHeight: 1.3 }}>
+                    <h2 data-animate style={{  fontWeight: 700, fontSize: 40, color: '#1a1a2e', margin: '0 0 16px', lineHeight: 1.3 }}>
                         내 옷장 아이템으로<br />직접 코디를 완성해 보세요.
                     </h2>
-                    <p data-animate style={{ fontFamily: theme.fontFamily.body, fontSize: 16, color: '#888', margin: '0 0 64px', lineHeight: 1.7 }}>
+                    <p data-animate style={{  fontSize: 16, color: '#888', margin: '0 0 64px', lineHeight: 1.7 }}>
                         드래그 한 번으로 배경이 제거되고, 완성된 코디는 옷장에 바로 저장돼요.
                     </p>
 
@@ -787,7 +787,7 @@ function Home() {
                                 num: '03',
                                 icon: <StudioIcon color="#71b3e5" size={36} />,
                                 title: '코디 저장',
-                                desc: '완성된 코디를 내 옷장 "저장한 코디"에 바로 저장해요',
+                                desc: '완성된 코디를 내 옷장 저장한 코디에 바로 저장해요',
                             },
                         ].map(({ num, icon, title, desc }, i) => (
                             <div key={i} style={{
@@ -799,14 +799,14 @@ function Home() {
                             }}>
                                 <span style={{
                                     position: 'absolute', top: 28, right: 28,
-                                    fontFamily: theme.fontFamily.heading,
+                                    
                                     fontWeight: 800, fontSize: 48,
                                     color: 'rgba(113,179,229,0.12)',
                                     lineHeight: 1,
                                 }}>{num}</span>
                                 <div style={{ marginBottom: 20 }}>{icon}</div>
-                                <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 18, color: '#1a1a2e', margin: '0 0 10px' }}>{title}</p>
-                                <p style={{ fontFamily: theme.fontFamily.body, fontSize: 14, color: '#888', margin: 0, lineHeight: 1.7 }}>{desc}</p>
+                                <p style={{  fontWeight: 700, fontSize: 18, color: '#1a1a2e', margin: '0 0 10px' }}>{title}</p>
+                                <p style={{  fontSize: 14, color: '#888', margin: 0, lineHeight: 1.7 }}>{desc}</p>
                             </div>
                         ))}
                     </div>
@@ -814,7 +814,7 @@ function Home() {
                     {/* 저장된 코디 미리보기 */}
                     {savedOutfits.length > 0 && (
                         <>
-                            <p data-animate style={{ fontFamily: theme.fontFamily.body, fontWeight: 600, fontSize: 13, color: '#aaa', margin: '0 0 20px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                            <p data-animate style={{  fontWeight: 600, fontSize: 13, color: '#aaa', margin: '0 0 20px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                                 저장한 코디
                             </p>
                             <div data-animate style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 48 }}>
@@ -831,7 +831,7 @@ function Home() {
                                         </div>
                                         <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
                                             <StudioIcon color="#71b3e5" size={14} />
-                                            <span style={{ fontFamily: theme.fontFamily.ui, fontWeight: 600, fontSize: 12, color: '#71b3e5' }}>저장한 코디</span>
+                                            <span style={{  fontWeight: 600, fontSize: 12, color: '#71b3e5' }}>저장한 코디</span>
                                         </div>
                                     </div>
                                 ))}
@@ -844,7 +844,7 @@ function Home() {
                             background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)',
                             border: 'none', borderRadius: 999,
                             padding: '16px 40px', cursor: 'pointer',
-                            fontFamily: theme.fontFamily.ui, fontWeight: 700, fontSize: 15,
+                             fontWeight: 700, fontSize: 15,
                             color: 'white', boxShadow: '0 8px 28px rgba(113,179,229,0.4)',
                             display: 'inline-flex', alignItems: 'center', gap: 10,
                         }}>
@@ -855,7 +855,7 @@ function Home() {
                             <button onClick={() => navigate('/wardrobe')} style={{
                                 background: 'white', border: '2px solid #71b3e5', borderRadius: 999,
                                 padding: '16px 32px', cursor: 'pointer',
-                                fontFamily: theme.fontFamily.ui, fontWeight: 600, fontSize: 15,
+                                 fontWeight: 600, fontSize: 15,
                                 color: '#71b3e5',
                                 transition: 'background 0.2s, color 0.2s',
                             }}
@@ -879,17 +879,17 @@ function Home() {
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                     textAlign: 'center', padding: '0 40px',
                 }}>
-                    <h2 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 44, color: 'white', margin: '0 0 20px', lineHeight: 1.2 }}>
+                    <h2 style={{  fontWeight: 700, fontSize: 44, color: 'white', margin: '0 0 20px', lineHeight: 1.2 }}>
                         오늘의 완벽한 코디,<br />AI와 함께 찾아보세요
                     </h2>
-                    <p style={{ fontFamily: theme.fontFamily.body, fontSize: 18, color: 'rgba(255,255,255,0.72)', margin: '0 0 40px' }}>
+                    <p style={{  fontSize: 18, color: 'rgba(255,255,255,0.72)', margin: '0 0 40px' }}>
                         날씨와 일정을 분석해 오늘 최고의 코디를 찾아드릴게요.
                     </p>
                     <div style={{ display: 'flex', gap: 16 }}>
                         <button onClick={() => navigate('/recommend')} style={{
                             background: '#71b3e5', border: 'none', borderRadius: 999,
                             padding: '16px 40px', cursor: 'pointer',
-                            fontFamily: theme.fontFamily.ui, fontWeight: 700, fontSize: 16,
+                             fontWeight: 700, fontSize: 16,
                             color: 'white', boxShadow: '0 8px 24px rgba(113,179,229,0.5)',
                         }}>
                             AI 추천 전체 보기 →
@@ -898,7 +898,7 @@ function Home() {
                             background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(8px)',
                             border: '1.5px solid rgba(255,255,255,0.38)', borderRadius: 999,
                             padding: '16px 36px', cursor: 'pointer',
-                            fontFamily: theme.fontFamily.ui, fontWeight: 600, fontSize: 15,
+                             fontWeight: 600, fontSize: 15,
                             color: 'white',
                         }}>
                             내 옷장 보러가기

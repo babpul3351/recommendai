@@ -55,7 +55,7 @@ function Navbar() {
                         style={{ width: 55, height: 55, flexShrink: 0 }}
                     />
                     <span style={{
-                        fontFamily: theme.fontFamily.heading,
+                        
                         fontWeight: 700,
                         fontSize: 28,
                         color: '#1a1a2e',
@@ -69,7 +69,7 @@ function Navbar() {
             {/* Nav */}
             <nav style={{ flex: 1, padding: '0 12px' }}>
                 <p style={{
-                    fontFamily: theme.fontFamily.body,
+                    
                     fontWeight: 600,
                     fontSize: 12,
                     color: '#aaa',
@@ -103,7 +103,7 @@ function Navbar() {
                                 <Icon color={active ? 'white' : '#555'} />
                             </span>
                             <span style={{
-                                fontFamily: theme.fontFamily.ui,
+                                
                                 fontWeight: active ? 600 : 400,
                                 fontSize: 14,
                                 color: active ? 'white' : '#444',
@@ -128,7 +128,7 @@ function Navbar() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{
-                            fontFamily: theme.fontFamily.heading,
+                            
                             fontWeight: 600,
                             fontSize: 15,
                             color: '#1a1a2e',
