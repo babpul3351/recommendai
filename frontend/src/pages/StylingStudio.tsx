@@ -62,7 +62,7 @@ function btnStyle(disabled: boolean, variant: 'default' | 'danger' | 'primary' =
         border: c.border,
         background: c.bg,
         color: c.color,
-        fontFamily: theme.fontFamily.ui,
+        
         fontSize: 13,
         fontWeight: 500,
         cursor: disabled ? 'not-allowed' : 'pointer',
@@ -332,10 +332,10 @@ function StylingStudio() {
         <div style={{ padding: '70px 36px', maxWidth: 1200, width: '100%', boxSizing: 'border-box' }}>
             {/* Header */}
             <div style={{ marginBottom: 20 }}>
-                <h1 style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 28, color: '#1a1a2e', margin: 0 }}>
+                <h1 style={{  fontWeight: 700, fontSize: 28, color: '#1a1a2e', margin: 0 }}>
                     코디 스튜디오
                 </h1>
-                <p style={{ fontFamily: theme.fontFamily.body, fontSize: 14, color: '#888', margin: '6px 0 0' }}>
+                <p style={{  fontSize: 14, color: '#888', margin: '6px 0 0' }}>
                     옷장에서 아이템을 드래그해서 나만의 코디를 완성해 보세요
                 </p>
             </div>
@@ -377,10 +377,10 @@ function StylingStudio() {
                     overflow: 'hidden',
                 }}>
                     <div style={{ padding: '16px 16px 8px' }}>
-                        <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 600, fontSize: 14, color: '#1a1a2e', margin: 0 }}>
+                        <p style={{  fontWeight: 600, fontSize: 14, color: '#1a1a2e', margin: 0 }}>
                             내 옷장
                         </p>
-                        <p style={{ fontFamily: theme.fontFamily.body, fontSize: 11, color: '#aaa', margin: '4px 0 0' }}>
+                        <p style={{  fontSize: 11, color: '#aaa', margin: '4px 0 0' }}>
                             아이템을 드래그해서 캔버스에 올려보세요
                         </p>
                     </div>
@@ -397,7 +397,7 @@ function StylingStudio() {
                                     border: 'none',
                                     background: selectedCategory === cat ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : '#f5f7fa',
                                     color: selectedCategory === cat ? 'white' : '#666',
-                                    fontFamily: theme.fontFamily.ui,
+                                    
                                     fontSize: 11,
                                     fontWeight: selectedCategory === cat ? 600 : 400,
                                     cursor: 'pointer',
@@ -419,11 +419,11 @@ function StylingStudio() {
                         alignContent: 'start',
                     }}>
                         {wardrobeLoading ? (
-                            <div style={{ gridColumn: '1/-1', textAlign: 'center', paddingTop: 40, color: '#aaa', fontFamily: theme.fontFamily.ui, fontSize: 12 }}>
+                            <div style={{ gridColumn: '1/-1', textAlign: 'center', paddingTop: 40, color: '#aaa',  fontSize: 12 }}>
                                 불러오는 중...
                             </div>
                         ) : filtered.length === 0 ? (
-                            <div style={{ gridColumn: '1/-1', textAlign: 'center', paddingTop: 40, color: '#aaa', fontFamily: theme.fontFamily.ui, fontSize: 12 }}>
+                            <div style={{ gridColumn: '1/-1', textAlign: 'center', paddingTop: 40, color: '#aaa',  fontSize: 12 }}>
                                 아이템이 없어요
                             </div>
                         ) : filtered.map(item => (
@@ -464,7 +464,7 @@ function StylingStudio() {
                                 <p style={{
                                     margin: 0,
                                     padding: '6px 8px',
-                                    fontFamily: theme.fontFamily.ui,
+                                    
                                     fontSize: 10,
                                     color: '#555',
                                     overflow: 'hidden',
@@ -506,10 +506,10 @@ function StylingStudio() {
                             pointerEvents: 'none',
                         }}>
                             <div style={{ fontSize: 52, marginBottom: 14, opacity: 0.35 }}>👗</div>
-                            <p style={{ fontFamily: theme.fontFamily.heading, fontWeight: 600, fontSize: 15, color: '#bcc5d4', margin: 0 }}>
+                            <p style={{  fontWeight: 600, fontSize: 15, color: '#bcc5d4', margin: 0 }}>
                                 여기에 아이템을 드래그해 보세요
                             </p>
-                            <p style={{ fontFamily: theme.fontFamily.body, fontSize: 12, color: '#c8d0dc', margin: '6px 0 0' }}>
+                            <p style={{  fontSize: 12, color: '#c8d0dc', margin: '6px 0 0' }}>
                                 배경이 자동으로 제거돼요
                             </p>
                         </div>
@@ -557,7 +557,7 @@ function StylingStudio() {
                                             borderRadius: '50%',
                                             animation: 'spin 0.8s linear infinite',
                                         }} />
-                                        <span style={{ fontFamily: theme.fontFamily.ui, fontSize: 10, color: '#71b3e5' }}>
+                                        <span style={{  fontSize: 10, color: '#71b3e5' }}>
                                             배경 제거 중…
                                         </span>
                                     </div>
@@ -606,7 +606,7 @@ function StylingStudio() {
                                     <div style={{
                                         position: 'absolute', bottom: -10, left: '50%', transform: 'translateX(-50%)',
                                         background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)',
-                                        color: 'white', fontSize: 9, fontFamily: theme.fontFamily.ui,
+                                        color: 'white', fontSize: 9, 
                                         padding: '2px 8px', borderRadius: 999,
                                         whiteSpace: 'nowrap', zIndex: 10,
                                         boxShadow: '0 2px 6px rgba(113,179,229,0.4)',

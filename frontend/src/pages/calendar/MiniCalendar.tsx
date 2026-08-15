@@ -25,7 +25,7 @@ function MiniCalendar({ calYear, calMonth, today, weekDays, events, outfits = []
     return (
         <div style={{ background: 'white', borderRadius: 18, padding: 16, border: '1px solid #eaedf2', marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <span style={{ fontFamily: theme.fontFamily.heading, fontWeight: 700, fontSize: 13, color: '#1a1a2e' }}>
+                <span style={{  fontWeight: 700, fontSize: 13, color: '#1a1a2e' }}>
                     {calYear}년 {calMonth + 1}월
                 </span>
                 <div style={{ display: 'flex', gap: 2 }}>
@@ -37,7 +37,7 @@ function MiniCalendar({ calYear, calMonth, today, weekDays, events, outfits = []
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 4 }}>
                 {WEEKDAYS.map((d, i) => (
-                    <div key={d} style={{ textAlign: 'center', fontSize: 9, fontWeight: 600, fontFamily: theme.fontFamily.body, padding: '2px 0', color: i === 0 ? '#e74c3c' : i === 6 ? '#3498db' : '#bbb' }}>{d}</div>
+                    <div key={d} style={{ textAlign: 'center', fontSize: 9, fontWeight: 600,  padding: '2px 0', color: i === 0 ? '#e74c3c' : i === 6 ? '#3498db' : '#bbb' }}>{d}</div>
                 ))}
             </div>
 
@@ -59,7 +59,7 @@ function MiniCalendar({ calYear, calMonth, today, weekDays, events, outfits = []
                             textAlign: 'center', padding: '3px 1px', cursor: 'pointer', borderRadius: 6,
                             background: isToday ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : inWeek ? 'rgba(113,179,229,0.1)' : 'transparent',
                         }}>
-                            <span style={{ fontSize: 11, fontFamily: theme.fontFamily.heading, display: 'block', fontWeight: isToday || inWeek ? 700 : 400, color: isToday ? 'white' : dow === 0 ? '#e74c3c' : dow === 6 ? '#3498db' : '#1a1a2e' }}>{day}</span>
+                            <span style={{ fontSize: 11,  display: 'block', fontWeight: isToday || inWeek ? 700 : 400, color: isToday ? 'white' : dow === 0 ? '#e74c3c' : dow === 6 ? '#3498db' : '#1a1a2e' }}>{day}</span>
                             {(evtsOnDay.length > 0 || hasOutfit) && (
                                 <div style={{ display: 'flex', justifyContent: 'center', gap: 2, marginTop: 1 }}>
                                     {evtsOnDay.slice(0, 2).map((ev, ei) => (
