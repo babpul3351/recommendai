@@ -3,6 +3,11 @@ import Navbar from '../components/Navbar';
 import { wardrobeAPI, weatherAPI, calendarAPI, recommendationAPI } from '../api/api';
 import { theme } from '../styles/theme';
 
+const STYLE_LABELS = {
+    casual: '캐주얼', formal: '포멀', business: '비즈니스',
+    lovely: '러블리', feminine: '페미닌', sporty: '스포티', comfort: '컴포트'
+};
+
 const TPO_LIST = [
     { key: '데이트', emoji: '💑', color: '#FF6B9D' },
     { key: '직장',   emoji: '💼', color: '#4A90D9' },
@@ -275,7 +280,7 @@ function Recommend() {
                                         <span style={{
                                             ...S.cardStyle,
                                             color: isAccepted ? theme.colors.primary : '#555',
-                                        }}>{outfit.style}</span>
+                                        }}>{STYLE_LABELS[outfit.style] || outfit.style}</span>
                                     )}
                                 </div>
                                 {isAccepted && (

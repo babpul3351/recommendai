@@ -74,31 +74,26 @@ def get_image_embedding(pil_img):
     return feat.tolist()
 
 
-STYLE_KO_TO_CODE = {
-    "캐주얼": "casual", "포멀": "formal", "비즈니스": "business",
-    "러블리": "lovely", "페미닌": "feminine", "스포티": "sporty",
-    "편안": "comfort", "베이직": "comfort",
-}
-
-
 def _style_matches(outfit_style: str, style_tags_json: str) -> bool:
-    """옷의 style_tags(JSON 배열 문자열)에 코디의 style이 포함되는지 확인합니다."""
-    if not style_tags_json:
+    """
+    옷의 style_tags(JSON 배열 문자열)에 코디의 style이 포함되는지 확인합니다.
+    outfit_style은 gemini_service.VALID_STYLES와 동일한 영어 코드(예: "casual")로
+    전달된다고 가정합니다 — analyze_clothing과 get_outfit_recommendation이
+    같은 코드 체계를 쓰도록 통일했으므로, 별도의 한글→코드 매핑이 필요 없습니다.
+    """
+    if not style_tags_json or not outfit_style:
         return False
     try:
         tags = json.loads(style_tags_json)
     except (json.JSONDecodeError, TypeError):
         return False
-    key = (outfit_style or "").strip()
-    code = STYLE_KO_TO_CODE.get(key, key.lower())
-    return code in tags
+    return outfit_style in tags
 
 
 def _filter_by_style(candidates: list, outfit_style: str) -> list:
     """
-    [실험 A: 포함/폴백 방식]
-    style_tags가 없는(비어있는) 옷은 스타일이 안 맞아도 후보에 포함시킵니다.
-    (스타일 태그가 아직 없는 기존 옷도 매칭 기회를 잃지 않도록 하는 방식)
+    스타일 태그가 없는(비어있는) 옷은 스타일이 안 맞아도 후보에 포함시킵니다.
+    (5번 결정(a): 스타일 태그가 아직 없는 기존 옷도 매칭 기회를 잃지 않도록 하는 방식)
     """
     return [
         w for w in candidates

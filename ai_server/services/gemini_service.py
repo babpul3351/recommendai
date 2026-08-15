@@ -33,6 +33,8 @@ if not API_KEY:
         "(.env.example 파일을 참고하세요)"
     )
 
+VALID_STYLES = {"casual", "formal", "business", "lovely", "feminine", "sporty", "comfort"}
+
 gemini_client = None
 
 def get_gemini():
@@ -113,7 +115,6 @@ def analyze_clothing(image_b64: str) -> dict:
     clean = raw.replace("```json", "").replace("```", "").strip()
     result = json.loads(clean)
 
-    VALID_STYLES = {"casual", "formal", "business", "lovely", "feminine", "sporty", "comfort"}
     if result.get("style") not in VALID_STYLES:
         result["style"] = None
 
@@ -162,6 +163,7 @@ def get_outfit_recommendation(tpo, weather, profile, mode, wardrobe_items, linke
     num_outfits = max(2, min(3, num_outfits))
 
     slot_fmt = '{{"id":null,"color":"색상","type":"아이템명","search_query":"English query"}}'
+    style_codes = "/".join(sorted(VALID_STYLES))
 
     prompt = f"""
 === 사용자 조건 ===
@@ -179,8 +181,8 @@ TPO·날씨·스타일에 맞는 서로 다른 {num_outfits}가지 코디를 구
 
 === 출력 형식 (순수 JSON 배열만, {num_outfits}개) ===
 [
-  {{"top":{slot_fmt},"bottom":{slot_fmt},"outer":{slot_fmt} 또는 null,"style":"스타일명","description":"한 줄 코디 설명"}},
-  {{"top":{slot_fmt},"bottom":{slot_fmt},"outer":{slot_fmt} 또는 null,"style":"스타일명","description":"한 줄 코디 설명"}}
+  {{"top":{slot_fmt},"bottom":{slot_fmt},"outer":{slot_fmt} 또는 null,"style":"{style_codes} 중 이 코디에 가장 잘 맞는 것 하나만 영어 코드 그대로","description":"한 줄 코디 설명"}},
+  {{"top":{slot_fmt},"bottom":{slot_fmt},"outer":{slot_fmt} 또는 null,"style":"{style_codes} 중 이 코디에 가장 잘 맞는 것 하나만 영어 코드 그대로","description":"한 줄 코디 설명"}}
 ]"""
 
     raw = gemini_text(prompt)
@@ -195,6 +197,11 @@ TPO·날씨·스타일에 맞는 서로 다른 {num_outfits}가지 코디를 구
 
     if isinstance(outfits, dict):
         outfits = [outfits]
+
+    for o in outfits:
+        if isinstance(o, dict) and o.get("style") not in VALID_STYLES:
+            o["style"] = None
+
     while len(outfits) < num_outfits:
         outfits.append(outfits[0].copy() if outfits else {})
     return outfits[:num_outfits]
