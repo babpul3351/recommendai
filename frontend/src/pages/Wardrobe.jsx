@@ -17,6 +17,11 @@ import DaltonizedImage from '../components/DaltonizedImage';
  */
 
 const CATEGORIES = ['상의', '하의', '아우터', '원피스', '기타'];
+const STYLES = ['casual', 'formal', 'business', 'lovely', 'feminine', 'sporty', 'comfort'];
+const STYLE_LABELS = {
+    casual: '캐주얼', formal: '포멀', business: '비즈니스',
+    lovely: '러블리', feminine: '페미닌', sporty: '스포티', comfort: '컴포트'
+};
 const COLORS = ['블랙', '화이트', '그레이', '네이비', '블루', '레드', '핑크',
     '옐로우', '그린', '카키', '브라운', '갈색', '베이지', '퍼플', '오렌지',
     '와인', '민트', '코랄', '머스타드', '아이보리'];
@@ -33,6 +38,7 @@ function Wardrobe() {
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('전체');
+    const [selectedStyle, setSelectedStyle] = useState('전체');
     const [selectedItem, setSelectedItem] = useState(null);
     const [editMode, setEditMode] = useState(false);
     const [editForm, setEditForm] = useState({});
@@ -45,6 +51,7 @@ function Wardrobe() {
     // ──────────────────────────────────────────
 
     const categories = ['전체', ...CATEGORIES];
+    const styleOptions = ['전체', ...STYLES];
 
     useEffect(() => {
         fetchWardrobe();
@@ -147,13 +154,28 @@ function Wardrobe() {
         return c;
     };
 
-    const filteredItems = selectedCategory === '전체'
-        ? items
-        : items.filter(item => normalizeCategory(item.category) === selectedCategory);
+    const parseStyleTags = (item) => {
+        if (!item.styleTags) return [];
+        try {
+            const parsed = JSON.parse(item.styleTags);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (err) {
+            return [];
+        }
+    };
+
+    const filteredItems = items
+        .filter(item => selectedCategory === '전체' || normalizeCategory(item.category) === selectedCategory)
+        .filter(item => selectedStyle === '전체' || parseStyleTags(item).includes(selectedStyle));
 
     const getCategoryCount = (cat) => {
         if (cat === '전체') return items.length;
         return items.filter(item => normalizeCategory(item.category) === cat).length;
+    };
+
+    const getStyleCount = (style) => {
+        if (style === '전체') return items.length;
+        return items.filter(item => parseStyleTags(item).includes(style)).length;
     };
 
     const getColorHex = (colorName) => {
@@ -282,6 +304,27 @@ function Wardrobe() {
                     ))}
                 </div>
 
+                <div style={styles.filterRow}>
+                    {styleOptions.map(style => (
+                        <button key={style} style={{
+                            ...styles.filterBtn,
+                            ...styles.styleFilterBtn,
+                            backgroundColor: selectedStyle === style ? theme.colors.primary : theme.colors.white,
+                            color: selectedStyle === style ? theme.colors.white : theme.colors.textSub,
+                            boxShadow: selectedStyle === style ? 'none' : '0 1px 4px rgba(0,0,0,0.06)'
+                        }} onClick={() => setSelectedStyle(style)}>
+                            {style === '전체' ? '전체' : STYLE_LABELS[style]}
+                            <span style={{
+                                ...styles.categoryCount,
+                                backgroundColor: selectedStyle === style ? 'rgba(255,255,255,0.3)' : theme.colors.primaryLight,
+                                color: selectedStyle === style ? theme.colors.white : theme.colors.primary
+                            }}>
+                                {getStyleCount(style)}
+                            </span>
+                        </button>
+                    ))}
+                </div>
+
                 {loading ? (
                     <div style={styles.emptyBox}>
                         <p style={styles.emptyText}>불러오는 중...</p>
@@ -290,9 +333,12 @@ function Wardrobe() {
                     <div style={styles.emptyBox}>
                         <p style={styles.emptyEmoji}>👗</p>
                         <p style={styles.emptyText}>
-                            {selectedCategory === '전체'
+                            {selectedCategory === '전체' && selectedStyle === '전체'
                                 ? '옷장이 비어있습니다.'
-                                : `${selectedCategory} 카테고리에 옷이 없습니다.`}
+                                : [
+                                    selectedCategory !== '전체' ? selectedCategory : null,
+                                    selectedStyle !== '전체' ? STYLE_LABELS[selectedStyle] : null
+                                ].filter(Boolean).join(' · ') + ' 옷이 없습니다.'}
                         </p>
                         <p style={styles.emptySubText}>오른쪽 상단 버튼으로 옷을 추가해보세요</p>
                     </div>
@@ -318,6 +364,15 @@ function Wardrobe() {
                                         {normalizeCategory(item.category)}
                                     </span>
                                     <p style={styles.cardType}>{item.type}</p>
+                                    {parseStyleTags(item).length > 0 && (
+                                        <div style={styles.cardStyleRow}>
+                                            {parseStyleTags(item).map(s => (
+                                                <span key={s} style={styles.cardStyleChip}>
+                                                    {STYLE_LABELS[s] || s}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
                                     <div style={styles.cardColorRow}>
                                         <div style={{
                                             width: '10px', height: '10px', borderRadius: '50%',
@@ -381,6 +436,12 @@ function Wardrobe() {
                                     { label: '카테고리', value: normalizeCategory(selectedItem.category) },
                                     { label: '종류', value: selectedItem.type || '-' },
                                     { label: '소재', value: selectedItem.material || '-' },
+                                    {
+                                        label: '스타일',
+                                        value: parseStyleTags(selectedItem).length > 0
+                                            ? parseStyleTags(selectedItem).map(s => STYLE_LABELS[s] || s).join(', ')
+                                            : '-'
+                                    },
                                 ].map(row => (
                                     <div key={row.label} style={styles.infoRow}>
                                         <span style={styles.infoLabel}>{row.label}</span>
@@ -493,6 +554,14 @@ const styles = {
         display: 'flex', alignItems: 'center', gap: '6px',
         padding: '7px 12px', border: 'none', borderRadius: theme.radius.full,
         fontSize: '13px', cursor: 'pointer', fontWeight: '500'
+    },
+    styleFilterBtn: {
+        border: `1px solid ${theme.colors.border}`
+    },
+    cardStyleRow: { display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '6px' },
+    cardStyleChip: {
+        fontSize: '10px', color: theme.colors.textSub, backgroundColor: theme.colors.background,
+        padding: '2px 7px', borderRadius: theme.radius.full, fontWeight: '500'
     },
     categoryCount: {
         padding: '1px 7px', borderRadius: theme.radius.full,
