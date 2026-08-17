@@ -177,34 +177,34 @@ function Recommend() {
         <div style={{ padding: '70px 36px', maxWidth: 1100, width: '100%' }}>
             {/* Header */}
             <div style={{ marginBottom: 28 }}>
-                <h1 style={{  fontWeight: 700, fontSize: 28, color: '#1a1a2e', margin: 0, letterSpacing: '-0.5px' }}>
+                <h1 style={{ fontWeight: 700, fontSize: 28, color: '#1a1a2e', margin: 0, letterSpacing: '-0.5px' }}>
                     AI 코디 추천
                 </h1>
-                <p style={{  fontWeight: 400, fontSize: 14, color: '#888', margin: '6px 0 0' }}>
+                <p style={{ fontWeight: 400, fontSize: 14, color: '#888', margin: '6px 0 0' }}>
                     날씨와 일정을 분석해 최적의 코디를 제안해 드려요
                 </p>
             </div>
 
-            {/* Left / Right layout */}
-            <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+            {/* Left / Right layout — same ratio as MyPage (320px / 1fr) */}
+            <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 24, alignItems: 'start' }}>
 
-                {/* LEFT: Weather + Events */}
-                <div style={{ width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {/* LEFT column */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {/* Today label */}
-                    <p style={{  fontWeight: 600, fontSize: 14, color: '#1a1a2e', margin: 0 }}>{todayLabel}</p>
+                    <p style={{ fontWeight: 600, fontSize: 14, color: '#1a1a2e', margin: 0 }}>{todayLabel}</p>
 
                     {/* Weather card */}
                     <div style={{ background: '#f2f3f5', borderRadius: 18, padding: '20px 22px' }}>
-                        <p style={{  fontWeight: 600, fontSize: 11, color: '#999', margin: '0 0 14px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>오늘 날씨</p>
+                        <p style={{ fontWeight: 600, fontSize: 11, color: '#999', margin: '0 0 14px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>오늘 날씨</p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                             <span style={{ flexShrink: 0 }}>
                                 {weather ? <WeatherIcon desc={weather.desc} size={40} /> : weatherUnavailable ? <WeatherIcon desc="" size={40} /> : <ClockIcon color="#aaa" size={40} />}
                             </span>
                             <div>
-                                <p style={{  fontWeight: 700, fontSize: 20, color: '#1a1a2e', margin: 0 }}>
+                                <p style={{ fontWeight: 700, fontSize: 20, color: '#1a1a2e', margin: 0 }}>
                                     {weather ? `${Math.round(weather.temp)}℃` : weatherUnavailable ? '-' : '...'}
                                 </p>
-                                <p style={{  fontWeight: 400, fontSize: 13, color: '#666', margin: '4px 0 0' }}>
+                                <p style={{ fontWeight: 400, fontSize: 13, color: '#666', margin: '4px 0 0' }}>
                                     {weather ? weather.desc : weatherUnavailable ? '날씨 정보 없음' : '불러오는 중'}
                                 </p>
                             </div>
@@ -213,13 +213,13 @@ function Recommend() {
 
                     {/* Events card */}
                     <div style={{ background: 'white', borderRadius: 18, padding: '20px 22px', border: '1px solid #eaedf2' }}>
-                        <p style={{  fontWeight: 600, fontSize: 11, color: '#999', margin: '0 0 14px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>오늘 일정</p>
+                        <p style={{ fontWeight: 600, fontSize: 11, color: '#999', margin: '0 0 14px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>오늘 일정</p>
                         {todayEvents.length === 0 ? (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                 <div style={{ width: 36, height: 36, borderRadius: 10, background: '#eaedf2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                     <CalendarIcon color="#aaa" size={18} />
                                 </div>
-                                <p style={{  fontSize: 13, color: '#bbb', margin: 0 }}>등록된 일정이 없어요</p>
+                                <p style={{ fontSize: 13, color: '#bbb', margin: 0 }}>등록된 일정이 없어요</p>
                             </div>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -227,26 +227,23 @@ function Recommend() {
                                     const color = getTpoColor(ev.tpoKeyword);
                                     return (
                                         <div key={ev.eventId} style={{ background: color + '14', borderRadius: 12, padding: '10px 14px', borderLeft: `3px solid ${color}` }}>
-                                            <p style={{  fontWeight: 700, fontSize: 14, color: '#1a1a2e', margin: 0 }}>{ev.eventName}</p>
-                                            <p style={{  fontSize: 12, color, margin: '4px 0 0', fontWeight: 600 }}>{ev.tpoKeyword}</p>
+                                            <p style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', margin: 0 }}>{ev.eventName}</p>
+                                            <p style={{ fontSize: 12, color, margin: '4px 0 0', fontWeight: 600 }}>{ev.tpoKeyword}</p>
                                         </div>
                                     );
                                 })}
                             </div>
                         )}
                     </div>
-                </div>
 
-                {/* RIGHT: TPO + Recommend + Outfits */}
-                <div style={{ flex: 1, minWidth: 0 }}>
                     {/* TPO & settings */}
-                    <div style={{ background: 'white', borderRadius: 20, padding: '24px 28px', border: '1px solid #eaedf2', marginBottom: 16 }}>
+                    <div style={{ background: 'white', borderRadius: 20, padding: '24px 22px', border: '1px solid #eaedf2' }}>
                         {todayEvents.length > 0 ? (
                             <>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                                    <h2 style={{  fontWeight: 600, fontSize: 16, color: '#1a1a2e', margin: 0 }}>어떤 자리인가요?</h2>
+                                    <h2 style={{ fontWeight: 600, fontSize: 15, color: '#1a1a2e', margin: 0 }}>어떤 자리인가요?</h2>
                                     {!showFullTpo && !isRetry && (
-                                        <button onClick={() => setShowFullTpo(true)} style={{ background: 'none', border: '1px solid #dde2ea', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#888', cursor: 'pointer',  }}>수정</button>
+                                        <button onClick={() => setShowFullTpo(true)} style={{ background: 'none', border: '1px solid #dde2ea', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#888', cursor: 'pointer' }}>수정</button>
                                     )}
                                 </div>
 
@@ -254,24 +251,24 @@ function Recommend() {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                         {TPO_LIST.filter(t => t.key === selectedTpo).map(t => (
                                             <div key={t.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 999, border: `2px solid ${t.color}`, background: `${t.color}18` }}>
-                                                <TpoIcon tpo={t.key} color={t.color} size={20} />
-                                                <span style={{  fontWeight: 700, fontSize: 15, color: t.color }}>{t.key}</span>
+                                                <TpoIcon tpo={t.key} color={t.color} size={18} />
+                                                <span style={{ fontWeight: 700, fontSize: 14, color: t.color }}>{t.key}</span>
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
                                         {TPO_LIST.map(t => {
                                             const active = selectedTpo === t.key;
                                             return (
                                                 <button key={t.key} onClick={() => setSelectedTpo(t.key)} style={{
-                                                    display: 'inline-flex', alignItems: 'center', gap: 8,
-                                                    padding: '10px 18px', borderRadius: 999, cursor: 'pointer',
+                                                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                                                    padding: '8px 14px', borderRadius: 999, cursor: 'pointer',
                                                     border: active ? `2px solid ${t.color}` : '1.5px solid #e8ecf0',
                                                     background: active ? `${t.color}18` : '#f5f7fa',
                                                 }}>
-                                                    <TpoIcon tpo={t.key} color={active ? t.color : '#aaa'} size={20} />
-                                                    <span style={{  fontWeight: active ? 700 : 500, fontSize: 14, color: active ? t.color : '#555' }}>{t.key}</span>
+                                                    <TpoIcon tpo={t.key} color={active ? t.color : '#aaa'} size={16} />
+                                                    <span style={{ fontWeight: active ? 700 : 500, fontSize: 13, color: active ? t.color : '#555' }}>{t.key}</span>
                                                 </button>
                                             );
                                         })}
@@ -279,15 +276,15 @@ function Recommend() {
                                 )}
 
                                 {!isRetry && (
-                                    <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #f0f0f0' }}>
-                                        <p style={{  fontWeight: 600, fontSize: 12, color: '#aaa', margin: '0 0 10px' }}>코디 수</p>
-                                        <div style={{ display: 'flex', gap: 10 }}>
+                                    <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #f0f0f0' }}>
+                                        <p style={{ fontWeight: 600, fontSize: 12, color: '#aaa', margin: '0 0 10px' }}>코디 수</p>
+                                        <div style={{ display: 'flex', gap: 8 }}>
                                             {[2, 3].map(n => (
                                                 <button key={n} onClick={() => setNumOutfits(n)} style={{
-                                                    flex: 1, padding: '10px', borderRadius: 999, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                                                    flex: 1, padding: '9px', borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: 'pointer',
                                                     border: numOutfits === n ? 'none' : '1.5px solid #e8ecf0',
                                                     background: numOutfits === n ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : '#f5f7fa',
-                                                    color: numOutfits === n ? 'white' : '#888', 
+                                                    color: numOutfits === n ? 'white' : '#888',
                                                 }}>{n}가지</button>
                                             ))}
                                         </div>
@@ -296,44 +293,44 @@ function Recommend() {
                             </>
                         ) : !tpoPromptVisible ? (
                             <>
-                                <h2 style={{  fontWeight: 700, fontSize: 16, color: '#1a1a2e', margin: '0 0 6px' }}>어떤 코디를 추천해 드릴까요?</h2>
-                                <p style={{  fontWeight: 400, fontSize: 13, color: '#aaa', margin: '0 0 20px' }}>코디 수를 선택하면 어울리는 자리를 골라볼 수 있어요</p>
-                                <div style={{ display: 'flex', gap: 12 }}>
+                                <h2 style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', margin: '0 0 6px' }}>어떤 코디를 추천해 드릴까요?</h2>
+                                <p style={{ fontWeight: 400, fontSize: 13, color: '#aaa', margin: '0 0 18px' }}>코디 수를 선택하면 어울리는 자리를 골라볼 수 있어요</p>
+                                <div style={{ display: 'flex', gap: 10 }}>
                                     {[2, 3].map(n => (
                                         <button key={n} onClick={() => { setNumOutfits(n); setTpoPromptVisible(true); }} style={{
-                                            flex: 1, padding: '18px', borderRadius: 16, border: 'none', cursor: 'pointer',
+                                            flex: 1, padding: '15px', borderRadius: 14, border: 'none', cursor: 'pointer',
                                             background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)',
-                                            color: 'white',  fontWeight: 700, fontSize: 15,
+                                            color: 'white', fontWeight: 700, fontSize: 14,
                                             boxShadow: '0 4px 16px rgba(113,179,229,0.35)',
                                         }}>
-                                            {n}가지 코디 추천받기
+                                            {n}가지 코디
                                         </button>
                                     ))}
                                 </div>
                             </>
                         ) : (
                             <>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                                    <h2 style={{  fontWeight: 600, fontSize: 16, color: '#1a1a2e', margin: 0 }}>어떤 자리인가요?</h2>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                                    <h2 style={{ fontWeight: 600, fontSize: 15, color: '#1a1a2e', margin: 0 }}>어떤 자리인가요?</h2>
                                     {!isRetry && (
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                            <span style={{  fontSize: 12, color: '#71b3e5', background: 'rgba(113,179,229,0.1)', padding: '4px 10px', borderRadius: 20 }}>코디 {numOutfits}가지</span>
-                                            <button onClick={() => { setTpoPromptVisible(false); setSelectedTpo(null); }} style={{ background: 'none', border: '1px solid #dde2ea', borderRadius: 20, padding: '4px 10px', fontSize: 11, color: '#888', cursor: 'pointer',  }}>변경</button>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            <span style={{ fontSize: 11, color: '#71b3e5', background: 'rgba(113,179,229,0.1)', padding: '3px 8px', borderRadius: 20 }}>코디 {numOutfits}가지</span>
+                                            <button onClick={() => { setTpoPromptVisible(false); setSelectedTpo(null); }} style={{ background: 'none', border: '1px solid #dde2ea', borderRadius: 20, padding: '3px 8px', fontSize: 11, color: '#888', cursor: 'pointer' }}>변경</button>
                                         </div>
                                     )}
                                 </div>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                                     {TPO_LIST.map(t => {
                                         const active = selectedTpo === t.key;
                                         return (
                                             <button key={t.key} onClick={() => setSelectedTpo(t.key)} style={{
-                                                display: 'inline-flex', alignItems: 'center', gap: 8,
-                                                padding: '10px 18px', borderRadius: 999, cursor: 'pointer',
+                                                display: 'inline-flex', alignItems: 'center', gap: 6,
+                                                padding: '8px 14px', borderRadius: 999, cursor: 'pointer',
                                                 border: active ? `2px solid ${t.color}` : '1.5px solid #e8ecf0',
                                                 background: active ? `${t.color}18` : '#f5f7fa',
                                             }}>
-                                                <TpoIcon tpo={t.key} color={active ? t.color : '#aaa'} size={20} />
-                                                <span style={{  fontWeight: active ? 700 : 500, fontSize: 14, color: active ? t.color : '#555' }}>{t.key}</span>
+                                                <TpoIcon tpo={t.key} color={active ? t.color : '#aaa'} size={16} />
+                                                <span style={{ fontWeight: active ? 700 : 500, fontSize: 13, color: active ? t.color : '#555' }}>{t.key}</span>
                                             </button>
                                         );
                                     })}
@@ -342,8 +339,9 @@ function Recommend() {
                         )}
                     </div>
 
-                    {error && <p style={{ color: '#FF5A5A', fontSize: 13, marginBottom: 10,  }}>{error}</p>}
+                    {error && <p style={{ color: '#FF5A5A', fontSize: 13, margin: 0 }}>{error}</p>}
 
+                    {/* Recommend button */}
                     <button
                         onClick={handleRecommend}
                         disabled={loading}
@@ -351,7 +349,7 @@ function Recommend() {
                             width: '100%', padding: '15px',
                             background: loading ? '#aaa' : 'linear-gradient(135deg, #71b3e5, #5a9fd4)',
                             color: 'white', border: 'none', borderRadius: 14, fontSize: 15, cursor: 'pointer',
-                             fontWeight: 700, marginBottom: 20,
+                            fontWeight: 700,
                             boxShadow: loading ? 'none' : '0 4px 16px rgba(113,179,229,0.4)',
                         }}
                     >
@@ -362,12 +360,13 @@ function Recommend() {
                     </button>
 
                     {outfitPool.length > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(113,179,229,0.07)', border: '1px solid rgba(113,179,229,0.2)', borderRadius: 12, padding: '10px 16px', marginBottom: 16 }}>
-                            <span style={{  fontWeight: 700, fontSize: 13, color: '#71b3e5' }}>총 {outfitPool.length}가지 코디</span>
-                            {acceptedPoolIdx !== null && <span style={{  fontWeight: 700, fontSize: 13, color: '#71b3e5', display: 'inline-flex', alignItems: 'center', gap: 4 }}><CheckIcon color="#71b3e5" size={14} /> 코디 {acceptedPoolIdx + 1} 선택됨</span>}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(113,179,229,0.07)', border: '1px solid rgba(113,179,229,0.2)', borderRadius: 12, padding: '10px 16px' }}>
+                            <span style={{ fontWeight: 700, fontSize: 13, color: '#71b3e5' }}>총 {outfitPool.length}가지 코디</span>
+                            {acceptedPoolIdx !== null && <span style={{ fontWeight: 700, fontSize: 13, color: '#71b3e5', display: 'inline-flex', alignItems: 'center', gap: 4 }}><CheckIcon color="#71b3e5" size={14} /> 코디 {acceptedPoolIdx + 1} 선택됨</span>}
                         </div>
                     )}
 
+                    {/* Outfit cards */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                         {outfitPool.map((entry, poolIdx) => {
                             const isAccepted = acceptedPoolIdx === poolIdx;
@@ -386,26 +385,26 @@ function Recommend() {
                                     borderRadius: 20, overflow: 'hidden',
                                     opacity: isOtherAccepted ? 0.55 : 1,
                                 }}>
-                                    <div style={{ padding: '24px 28px', borderBottom: '1px solid #eaedf2' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: slots.length > 0 ? 16 : 0 }}>
-                                            <div style={{ width: 40, height: 40, borderRadius: '50%', background: isAccepted ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : '#c8d4dc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 900, color: 'white', flexShrink: 0,  }}>
+                                    <div style={{ padding: '20px 22px', borderBottom: '1px solid #eaedf2' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: slots.length > 0 ? 14 : 0 }}>
+                                            <div style={{ width: 36, height: 36, borderRadius: '50%', background: isAccepted ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : '#c8d4dc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 900, color: 'white', flexShrink: 0 }}>
                                                 {poolIdx + 1}
                                             </div>
                                             {outfit?.style && (
-                                                <span style={{  fontWeight: 700, fontSize: 18, color: isAccepted ? '#1a1a2e' : '#555' }}>{outfit.style}</span>
+                                                <span style={{ fontWeight: 700, fontSize: 16, color: isAccepted ? '#1a1a2e' : '#555' }}>{outfit.style}</span>
                                             )}
-                                            {isAccepted && <span style={{ marginLeft: 'auto',  fontWeight: 700, fontSize: 12, color: '#71b3e5', background: 'white', border: '1.5px solid #71b3e5', padding: '3px 10px', borderRadius: 20, display: 'inline-flex', alignItems: 'center', gap: 4 }}><CheckIcon color="#71b3e5" size={12} /> 선택됨</span>}
+                                            {isAccepted && <span style={{ marginLeft: 'auto', fontWeight: 700, fontSize: 11, color: '#71b3e5', background: 'white', border: '1.5px solid #71b3e5', padding: '3px 8px', borderRadius: 20, display: 'inline-flex', alignItems: 'center', gap: 4 }}><CheckIcon color="#71b3e5" size={11} /> 선택됨</span>}
                                         </div>
 
                                         {slots.length > 0 && (
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                                 {slots.map((s, i) => (
-                                                    <div key={i} style={{ background: '#f8f9fc', borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: CAT_COLOR[s.label] || '#71b3e5', flexShrink: 0 }} />
+                                                    <div key={i} style={{ background: '#f8f9fc', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                        <div style={{ width: 7, height: 7, borderRadius: '50%', background: CAT_COLOR[s.label] || '#71b3e5', flexShrink: 0 }} />
                                                         <div>
-                                                            <p style={{  fontWeight: 700, fontSize: 10, color: '#aaa', margin: 0, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</p>
-                                                            <p style={{  fontWeight: 600, fontSize: 13, color: '#1a1a2e', margin: '2px 0 0' }}>{s.type}</p>
-                                                            {s.color && <p style={{  fontSize: 11, color: '#aaa', margin: '1px 0 0' }}>{s.color}</p>}
+                                                            <p style={{ fontWeight: 700, fontSize: 10, color: '#aaa', margin: 0, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</p>
+                                                            <p style={{ fontWeight: 600, fontSize: 13, color: '#1a1a2e', margin: '2px 0 0' }}>{s.type}</p>
+                                                            {s.color && <p style={{ fontSize: 11, color: '#aaa', margin: '1px 0 0' }}>{s.color}</p>}
                                                         </div>
                                                     </div>
                                                 ))}
@@ -413,26 +412,26 @@ function Recommend() {
                                         )}
                                     </div>
 
-                                    <div style={{ padding: '20px 28px' }}>
+                                    <div style={{ padding: '16px 22px' }}>
                                         {outfit?.description && (
-                                            <div style={{ background: 'rgba(113,179,229,0.07)', borderLeft: '3px solid #71b3e5', borderRadius: '0 12px 12px 0', padding: '14px 18px', marginBottom: 16 }}>
-                                                <p style={{  fontWeight: 600, fontSize: 10, color: '#71b3e5', margin: '0 0 5px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>AI 추천 이유</p>
-                                                <p style={{  fontWeight: 400, fontSize: 13, color: '#555', lineHeight: 1.7, margin: 0 }}>"{outfit.description}"</p>
+                                            <div style={{ background: 'rgba(113,179,229,0.07)', borderLeft: '3px solid #71b3e5', borderRadius: '0 12px 12px 0', padding: '12px 14px', marginBottom: 14 }}>
+                                                <p style={{ fontWeight: 600, fontSize: 10, color: '#71b3e5', margin: '0 0 5px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>AI 추천 이유</p>
+                                                <p style={{ fontWeight: 400, fontSize: 12, color: '#555', lineHeight: 1.7, margin: 0 }}>"{outfit.description}"</p>
                                             </div>
                                         )}
 
                                         {entry.matchedItems.length > 0 && (
-                                            <div style={{ marginBottom: 16 }}>
-                                                <p style={{  fontWeight: 700, fontSize: 11, color: '#aaa', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>내 옷장 아이템</p>
-                                                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                                            <div style={{ marginBottom: 14 }}>
+                                                <p style={{ fontWeight: 700, fontSize: 11, color: '#aaa', margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>내 옷장 아이템</p>
+                                                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                                                     {entry.matchedItems.map((item, i) => (
-                                                        <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, width: 72 }}>
+                                                        <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: 64 }}>
                                                             {(item.imageUrl || item.imageB64) ? (
-                                                                <img src={item.imageUrl || item.imageB64} alt={item.type} style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 10, border: '1px solid #eaedf2' }} />
+                                                                <img src={item.imageUrl || item.imageB64} alt={item.type} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 10, border: '1px solid #eaedf2' }} />
                                                             ) : (
-                                                                <div style={{ width: 72, height: 72, borderRadius: 10, background: 'rgba(113,179,229,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><WardrobeIcon color="#71b3e5" size={28} /></div>
+                                                                <div style={{ width: 64, height: 64, borderRadius: 10, background: 'rgba(113,179,229,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><WardrobeIcon color="#71b3e5" size={24} /></div>
                                                             )}
-                                                            <span style={{  fontSize: 10, color: '#555', fontWeight: 500, textAlign: 'center', maxWidth: 72, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.type}</span>
+                                                            <span style={{ fontSize: 10, color: '#555', fontWeight: 500, textAlign: 'center', maxWidth: 64, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.type}</span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -441,16 +440,16 @@ function Recommend() {
 
                                         {!isAccepted ? (
                                             <button onClick={() => handleAccept(poolIdx)} disabled={accepting} style={{
-                                                width: '100%', padding: 13,
+                                                width: '100%', padding: 12,
                                                 background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)',
-                                                color: 'white', border: 'none', borderRadius: 12, fontSize: 14, cursor: 'pointer',
-                                                 fontWeight: 700,
+                                                color: 'white', border: 'none', borderRadius: 12, fontSize: 13, cursor: 'pointer',
+                                                fontWeight: 700,
                                             }}>
-                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>{accepting ? '선택 중...' : <><CheckIcon color="white" size={15} /> 이 코디 선택</>}</span>
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>{accepting ? '선택 중...' : <><CheckIcon color="white" size={14} /> 이 코디 선택</>}</span>
                                             </button>
                                         ) : (
                                             <div style={{ padding: 12, background: 'rgba(113,179,229,0.1)', borderRadius: 12, textAlign: 'center' }}>
-                                                <span style={{  fontWeight: 700, fontSize: 14, color: '#71b3e5', display: 'inline-flex', alignItems: 'center', gap: 5 }}>선택한 코디입니다 <CheckIcon color="#71b3e5" size={15} /></span>
+                                                <span style={{ fontWeight: 700, fontSize: 13, color: '#71b3e5', display: 'inline-flex', alignItems: 'center', gap: 5 }}>선택한 코디입니다 <CheckIcon color="#71b3e5" size={14} /></span>
                                             </div>
                                         )}
                                     </div>
@@ -459,77 +458,87 @@ function Recommend() {
                         })}
                     </div>
                 </div>
-            </div>
 
-            {/* Past recommendations */}
-            {history.length > 0 && (
-                <div style={{ marginTop: 40 }}>
-                    <div style={{ borderTop: '2px dashed #eaedf2', paddingTop: 32, marginBottom: 24 }}>
-                        <h2 style={{  fontWeight: 700, fontSize: 22, color: '#1a1a2e', margin: '0 0 6px' }}>지난 추천 코디</h2>
-                        <p style={{  fontWeight: 400, fontSize: 14, color: '#888', margin: 0 }}>이전에 추천받은 코디를 확인하고 변경할 수 있어요 ({history.length}건)</p>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                        {history.map((rec, i) => (
-                            <div key={rec.recId || i} style={{ background: 'white', borderRadius: 20, overflow: 'hidden', border: '1px solid #eaedf2' }}>
-                                <div style={{ padding: '16px 20px 14px', background: `linear-gradient(135deg, ${TPO_COLORS[rec.tpo] || '#71b3e5'}DD, ${TPO_COLORS[rec.tpo] || '#71b3e5'}88)` }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10, flexWrap: 'wrap' }}>
-                                        <span style={{ fontSize: 12, fontWeight: 800, color: 'white', background: 'rgba(255,255,255,0.25)', padding: '4px 12px', borderRadius: 20,  }}>{rec.tpo}</span>
-                                        {!!rec.retryCount && rec.retryCount > 0 && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.9)', background: 'rgba(255,255,255,0.18)', padding: '3px 9px', borderRadius: 20,  display: 'inline-flex', alignItems: 'center', gap: 4 }}><RefreshIcon color="rgba(255,255,255,0.9)" size={10} /> 재추천 {rec.retryCount}회</span>}
-                                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginLeft: 'auto',  }}>{new Date(rec.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                        <span style={{ fontSize: 17, fontWeight: 800, color: 'white', letterSpacing: '-0.3px',  display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                                            {rec.outfitDate && <CalendarIcon color="white" size={16} />}{rec.outfitDate ? `${formatOutfitDate(rec.outfitDate)} 코디` : '코디 추천'}
-                                        </span>
-                                        {rec.temperature && <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.9)', background: 'rgba(255,255,255,0.18)', padding: '4px 10px', borderRadius: 20,  display: 'inline-flex', alignItems: 'center', gap: 4 }}><ThermometerIcon color="rgba(255,255,255,0.9)" size={11} /> {rec.temperature}°C · {rec.weatherCondition}</span>}
-                                    </div>
-                                </div>
-                                <div style={{ padding: '14px 20px 18px' }}>
-                                    {rec.description && <p style={{  fontSize: 12, color: '#888', lineHeight: 1.65, margin: '0 0 12px', fontStyle: 'italic', paddingLeft: 10, borderLeft: '2px solid rgba(113,179,229,0.3)' }}>"{rec.description}"</p>}
-                                    {rec.allOutfitGroups && Object.keys(rec.allOutfitGroups).length > 0 ? (
-                                        Object.entries(rec.allOutfitGroups).map(([idxStr, items]) => {
-                                            const idx = parseInt(idxStr);
-                                            const isAccepted = rec.acceptedOutfitIndex === idx;
-                                            const info = rec.outfitInfos?.[idx];
-                                            return (
-                                                <div key={idx} style={{ borderRadius: 14, padding: '12px 14px', marginBottom: 10, background: isAccepted ? 'rgba(113,179,229,0.07)' : '#f8f9fc', borderLeft: isAccepted ? '3px solid #71b3e5' : '3px solid #eaedf2' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                            <span style={{ width: 24, height: 24, borderRadius: '50%', background: isAccepted ? '#71b3e5' : '#B0BEC5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, color: 'white', flexShrink: 0,  }}>{idx + 1}</span>
-                                                            {info?.style && <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20, color: isAccepted ? '#71b3e5' : '#607D8B', background: isAccepted ? 'white' : '#EEF2F5', border: isAccepted ? '1px solid rgba(113,179,229,0.3)' : '1px solid #DDE3E9',  }}>{info.style}</span>}
-                                                        </div>
-                                                        {isAccepted && <span style={{ fontSize: 11, fontWeight: 700, color: '#71b3e5', background: 'white', padding: '4px 12px', borderRadius: 20, border: '1.5px solid #71b3e5',  display: 'inline-flex', alignItems: 'center', gap: 4 }}><CheckIcon color="#71b3e5" size={11} /> 선택됨</span>}
-                                                    </div>
-                                                    {items.length > 0 ? (
-                                                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                                                            {items.map((item, ii) => (
-                                                                <div key={ii} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: 70 }}>
-                                                                    {item.imageUrl ? <img src={item.imageUrl} alt={item.type} style={{ width: 70, height: 70, objectFit: 'cover', borderRadius: 12, border: '2px solid rgba(255,255,255,0.9)', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }} /> : <div style={{ width: 70, height: 70, borderRadius: 12, background: 'rgba(113,179,229,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><WardrobeIcon color="#71b3e5" size={26} /></div>}
-                                                                    <span style={{ fontSize: 9, fontWeight: 700, color: 'white', padding: '2px 6px', borderRadius: 5, background: CAT_COLOR[item.category || ''] || '#71b3e5',  }}>{item.category}</span>
-                                                                    <p style={{ fontSize: 10, color: '#1a1a2e', fontWeight: 500, margin: 0, textAlign: 'center', maxWidth: 70, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',  }}>{item.type}</p>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    ) : (
-                                                        <p style={{ fontSize: 11, color: '#aaa', margin: 0, padding: '6px 0',  }}>매칭 아이템 없음</p>
-                                                    )}
-                                                    {!isAccepted && (
-                                                        <button onClick={() => handleChangeAccept(rec.recId, idx, info)} style={{ marginTop: 12, width: '100%', padding: 10, background: 'white', border: '1.5px solid #71b3e5', borderRadius: 10, fontSize: 13, fontWeight: 700, color: '#71b3e5', cursor: 'pointer',  }}>
-                                                            이 코디로 변경하기
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            );
-                                        })
-                                    ) : (
-                                        <p style={{ fontSize: 12, color: '#aaa', textAlign: 'center', padding: '16px 0',  }}>코디 정보 없음</p>
-                                    )}
-                                </div>
+                {/* RIGHT column: Past recommendations */}
+                <div>
+                    {history.length === 0 ? (
+                        <div style={{ background: 'white', borderRadius: 20, border: '1px solid #eaedf2', padding: '48px 32px', textAlign: 'center' }}>
+                            <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(113,179,229,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                                <ClockIcon color="#71b3e5" size={24} />
                             </div>
-                        ))}
-                    </div>
+                            <p style={{ fontWeight: 600, fontSize: 15, color: '#1a1a2e', margin: '0 0 8px' }}>아직 추천 기록이 없어요</p>
+                            <p style={{ fontSize: 13, color: '#bbb', margin: 0 }}>코디를 추천받으면 여기에 기록돼요</p>
+                        </div>
+                    ) : (
+                        <>
+                            <div style={{ marginBottom: 20 }}>
+                                <h2 style={{ fontWeight: 700, fontSize: 20, color: '#1a1a2e', margin: '0 0 4px' }}>지난 추천 코디</h2>
+                                <p style={{ fontWeight: 400, fontSize: 13, color: '#888', margin: 0 }}>이전에 추천받은 코디를 확인하고 변경할 수 있어요 ({history.length}건)</p>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                {history.map((rec, i) => (
+                                    <div key={rec.recId || i} style={{ background: 'white', borderRadius: 20, overflow: 'hidden', border: '1px solid #eaedf2' }}>
+                                        <div style={{ padding: '16px 20px 14px', background: `linear-gradient(135deg, ${TPO_COLORS[rec.tpo] || '#71b3e5'}DD, ${TPO_COLORS[rec.tpo] || '#71b3e5'}88)` }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10, flexWrap: 'wrap' }}>
+                                                <span style={{ fontSize: 12, fontWeight: 800, color: 'white', background: 'rgba(255,255,255,0.25)', padding: '4px 12px', borderRadius: 20 }}>{rec.tpo}</span>
+                                                {!!rec.retryCount && rec.retryCount > 0 && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.9)', background: 'rgba(255,255,255,0.18)', padding: '3px 9px', borderRadius: 20, display: 'inline-flex', alignItems: 'center', gap: 4 }}><RefreshIcon color="rgba(255,255,255,0.9)" size={10} /> 재추천 {rec.retryCount}회</span>}
+                                                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginLeft: 'auto' }}>{new Date(rec.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                <span style={{ fontSize: 17, fontWeight: 800, color: 'white', letterSpacing: '-0.3px', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                                    {rec.outfitDate && <CalendarIcon color="white" size={16} />}{rec.outfitDate ? `${formatOutfitDate(rec.outfitDate)} 코디` : '코디 추천'}
+                                                </span>
+                                                {rec.temperature && <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.9)', background: 'rgba(255,255,255,0.18)', padding: '4px 10px', borderRadius: 20, display: 'inline-flex', alignItems: 'center', gap: 4 }}><ThermometerIcon color="rgba(255,255,255,0.9)" size={11} /> {rec.temperature}°C · {rec.weatherCondition}</span>}
+                                            </div>
+                                        </div>
+                                        <div style={{ padding: '14px 20px 18px' }}>
+                                            {rec.description && <p style={{ fontSize: 12, color: '#888', lineHeight: 1.65, margin: '0 0 12px', fontStyle: 'italic', paddingLeft: 10, borderLeft: '2px solid rgba(113,179,229,0.3)' }}>"{rec.description}"</p>}
+                                            {rec.allOutfitGroups && Object.keys(rec.allOutfitGroups).length > 0 ? (
+                                                Object.entries(rec.allOutfitGroups).map(([idxStr, items]) => {
+                                                    const idx = parseInt(idxStr);
+                                                    const isAccepted = rec.acceptedOutfitIndex === idx;
+                                                    const info = rec.outfitInfos?.[idx];
+                                                    return (
+                                                        <div key={idx} style={{ borderRadius: 14, padding: '12px 14px', marginBottom: 10, background: isAccepted ? 'rgba(113,179,229,0.07)' : '#f8f9fc', borderLeft: isAccepted ? '3px solid #71b3e5' : '3px solid #eaedf2' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                                    <span style={{ width: 24, height: 24, borderRadius: '50%', background: isAccepted ? '#71b3e5' : '#B0BEC5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, color: 'white', flexShrink: 0 }}>{idx + 1}</span>
+                                                                    {info?.style && <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20, color: isAccepted ? '#71b3e5' : '#607D8B', background: isAccepted ? 'white' : '#EEF2F5', border: isAccepted ? '1px solid rgba(113,179,229,0.3)' : '1px solid #DDE3E9' }}>{info.style}</span>}
+                                                                </div>
+                                                                {isAccepted && <span style={{ fontSize: 11, fontWeight: 700, color: '#71b3e5', background: 'white', padding: '4px 12px', borderRadius: 20, border: '1.5px solid #71b3e5', display: 'inline-flex', alignItems: 'center', gap: 4 }}><CheckIcon color="#71b3e5" size={11} /> 선택됨</span>}
+                                                            </div>
+                                                            {items.length > 0 ? (
+                                                                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                                                                    {items.map((item, ii) => (
+                                                                        <div key={ii} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: 70 }}>
+                                                                            {item.imageUrl ? <img src={item.imageUrl} alt={item.type} style={{ width: 70, height: 70, objectFit: 'cover', borderRadius: 12, border: '2px solid rgba(255,255,255,0.9)', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }} /> : <div style={{ width: 70, height: 70, borderRadius: 12, background: 'rgba(113,179,229,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><WardrobeIcon color="#71b3e5" size={26} /></div>}
+                                                                            <span style={{ fontSize: 9, fontWeight: 700, color: 'white', padding: '2px 6px', borderRadius: 5, background: CAT_COLOR[item.category || ''] || '#71b3e5' }}>{item.category}</span>
+                                                                            <p style={{ fontSize: 10, color: '#1a1a2e', fontWeight: 500, margin: 0, textAlign: 'center', maxWidth: 70, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.type}</p>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            ) : (
+                                                                <p style={{ fontSize: 11, color: '#aaa', margin: 0, padding: '6px 0' }}>매칭 아이템 없음</p>
+                                                            )}
+                                                            {!isAccepted && (
+                                                                <button onClick={() => handleChangeAccept(rec.recId, idx, info)} style={{ marginTop: 12, width: '100%', padding: 10, background: 'white', border: '1.5px solid #71b3e5', borderRadius: 10, fontSize: 13, fontWeight: 700, color: '#71b3e5', cursor: 'pointer' }}>
+                                                                    이 코디로 변경하기
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })
+                                            ) : (
+                                                <p style={{ fontSize: 12, color: '#aaa', textAlign: 'center', padding: '16px 0' }}>코디 정보 없음</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
                 </div>
-            )}
+            </div>
         </div>
     );
 }
