@@ -159,114 +159,120 @@ function Wardrobe() {
     return (
         <div style={{ padding: '70px 36px', maxWidth: 1100, width: '100%' }}>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 28 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
                 <div>
-                    <h1 style={{  fontWeight: 700, fontSize: 28, color: '#1a1a2e', margin: 0, letterSpacing: '-0.5px' }}>
-                        내 옷장
-                    </h1>
-                    <p style={{  fontWeight: 400, fontSize: 14, color: '#888', margin: '6px 0 0' }}>
-                        {items.length}개의 아이템이 등록되어 있어요
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+                        <h1 style={{ fontWeight: 700, fontSize: 28, color: '#1a1a2e', margin: 0, letterSpacing: '-0.5px' }}>내 옷장</h1>
+                        <span style={{ fontWeight: 400, fontSize: 16, color: '#888' }}>전체 아이템 {items.length}개</span>
+                    </div>
+                    <p style={{ fontWeight: 400, fontSize: 14, color: '#888', margin: '6px 0 0' }}>
+                        당신의 소중한 의류 아이템들을 모아보고 관리하세요.
                     </p>
                 </div>
-                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                    {hasColorDeficiency && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: correctionEnabled ? 'rgba(113,179,229,0.1)' : '#f5f5f5', border: `1px solid ${correctionEnabled ? '#71b3e5' : '#e0e0e0'}`, borderRadius: 12, padding: '8px 14px' }}>
-                            <span style={{  fontSize: 12, fontWeight: 600, color: correctionEnabled ? '#71b3e5' : '#888' }}>
-                                색약 보정 {correctionEnabled ? 'ON' : 'OFF'}
-                            </span>
-                            <button
-                                onClick={() => setCorrectionEnabled(p => !p)}
-                                style={{ width: 36, height: 20, borderRadius: 10, background: correctionEnabled ? '#71b3e5' : '#ccc', border: 'none', cursor: 'pointer', position: 'relative' }}
-                            >
-                                <div style={{ position: 'absolute', top: 2, left: correctionEnabled ? 18 : 2, width: 16, height: 16, borderRadius: '50%', background: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-                            </button>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
-                {statsData.map(({ label, value, color }) => (
-                    <div key={label} style={{ background: 'white', borderRadius: 16, padding: '18px 20px', border: '1px solid #eaedf2', display: 'flex', alignItems: 'center', gap: 14 }}>
-                        <div style={{ width: 44, height: 44, borderRadius: 12, background: color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <span style={{  fontWeight: 700, fontSize: 18, color }}>{value}</span>
-                        </div>
-                        <span style={{  fontWeight: 400, fontSize: 13, color: '#666' }}>{label}</span>
+                {hasColorDeficiency && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: correctionEnabled ? '#71b3e5' : '#888' }}>
+                            색약 보정 {correctionEnabled ? 'ON' : 'OFF'}
+                        </span>
+                        <button
+                            onClick={() => setCorrectionEnabled(p => !p)}
+                            style={{ width: 44, height: 24, borderRadius: 12, background: correctionEnabled ? '#71b3e5' : '#d0d5dd', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}
+                        >
+                            <div style={{ position: 'absolute', top: 2, left: correctionEnabled ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: 'white', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+                        </button>
                     </div>
-                ))}
+                )}
             </div>
 
-            {/* Search + filter */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                <div style={{ width: 260, flexShrink: 0, background: 'white', border: '1px solid #eaedf2', borderRadius: 12, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <SearchIcon size={16} color="#aaa" />
+            {/* Search + filter row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+                {/* Search */}
+                <div style={{ background: 'white', border: '1px solid #eaedf2', borderRadius: 10, padding: '9px 14px', display: 'flex', alignItems: 'center', gap: 8, width: 200, flexShrink: 0 }}>
+                    <SearchIcon size={15} color="#aaa" />
                     <input
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="아이템 검색..."
-                        style={{ border: 'none', outline: 'none',  fontWeight: 400, fontSize: 14, color: '#333', background: 'transparent', flex: 1, minWidth: 0 }}
+                        style={{ border: 'none', outline: 'none', fontWeight: 400, fontSize: 13, color: '#333', background: 'transparent', flex: 1, minWidth: 0 }}
                     />
                 </div>
 
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    {categories.map((cat) => {
-                        const isActive = cat === selectedCategory;
-                        return (
-                            <button
-                                key={cat}
-                                onClick={() => setSelectedCategory(cat)}
-                                style={{
-                                    background: isActive ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : 'white',
-                                    border: isActive ? 'none' : '1px solid #eaedf2',
-                                    borderRadius: 10, padding: '8px 16px',
-                                     fontWeight: isActive ? 600 : 400,
-                                    fontSize: 13, color: isActive ? 'white' : '#555', cursor: 'pointer', whiteSpace: 'nowrap',
-                                }}
-                            >
-                                {cat}
-                            </button>
-                        );
-                    })}
-                    <button
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploading}
-                        style={{
-                            background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)',
-                            border: 'none', borderRadius: 10, padding: '8px 16px',
-                             fontWeight: 600, fontSize: 13,
-                            color: 'white', cursor: 'pointer', whiteSpace: 'nowrap',
-                        }}
-                    >
-                        {uploading ? '업로드 중...' : '+ 아이템 추가'}
-                    </button>
-                    <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
-                </div>
+                {/* Category pills */}
+                {categories.map((cat) => {
+                    const isActive = cat === selectedCategory;
+                    return (
+                        <button
+                            key={cat}
+                            onClick={() => setSelectedCategory(cat)}
+                            style={{
+                                background: isActive ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : 'white',
+                                border: isActive ? 'none' : '1px solid #eaedf2',
+                                borderRadius: 8, padding: '8px 16px',
+                                fontWeight: isActive ? 600 : 400,
+                                fontSize: 13, color: isActive ? 'white' : '#555',
+                                cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                            }}
+                        >
+                            {cat}
+                        </button>
+                    );
+                })}
+
+                <div style={{ flex: 1 }} />
+
+                {/* Add button */}
+                <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    style={{
+                        background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)',
+                        border: 'none', borderRadius: 10, padding: '9px 20px',
+                        fontWeight: 600, fontSize: 13,
+                        color: 'white', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                    }}
+                >
+                    {uploading ? '업로드 중...' : '+ 아이템 추가'}
+                </button>
+                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
             </div>
 
             {/* Grid */}
             {loading ? (
-                <div style={{ textAlign: 'center', padding: '60px 0' }}>
-                    <p style={{  color: '#aaa', fontSize: 14 }}>불러오는 중...</p>
+                <div style={{ textAlign: 'center', padding: '80px 0' }}>
+                    <p style={{ color: '#aaa', fontSize: 14 }}>불러오는 중...</p>
                 </div>
             ) : filteredItems.length === 0 ? (
-                <div style={{ background: 'white', borderRadius: 20, padding: '60px', textAlign: 'center', border: '1px solid #eaedf2' }}>
-                    <div style={{ marginBottom: 12 }}><WardrobeIcon size={48} color="#ccc" /></div>
-                    <p style={{  fontWeight: 600, fontSize: 16, color: '#1a1a2e', margin: '0 0 8px' }}>
+                <div style={{ background: 'white', borderRadius: 20, padding: '80px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
+                    <div style={{ marginBottom: 16 }}><WardrobeIcon size={48} color="#ccc" /></div>
+                    <p style={{ fontWeight: 600, fontSize: 16, color: '#1a1a2e', margin: '0 0 8px' }}>
                         {selectedCategory === '전체' ? '옷장이 비어있어요' : `${selectedCategory} 카테고리에 아이템이 없어요`}
                     </p>
-                    <p style={{  fontSize: 13, color: '#aaa', margin: 0 }}>
+                    <p style={{ fontSize: 13, color: '#aaa', margin: 0 }}>
                         위 버튼으로 아이템을 추가해보세요
                     </p>
                 </div>
             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
                     {filteredItems.map(item => (
                         <div
                             key={item.id}
-                            className="wardrobe-card"
-                            style={{ background: 'white', border: '1px solid #eaedf2', borderRadius: 18, overflow: 'hidden', cursor: 'pointer' }}
                             onClick={() => openPopup(item)}
+                            style={{
+                                background: 'white',
+                                borderRadius: 16,
+                                overflow: 'hidden',
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                                transition: 'box-shadow 0.18s, transform 0.18s',
+                            }}
+                            onMouseEnter={e => {
+                                (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.12)';
+                                (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                            }}
+                            onMouseLeave={e => {
+                                (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)';
+                                (e.currentTarget as HTMLElement).style.transform = 'none';
+                            }}
                         >
                             {item.imageUrl ? (
                                 <DaltonizedImage
@@ -274,23 +280,23 @@ function Wardrobe() {
                                     alt={item.type || ''}
                                     colorType={colorType || 'normal'}
                                     correctionEnabled={correctionEnabled}
-                                    imgStyle={{ width: '100%', height: 140, objectFit: 'cover', display: 'block' }}
+                                    imgStyle={{ width: '100%', height: 210, objectFit: 'cover', display: 'block' }}
                                 />
                             ) : (
-                                <div style={{ height: 140, background: getColorHex(item.color), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <WardrobeIcon size={40} color="rgba(255,255,255,0.75)" />
+                                <div style={{ height: 210, background: getColorHex(item.color), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <WardrobeIcon size={44} color="rgba(255,255,255,0.75)" />
                                 </div>
                             )}
-                            <div style={{ padding: '12px 14px' }}>
-                                <p style={{  fontWeight: 600, fontSize: 13, color: '#1a1a2e', margin: 0 }}>
+                            <div style={{ padding: '14px 16px 16px' }}>
+                                <p style={{ fontWeight: 600, fontSize: 15, color: '#1a1a2e', margin: '0 0 10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                     {item.type || '아이템'}
                                 </p>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
-                                    <span style={{ background: 'rgba(113,179,229,0.12)', borderRadius: 8, padding: '2px 8px',  fontWeight: 400, fontSize: 10, color: '#71b3e5' }}>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+                                    <span style={{ fontSize: 12, color: '#999' }}>
                                         {normalizeCategory(item.category)}
                                     </span>
                                     {item.color && (
-                                        <span style={{ background: 'rgba(113,179,229,0.12)', borderRadius: 8, padding: '2px 8px',  fontWeight: 400, fontSize: 10, color: '#71b3e5' }}>
+                                        <span style={{ background: 'rgba(113,179,229,0.13)', borderRadius: 20, padding: '2px 10px', fontSize: 12, color: '#71b3e5', fontWeight: 500 }}>
                                             {item.color}
                                         </span>
                                     )}

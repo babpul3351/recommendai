@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { wardrobeAPI } from '../api/api';
-import { AI_BASE_URL } from '../api/env';
-import { theme } from '../styles/theme';
-import { WardrobeIcon, StudioIcon, CloseIcon } from '../components/Icons';
+import { wardrobeAPI } from '../../api/api';
+import { AI_BASE_URL } from '../../api/env';
+import { WardrobeIcon, StudioIcon, CloseIcon } from '../../components/Icons';
 
 interface WardrobeItem {
     id: number;
@@ -63,7 +62,6 @@ function btnStyle(disabled: boolean, variant: 'default' | 'danger' | 'primary' =
         border: c.border,
         background: c.bg,
         color: c.color,
-        
         fontSize: 13,
         fontWeight: 500,
         cursor: disabled ? 'not-allowed' : 'pointer',
@@ -72,7 +70,7 @@ function btnStyle(disabled: boolean, variant: 'default' | 'danger' | 'primary' =
     };
 }
 
-function StylingStudio() {
+function Outfits() {
     const [wardrobeItems, setWardrobeItems] = useState<WardrobeItem[]>([]);
     const [wardrobeLoading, setWardrobeLoading] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('전체');
@@ -130,7 +128,6 @@ function StylingStudio() {
 
         if (!src) return;
 
-        // 1단계: S3 이미지 → base64 (캔버스 저장 시 CORS 문제 방지)
         let b64: string;
         try {
             b64 = await urlToBase64(src);
@@ -140,7 +137,6 @@ function StylingStudio() {
             return;
         }
 
-        // 2단계: SAM 배경 제거
         try {
             const res = await fetch(`${AI_BASE_URL}/ai/remove-background`, {
                 method: 'POST',
@@ -155,15 +151,12 @@ function StylingStudio() {
                         : i
                 ));
             } else {
-                // SAM 실패 → cachedB64(data URL)로 폴백
                 setCanvasItems(prev => prev.map(i => i.id === id ? { ...i, displaySrc: b64, isLoading: false } : i));
             }
         } catch {
             setCanvasItems(prev => prev.map(i => i.id === id ? { ...i, displaySrc: b64, isLoading: false } : i));
         }
     }, []);
-
-    // ── Canvas drag/drop ──────────────────────────────────────────────────────
 
     const handleCanvasDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -178,8 +171,6 @@ function StylingStudio() {
         setDraggingItem(null);
     };
 
-    // ── Item move (pointer capture) ───────────────────────────────────────────
-
     const handleItemPointerDown = (e: React.PointerEvent, id: string) => {
         if (resizeRef.current) return;
         e.stopPropagation();
@@ -187,7 +178,6 @@ function StylingStudio() {
         const item = canvasItems.find(i => i.id === id)!;
         moveRef.current = { id, startX: e.clientX, startY: e.clientY, initX: item.x, initY: item.y };
         setSelectedId(id);
-        // bring to front
         setCanvasItems(prev => {
             const max = Math.max(...prev.map(i => i.zIndex));
             if (item.zIndex === max) return prev;
@@ -206,11 +196,7 @@ function StylingStudio() {
         ));
     };
 
-    const handleItemPointerUp = () => {
-        moveRef.current = null;
-    };
-
-    // ── Resize handles ────────────────────────────────────────────────────────
+    const handleItemPointerUp = () => { moveRef.current = null; };
 
     const handleResizeDown = (e: React.PointerEvent, id: string, corner: string) => {
         e.stopPropagation();
@@ -235,8 +221,6 @@ function StylingStudio() {
 
     const handleResizeUp = () => { resizeRef.current = null; };
 
-    // ── Layer controls ────────────────────────────────────────────────────────
-
     const changeLayer = (dir: 1 | -1) => {
         if (!selectedId) return;
         setCanvasItems(prev => {
@@ -258,8 +242,6 @@ function StylingStudio() {
         setSelectedId(null);
     };
 
-    // ── Canvas 합성 (data URL만 사용 → CORS 문제 없음) ────────────────────────
-
     const composeCanvas = useCallback(async (): Promise<string> => {
         const el = canvasRef.current!;
         const canvas = document.createElement('canvas');
@@ -271,7 +253,6 @@ function StylingStudio() {
 
         const sorted = [...canvasItems].sort((a, b) => a.zIndex - b.zIndex);
         for (const item of sorted) {
-            // displaySrc(SAM 결과) → cachedB64(원본 data URL) → originalSrc 순으로 시도
             const src = item.displaySrc.startsWith('data:')
                 ? item.displaySrc
                 : (item.cachedB64 ?? item.originalSrc);
@@ -286,21 +267,16 @@ function StylingStudio() {
         return canvas.toDataURL('image/png');
     }, [canvasItems]);
 
-    // ── 옷장에 코디 저장 ────────────────────────────────────────────────────────
-
     const handleSaveToWardrobe = async () => {
         if (canvasItems.length === 0 || saving) return;
         setSaving(true);
         try {
-            // 저장 전 현재 옷장 ID 목록 확보
             const before = await wardrobeAPI.getWardrobe();
             const beforeIds = new Set<number>(before.data.map((i: any) => i.id));
 
-            // 캔버스 합성 → 업로드
             const b64 = await composeCanvas();
             await wardrobeAPI.uploadItem(b64);
 
-            // 새로 추가된 아이템 찾기
             const after = await wardrobeAPI.getWardrobe();
             const newItem = after.data.find((i: any) => !beforeIds.has(i.id));
 
@@ -321,8 +297,6 @@ function StylingStudio() {
         }
     };
 
-    // ── Render ────────────────────────────────────────────────────────────────
-
     const filtered = wardrobeItems.filter(item =>
         selectedCategory === '전체' || normalizeCategory(item.category) === selectedCategory
     );
@@ -330,17 +304,7 @@ function StylingStudio() {
     const selected = canvasItems.find(i => i.id === selectedId);
 
     return (
-        <div style={{ padding: '70px 36px', maxWidth: 1200, width: '100%', boxSizing: 'border-box' }}>
-            {/* Header */}
-            <div style={{ marginBottom: 20 }}>
-                <h1 style={{  fontWeight: 700, fontSize: 28, color: '#1a1a2e', margin: 0 }}>
-                    코디 스튜디오
-                </h1>
-                <p style={{  fontSize: 14, color: '#888', margin: '6px 0 0' }}>
-                    옷장에서 아이템을 드래그해서 나만의 코디를 완성해 보세요
-                </p>
-            </div>
-
+        <>
             {/* Toolbar */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
                 <button onClick={() => changeLayer(1)} disabled={!selected} style={btnStyle(!selected)}>앞으로</button>
@@ -352,7 +316,7 @@ function StylingStudio() {
                     disabled={canvasItems.length === 0}
                     style={btnStyle(canvasItems.length === 0)}
                 >
-                    전체 지우기
+                    새 코디 만들기
                 </button>
                 <button
                     onClick={handleSaveToWardrobe}
@@ -378,15 +342,10 @@ function StylingStudio() {
                     overflow: 'hidden',
                 }}>
                     <div style={{ padding: '16px 16px 8px' }}>
-                        <p style={{  fontWeight: 600, fontSize: 14, color: '#1a1a2e', margin: 0 }}>
-                            내 옷장
-                        </p>
-                        <p style={{  fontSize: 11, color: '#aaa', margin: '4px 0 0' }}>
-                            아이템을 드래그해서 캔버스에 올려보세요
-                        </p>
+                        <p style={{ fontWeight: 600, fontSize: 14, color: '#1a1a2e', margin: 0 }}>내 옷장</p>
+                        <p style={{ fontSize: 11, color: '#aaa', margin: '4px 0 0' }}>아이템을 드래그해서 캔버스에 올려보세요</p>
                     </div>
 
-                    {/* Category filter */}
                     <div style={{ padding: '0 12px 10px', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                         {CATEGORIES.map(cat => (
                             <button
@@ -398,7 +357,6 @@ function StylingStudio() {
                                     border: 'none',
                                     background: selectedCategory === cat ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : '#f5f7fa',
                                     color: selectedCategory === cat ? 'white' : '#666',
-                                    
                                     fontSize: 11,
                                     fontWeight: selectedCategory === cat ? 600 : 400,
                                     cursor: 'pointer',
@@ -409,7 +367,6 @@ function StylingStudio() {
                         ))}
                     </div>
 
-                    {/* Items grid */}
                     <div style={{
                         flex: 1,
                         overflowY: 'auto',
@@ -420,11 +377,11 @@ function StylingStudio() {
                         alignContent: 'start',
                     }}>
                         {wardrobeLoading ? (
-                            <div style={{ gridColumn: '1/-1', textAlign: 'center', paddingTop: 40, color: '#aaa',  fontSize: 12 }}>
+                            <div style={{ gridColumn: '1/-1', textAlign: 'center', paddingTop: 40, color: '#aaa', fontSize: 12 }}>
                                 불러오는 중...
                             </div>
                         ) : filtered.length === 0 ? (
-                            <div style={{ gridColumn: '1/-1', textAlign: 'center', paddingTop: 40, color: '#aaa',  fontSize: 12 }}>
+                            <div style={{ gridColumn: '1/-1', textAlign: 'center', paddingTop: 40, color: '#aaa', fontSize: 12 }}>
                                 아이템이 없어요
                             </div>
                         ) : filtered.map(item => (
@@ -464,16 +421,7 @@ function StylingStudio() {
                                         <WardrobeIcon size={28} color="#bbb" />
                                     </div>
                                 )}
-                                <p style={{
-                                    margin: 0,
-                                    padding: '6px 8px',
-                                    
-                                    fontSize: 10,
-                                    color: '#555',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                }}>
+                                <p style={{ margin: 0, padding: '6px 8px', fontSize: 10, color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                     {item.type || normalizeCategory(item.category)}
                                 </p>
                             </div>
@@ -500,7 +448,6 @@ function StylingStudio() {
                         cursor: 'default',
                     }}
                 >
-                    {/* Empty hint */}
                     {canvasItems.length === 0 && (
                         <div style={{
                             position: 'absolute', inset: 0,
@@ -511,19 +458,17 @@ function StylingStudio() {
                             <div style={{ marginBottom: 14, opacity: 0.35 }}>
                                 <StudioIcon size={48} color="#bcc5d4" />
                             </div>
-                            <p style={{  fontWeight: 600, fontSize: 15, color: '#bcc5d4', margin: 0 }}>
+                            <p style={{ fontWeight: 600, fontSize: 15, color: '#bcc5d4', margin: 0 }}>
                                 여기에 아이템을 드래그해 보세요
                             </p>
-                            <p style={{  fontSize: 12, color: '#c8d0dc', margin: '6px 0 0' }}>
+                            <p style={{ fontSize: 12, color: '#c8d0dc', margin: '6px 0 0' }}>
                                 배경이 자동으로 제거돼요
                             </p>
                         </div>
                     )}
 
-                    {/* Canvas items */}
                     {canvasItems.map(item => {
                         const isSel = item.id === selectedId;
-
                         return (
                             <div
                                 key={item.id}
@@ -552,8 +497,7 @@ function StylingStudio() {
                                         display: 'flex', flexDirection: 'column',
                                         alignItems: 'center', justifyContent: 'center',
                                         background: 'rgba(113,179,229,0.07)',
-                                        borderRadius: 8,
-                                        gap: 8,
+                                        borderRadius: 8, gap: 8,
                                     }}>
                                         <div style={{
                                             width: 28, height: 28,
@@ -562,26 +506,17 @@ function StylingStudio() {
                                             borderRadius: '50%',
                                             animation: 'spin 0.8s linear infinite',
                                         }} />
-                                        <span style={{  fontSize: 10, color: '#71b3e5' }}>
-                                            배경 제거 중…
-                                        </span>
+                                        <span style={{ fontSize: 10, color: '#71b3e5' }}>배경 제거 중…</span>
                                     </div>
                                 ) : (
                                     <img
                                         src={item.displaySrc}
                                         alt=""
                                         draggable={false}
-                                        style={{
-                                            width: '100%', height: '100%',
-                                            objectFit: 'contain',
-                                            display: 'block',
-                                            pointerEvents: 'none',
-                                            borderRadius: 8,
-                                        }}
+                                        style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', pointerEvents: 'none', borderRadius: 8 }}
                                     />
                                 )}
 
-                                {/* Delete button */}
                                 {isSel && (
                                     <button
                                         onPointerDown={(e) => e.stopPropagation()}
@@ -604,12 +539,11 @@ function StylingStudio() {
                                     </button>
                                 )}
 
-                                {/* SAM badge */}
                                 {isSel && item.isBgRemoved && (
                                     <div style={{
                                         position: 'absolute', bottom: -10, left: '50%', transform: 'translateX(-50%)',
                                         background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)',
-                                        color: 'white', fontSize: 9, 
+                                        color: 'white', fontSize: 9,
                                         padding: '2px 8px', borderRadius: 999,
                                         whiteSpace: 'nowrap', zIndex: 10,
                                         boxShadow: '0 2px 6px rgba(113,179,229,0.4)',
@@ -618,7 +552,6 @@ function StylingStudio() {
                                     </div>
                                 )}
 
-                                {/* Resize handles */}
                                 {isSel && (
                                     <>
                                         {[
@@ -652,8 +585,8 @@ function StylingStudio() {
             </div>
 
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        </div>
+        </>
     );
 }
 
-export default StylingStudio;
+export default Outfits;

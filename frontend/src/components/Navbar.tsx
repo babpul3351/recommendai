@@ -1,12 +1,11 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { theme } from '../styles/theme';
-import { HomeIcon, WardrobeIcon, CalendarIcon, SparkleIcon, UserIcon, StudioIcon } from './Icons';
+import { HomeIcon, WardrobeIcon, CalendarIcon, SparkleIcon, UserIcon } from './Icons';
 
 const navItems: { path: string; label: string; icon: React.ComponentType<{ color?: string }> }[] = [
     { path: '/', label: '홈', icon: HomeIcon },
     { path: '/wardrobe', label: '내 옷장', icon: WardrobeIcon },
-    { path: '/studio', label: '코디 스튜디오', icon: StudioIcon },
     { path: '/calendar', label: '캘린더', icon: CalendarIcon },
     { path: '/recommend', label: 'AI 추천', icon: SparkleIcon },
     { path: '/mypage', label: '마이페이지', icon: UserIcon },
