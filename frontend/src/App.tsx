@@ -4,7 +4,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Home from './pages/Home';
 import Wardrobe from './pages/wardrobe/Page';
-import Recommend from './pages/Recommend';
+import Recommend from './pages/recommend/Page';
 import Calendar from './pages/calendar/Page';
 import MyPage from './pages/MyPage';
 import Navbar from './components/Navbar';
