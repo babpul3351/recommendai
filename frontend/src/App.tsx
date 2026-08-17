@@ -3,8 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, Outle
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Home from './pages/Home';
-import Wardrobe from './pages/Wardrobe';
-import StylingStudio from './pages/StylingStudio';
+import Wardrobe from './pages/wardrobe/Page';
 import Recommend from './pages/Recommend';
 import Calendar from './pages/calendar/Page';
 import MyPage from './pages/MyPage';
@@ -60,7 +59,6 @@ function App() {
                 <Route element={<AuthLayout />}>
                     <Route path="/" element={<Home />} />
                     <Route path="/wardrobe" element={<Wardrobe />} />
-                    <Route path="/studio" element={<StylingStudio />} />
                     <Route path="/recommend" element={<Recommend />} />
                     <Route path="/calendar" element={<Calendar />} />
                     <Route path="/mypage" element={<MyPage />} />

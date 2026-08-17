@@ -1,16 +1,15 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { wardrobeAPI, userAPI } from '../api/api';
-import DaltonizedImage from '../components/DaltonizedImage';
-import { ColorType } from '../daltonization';
-import { theme } from '../styles/theme';
-import { SearchIcon, WardrobeIcon } from '../components/Icons';
+import { wardrobeAPI, userAPI } from '../../api/api';
+import DaltonizedImage from '../../components/DaltonizedImage';
+import { ColorType } from '../../daltonization';
+import { SearchIcon, WardrobeIcon } from '../../components/Icons';
 
-const CATEGORIES = ['상의', '하의', '아우터', '원피스', '기타', '저장한 코디'];
+const CATEGORIES_FILTER = ['전체', '상의', '하의', '아우터', '원피스', '기타'];
+const CATEGORIES_EDIT = ['상의', '하의', '아우터', '원피스', '기타'];
 const COLORS = ['블랙', '화이트', '그레이', '네이비', '블루', '레드', '핑크',
     '옐로우', '그린', '카키', '브라운', '갈색', '베이지', '퍼플', '오렌지',
     '와인', '민트', '코랄', '머스타드', '아이보리'];
 const MATERIALS = ['코튼', '데님', '니트', '가죽', '린넨', '폴리에스터', '울', '시폰', '기타'];
-
 
 interface WardrobeItem {
     id: number;
@@ -28,7 +27,33 @@ interface EditForm {
     material: string;
 }
 
-function Wardrobe() {
+export function normalizeCategory(category?: string): string {
+    if (!category) return '기타';
+    const c = category.trim();
+    if (['상의', '탑', 'top', 'TOP', '티셔츠', '셔츠', '니트', '블라우스', '후드', '맨투맨'].some(k => c.includes(k))) return '상의';
+    if (['하의', '팬츠', '바지', '스커트', '반바지', 'bottom', 'BOTTOM'].some(k => c.includes(k))) return '하의';
+    if (['아우터', '자켓', '재킷', '코트', '패딩', '점퍼', '가디건', 'outer', 'OUTER'].some(k => c.includes(k))) return '아우터';
+    if (['원피스', '드레스', 'dress', 'DRESS'].some(k => c.includes(k))) return '원피스';
+    return c;
+}
+
+function getColorHex(colorName?: string): string {
+    const map: Record<string, string> = {
+        '블랙': '#1a1a1a', '화이트': '#f5f5f5', '그레이': '#95a5a6',
+        '아이보리': '#f5f0dc', '네이비': '#1a2a5e', '블루': '#3498db',
+        '레드': '#e74c3c', '핑크': '#ff6b9d', '옐로우': '#f1c40f',
+        '그린': '#2ecc71', '카키': '#8B8B6A', '브라운': '#8B4513',
+        '베이지': '#f5f0e8', '퍼플': '#9b59b6', '오렌지': '#e67e22',
+        '와인': '#722F37', '민트': '#98FF98', '코랄': '#FF6B6B', '머스타드': '#FFDB58',
+    };
+    if (!colorName) return '#e0e0e0';
+    for (const [key, val] of Object.entries(map)) {
+        if (colorName.includes(key)) return val;
+    }
+    return '#e0e0e0';
+}
+
+function Clothes() {
     const [items, setItems] = useState<WardrobeItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -41,30 +66,26 @@ function Wardrobe() {
     const [colorType, setColorType] = useState<ColorType | 'normal' | null>(null);
     const [correctionEnabled, setCorrectionEnabled] = useState(false);
 
-    const categories = ['전체', '상의', '하의', '아우터', '원피스', '기타', '저장한 코디'];
-
     const fetchUserColorType = async () => {
         try {
             const res = await userAPI.getProfile();
             const ct: ColorType | 'normal' = res.data.colorType;
             setColorType(ct);
             if (ct && ct !== 'normal') setCorrectionEnabled(true);
-        } catch (err) { console.error(err); }
+        } catch {}
     };
 
     const fetchWardrobe = async () => {
         setLoading(true);
         try {
             const res = await wardrobeAPI.getWardrobe();
-            setItems(res.data);
-        } catch (err) { console.error(err); }
+            // 저장한 코디는 내 코디 탭에서 관리
+            setItems(res.data.filter((item: WardrobeItem) => normalizeCategory(item.category) !== '저장한 코디'));
+        } catch {}
         finally { setLoading(false); }
     };
 
-    useEffect(() => {
-        fetchWardrobe();
-        fetchUserColorType();
-    }, []);
+    useEffect(() => { fetchWardrobe(); fetchUserColorType(); }, []);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -76,12 +97,8 @@ function Wardrobe() {
                 await wardrobeAPI.uploadItem(reader.result as string);
                 await fetchWardrobe();
                 alert('업로드 완료');
-            } catch (err) {
-                alert('업로드 실패');
-            } finally {
-                setUploading(false);
-                e.target.value = '';
-            }
+            } catch { alert('업로드 실패'); }
+            finally { setUploading(false); e.target.value = ''; }
         };
         reader.readAsDataURL(file);
     };
@@ -92,7 +109,7 @@ function Wardrobe() {
             await wardrobeAPI.deleteItem(itemId);
             setItems(items.filter(item => item.id !== itemId));
             setSelectedItem(null);
-        } catch (err) { alert('삭제 실패'); }
+        } catch { alert('삭제 실패'); }
     };
 
     const handleEdit = async () => {
@@ -103,7 +120,7 @@ function Wardrobe() {
             setEditMode(false);
             setSelectedItem(prev => prev ? { ...prev, ...editForm } : null);
             alert('수정됐습니다.');
-        } catch (err) { alert('수정 실패'); }
+        } catch { alert('수정 실패'); }
     };
 
     const openPopup = (item: WardrobeItem) => {
@@ -112,63 +129,18 @@ function Wardrobe() {
         setEditMode(false);
     };
 
-    const normalizeCategory = (category?: string): string => {
-        if (!category) return '기타';
-        const c = category.trim();
-        if (['상의', '탑', 'top', 'TOP', '티셔츠', '셔츠', '니트', '블라우스', '후드', '맨투맨'].some(k => c.includes(k))) return '상의';
-        if (['하의', '팬츠', '바지', '스커트', '반바지', 'bottom', 'BOTTOM'].some(k => c.includes(k))) return '하의';
-        if (['아우터', '자켓', '재킷', '코트', '패딩', '점퍼', '가디건', 'outer', 'OUTER'].some(k => c.includes(k))) return '아우터';
-        if (['원피스', '드레스', 'dress', 'DRESS'].some(k => c.includes(k))) return '원피스';
-        return c;
-    };
-
     const filteredItems = items.filter(i =>
         (selectedCategory === '전체' || normalizeCategory(i.category) === selectedCategory) &&
         (search === '' || (i.type || '').includes(search))
     );
 
-    const getCategoryCount = (cat: string): number => {
-        if (cat === '전체') return items.length;
-        return items.filter(item => normalizeCategory(item.category) === cat).length;
-    };
-
-    const getColorHex = (colorName?: string): string => {
-        const map: Record<string, string> = {
-            '블랙': '#1a1a1a', '화이트': '#f5f5f5', '그레이': '#95a5a6',
-            '아이보리': '#f5f0dc', '네이비': '#1a2a5e', '블루': '#3498db',
-            '레드': '#e74c3c', '핑크': '#ff6b9d', '옐로우': '#f1c40f',
-            '그린': '#2ecc71', '카키': '#8B8B6A', '브라운': '#8B4513',
-            '베이지': '#f5f0e8', '퍼플': '#9b59b6', '오렌지': '#e67e22',
-            '와인': '#722F37', '민트': '#98FF98', '코랄': '#FF6B6B', '머스타드': '#FFDB58',
-        };
-        if (!colorName) return '#e0e0e0';
-        for (const [key, val] of Object.entries(map)) {
-            if (colorName.includes(key)) return val;
-        }
-        return '#e0e0e0';
-    };
-
     const hasColorDeficiency = colorType && colorType !== 'normal';
 
-    const statsData = [
-        { label: '전체 아이템', value: items.length, color: '#71b3e5' },
-        { label: '저장한 코디', value: getCategoryCount('저장한 코디'), color: '#84c98e' },
-        { label: '이번달 착용', value: getCategoryCount('이번달 착용'), color: '#d45acc' },
-    ];
-
     return (
-        <div style={{ padding: '70px 36px', maxWidth: 1100, width: '100%' }}>
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-                        <h1 style={{ fontWeight: 700, fontSize: 28, color: '#1a1a2e', margin: 0, letterSpacing: '-0.5px' }}>내 옷장</h1>
-                        <span style={{ fontWeight: 400, fontSize: 16, color: '#888' }}>전체 아이템 {items.length}개</span>
-                    </div>
-                    <p style={{ fontWeight: 400, fontSize: 14, color: '#888', margin: '6px 0 0' }}>
-                        당신의 소중한 의류 아이템들을 모아보고 관리하세요.
-                    </p>
-                </div>
+        <>
+            {/* Color correction toggle + item count */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                <span style={{ fontSize: 14, color: '#888' }}>총 {items.length}개의 아이템</span>
                 {hasColorDeficiency && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: correctionEnabled ? '#71b3e5' : '#888' }}>
@@ -186,7 +158,6 @@ function Wardrobe() {
 
             {/* Search + filter row */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-                {/* Search */}
                 <div style={{ background: 'white', border: '1px solid #eaedf2', borderRadius: 10, padding: '9px 14px', display: 'flex', alignItems: 'center', gap: 8, width: 200, flexShrink: 0 }}>
                     <SearchIcon size={15} color="#aaa" />
                     <input
@@ -196,40 +167,26 @@ function Wardrobe() {
                         style={{ border: 'none', outline: 'none', fontWeight: 400, fontSize: 13, color: '#333', background: 'transparent', flex: 1, minWidth: 0 }}
                     />
                 </div>
-
-                {/* Category pills */}
-                {categories.map((cat) => {
+                {CATEGORIES_FILTER.map((cat) => {
                     const isActive = cat === selectedCategory;
                     return (
-                        <button
-                            key={cat}
-                            onClick={() => setSelectedCategory(cat)}
-                            style={{
-                                background: isActive ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : 'white',
-                                border: isActive ? 'none' : '1px solid #eaedf2',
-                                borderRadius: 8, padding: '8px 16px',
-                                fontWeight: isActive ? 600 : 400,
-                                fontSize: 13, color: isActive ? 'white' : '#555',
-                                cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
-                            }}
-                        >
+                        <button key={cat} onClick={() => setSelectedCategory(cat)} style={{
+                            background: isActive ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : 'white',
+                            border: isActive ? 'none' : '1px solid #eaedf2',
+                            borderRadius: 8, padding: '8px 16px',
+                            fontWeight: isActive ? 600 : 400,
+                            fontSize: 13, color: isActive ? 'white' : '#555',
+                            cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                        }}>
                             {cat}
                         </button>
                     );
                 })}
-
                 <div style={{ flex: 1 }} />
-
-                {/* Add button */}
                 <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
-                    style={{
-                        background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)',
-                        border: 'none', borderRadius: 10, padding: '9px 20px',
-                        fontWeight: 600, fontSize: 13,
-                        color: 'white', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
-                    }}
+                    style={{ background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)', border: 'none', borderRadius: 10, padding: '9px 20px', fontWeight: 600, fontSize: 13, color: 'white', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
                 >
                     {uploading ? '업로드 중...' : '+ 아이템 추가'}
                 </button>
@@ -247,9 +204,7 @@ function Wardrobe() {
                     <p style={{ fontWeight: 600, fontSize: 16, color: '#1a1a2e', margin: '0 0 8px' }}>
                         {selectedCategory === '전체' ? '옷장이 비어있어요' : `${selectedCategory} 카테고리에 아이템이 없어요`}
                     </p>
-                    <p style={{ fontSize: 13, color: '#aaa', margin: 0 }}>
-                        위 버튼으로 아이템을 추가해보세요
-                    </p>
+                    <p style={{ fontSize: 13, color: '#aaa', margin: 0 }}>위 버튼으로 아이템을 추가해보세요</p>
                 </div>
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
@@ -257,22 +212,9 @@ function Wardrobe() {
                         <div
                             key={item.id}
                             onClick={() => openPopup(item)}
-                            style={{
-                                background: 'white',
-                                borderRadius: 16,
-                                overflow: 'hidden',
-                                cursor: 'pointer',
-                                boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-                                transition: 'box-shadow 0.18s, transform 0.18s',
-                            }}
-                            onMouseEnter={e => {
-                                (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.12)';
-                                (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
-                            }}
-                            onMouseLeave={e => {
-                                (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)';
-                                (e.currentTarget as HTMLElement).style.transform = 'none';
-                            }}
+                            style={{ background: 'white', borderRadius: 16, overflow: 'hidden', cursor: 'pointer', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', transition: 'box-shadow 0.18s, transform 0.18s' }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.12)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; (e.currentTarget as HTMLElement).style.transform = 'none'; }}
                         >
                             {item.imageUrl ? (
                                 <DaltonizedImage
@@ -292,9 +234,7 @@ function Wardrobe() {
                                     {item.type || '아이템'}
                                 </p>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-                                    <span style={{ fontSize: 12, color: '#999' }}>
-                                        {normalizeCategory(item.category)}
-                                    </span>
+                                    <span style={{ fontSize: 12, color: '#999' }}>{normalizeCategory(item.category)}</span>
                                     {item.color && (
                                         <span style={{ background: 'rgba(113,179,229,0.13)', borderRadius: 20, padding: '2px 10px', fontSize: 12, color: '#71b3e5', fontWeight: 500 }}>
                                             {item.color}
@@ -307,20 +247,20 @@ function Wardrobe() {
                 </div>
             )}
 
-            {/* Item Detail Popup */}
+            {/* Item detail popup */}
             {selectedItem && (
                 <>
                     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 200 }}
                         onClick={() => { setSelectedItem(null); setEditMode(false); }} />
                     <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', borderRadius: 24, width: 380, maxWidth: '90vw', maxHeight: '85vh', overflowY: 'auto', zIndex: 201, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 20px 0', marginBottom: 16 }}>
-                            <h2 style={{  fontWeight: 700, fontSize: 18, color: '#1a1a2e', margin: 0 }}>옷 상세 정보</h2>
+                            <h2 style={{ fontWeight: 700, fontSize: 18, color: '#1a1a2e', margin: 0 }}>옷 상세 정보</h2>
                             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                                 {!editMode ? (
-                                    <button onClick={() => setEditMode(true)} style={{ padding: '6px 14px', background: 'rgba(113,179,229,0.12)', color: '#71b3e5', border: 'none', borderRadius: 999, fontSize: 13, cursor: 'pointer',  fontWeight: 500 }}>수정</button>
+                                    <button onClick={() => setEditMode(true)} style={{ padding: '6px 14px', background: 'rgba(113,179,229,0.12)', color: '#71b3e5', border: 'none', borderRadius: 999, fontSize: 13, cursor: 'pointer', fontWeight: 500 }}>수정</button>
                                 ) : (
                                     <>
-                                        <button onClick={handleEdit} style={{ padding: '6px 14px', background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)', color: 'white', border: 'none', borderRadius: 999, fontSize: 13, cursor: 'pointer',  fontWeight: 600 }}>저장</button>
+                                        <button onClick={handleEdit} style={{ padding: '6px 14px', background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)', color: 'white', border: 'none', borderRadius: 999, fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>저장</button>
                                         <button onClick={() => setEditMode(false)} style={{ padding: '6px 14px', background: '#f5f7fa', color: '#888', border: 'none', borderRadius: 999, fontSize: 13, cursor: 'pointer' }}>취소</button>
                                     </>
                                 )}
@@ -353,25 +293,25 @@ function Wardrobe() {
                                     { label: '소재', value: selectedItem.material || '-' },
                                 ].map(row => (
                                     <div key={row.label} style={{ display: 'flex', alignItems: 'center', padding: '11px 0', borderBottom: '1px solid #f0f0f0' }}>
-                                        <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0,  }}>{row.label}</span>
-                                        <span style={{ fontSize: 14, color: '#1a1a2e', fontWeight: 500,  }}>{row.value}</span>
+                                        <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0 }}>{row.label}</span>
+                                        <span style={{ fontSize: 14, color: '#1a1a2e', fontWeight: 500 }}>{row.value}</span>
                                     </div>
                                 ))}
                             </div>
                         ) : (
                             <div style={{ padding: '0 20px', marginBottom: 16 }}>
                                 <div style={{ display: 'flex', alignItems: 'flex-start', padding: '11px 0', borderBottom: '1px solid #f0f0f0', gap: 12 }}>
-                                    <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0, paddingTop: 2,  }}>카테고리</span>
+                                    <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0, paddingTop: 2 }}>카테고리</span>
                                     <select style={{ flex: 1, padding: '8px 10px', borderRadius: 10, border: '1px solid #eaedf2', fontSize: 14, background: 'white' }} value={editForm.category} onChange={e => setEditForm({ ...editForm, category: e.target.value })}>
-                                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                        {CATEGORIES_EDIT.map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'flex-start', padding: '11px 0', borderBottom: '1px solid #f0f0f0', gap: 12 }}>
-                                    <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0, paddingTop: 2,  }}>종류</span>
+                                    <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0, paddingTop: 2 }}>종류</span>
                                     <input style={{ flex: 1, padding: '8px 10px', borderRadius: 10, border: '1px solid #eaedf2', fontSize: 14, boxSizing: 'border-box' }} value={editForm.type} onChange={e => setEditForm({ ...editForm, type: e.target.value })} placeholder="예: 티셔츠, 청바지" />
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'flex-start', padding: '11px 0', borderBottom: '1px solid #f0f0f0', gap: 12 }}>
-                                    <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0, paddingTop: 2,  }}>색상</span>
+                                    <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0, paddingTop: 2 }}>색상</span>
                                     <div style={{ flex: 1 }}>
                                         <select style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid #eaedf2', fontSize: 14, background: 'white', marginBottom: 6 }} value={editForm.color} onChange={e => setEditForm({ ...editForm, color: e.target.value })}>
                                             <option value="">선택</option>
@@ -381,7 +321,7 @@ function Wardrobe() {
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'flex-start', padding: '11px 0', gap: 12 }}>
-                                    <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0, paddingTop: 2,  }}>소재</span>
+                                    <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0, paddingTop: 2 }}>소재</span>
                                     <select style={{ flex: 1, padding: '8px 10px', borderRadius: 10, border: '1px solid #eaedf2', fontSize: 14, background: 'white' }} value={editForm.material} onChange={e => setEditForm({ ...editForm, material: e.target.value })}>
                                         <option value="">선택</option>
                                         {MATERIALS.map(m => <option key={m} value={m}>{m}</option>)}
@@ -392,15 +332,15 @@ function Wardrobe() {
 
                         <button
                             onClick={() => handleDelete(selectedItem.id)}
-                            style={{ width: 'calc(100% - 40px)', margin: '0 20px 20px', padding: 12, background: 'white', color: '#FF5A5A', border: '1px solid #FF5A5A', borderRadius: 12, fontSize: 14, cursor: 'pointer',  fontWeight: 500 }}
+                            style={{ width: 'calc(100% - 40px)', margin: '0 20px 20px', padding: 12, background: 'white', color: '#FF5A5A', border: '1px solid #FF5A5A', borderRadius: 12, fontSize: 14, cursor: 'pointer', fontWeight: 500 }}
                         >
                             옷장에서 삭제
                         </button>
                     </div>
                 </>
             )}
-        </div>
+        </>
     );
 }
 
-export default Wardrobe;
+export default Clothes;
