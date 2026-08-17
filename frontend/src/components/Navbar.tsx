@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { theme } from '../styles/theme';
 import { HomeIcon, WardrobeIcon, CalendarIcon, SparkleIcon, UserIcon } from './Icons';
@@ -26,6 +26,14 @@ function ActiveDot() {
 function Navbar() {
     const location = useLocation();
     const nickname = localStorage.getItem('nickname') || '사용자';
+    const [profileImage, setProfileImage] = useState<string | null>(null);
+
+    useEffect(() => {
+        const load = () => setProfileImage(localStorage.getItem('profileAvatarImage'));
+        load();
+        window.addEventListener('profileImageUpdated', load);
+        return () => window.removeEventListener('profileImageUpdated', load);
+    }, []);
 
     const isActive = (path: string): boolean => {
         if (path === '/') return location.pathname === '/';
@@ -118,13 +126,18 @@ function Navbar() {
             {/* Footer */}
             <div style={{ padding: '20px 24px', borderTop: '1px solid #eaedf2' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{
-                        width: 34, height: 34, borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #71b3e5, #bae3ff)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 15, flexShrink: 0,
-                    }}>
-                    </div>
+                    {profileImage ? (
+                        <img src={profileImage} alt="프로필" style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                    ) : (
+                        <div style={{
+                            width: 34, height: 34, borderRadius: '50%',
+                            background: 'linear-gradient(135deg, #71b3e5, #bae3ff)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 15, fontWeight: 700, color: 'white', flexShrink: 0,
+                        }}>
+                            {nickname.charAt(0).toUpperCase()}
+                        </div>
+                    )}
                     <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{
                             
