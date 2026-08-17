@@ -98,7 +98,7 @@ function Calendar() {
         .filter(s => s.count > 0);
 
     return (
-        <div style={{ padding: '70px 28px', width: '100%' }}>
+        <div style={{ padding: '70px 36px', maxWidth: 1200, width: '100%', boxSizing: 'border-box' }}>
             {/* Header */}
             <div style={{ marginBottom: 20 }}>
                 <h1 style={{  fontWeight: 700, fontSize: 28, color: '#1a1a2e', margin: 0 }}>캘린더</h1>
