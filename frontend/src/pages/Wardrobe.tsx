@@ -3,6 +3,7 @@ import { wardrobeAPI, userAPI } from '../api/api';
 import DaltonizedImage from '../components/DaltonizedImage';
 import { ColorType } from '../daltonization';
 import { theme } from '../styles/theme';
+import { SearchIcon, WardrobeIcon } from '../components/Icons';
 
 const CATEGORIES = ['상의', '하의', '아우터', '원피스', '기타', '저장한 코디'];
 const COLORS = ['블랙', '화이트', '그레이', '네이비', '블루', '레드', '핑크',
@@ -199,7 +200,7 @@ function Wardrobe() {
             {/* Search + filter */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
                 <div style={{ width: 260, flexShrink: 0, background: 'white', border: '1px solid #eaedf2', borderRadius: 12, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ color: '#aaa', fontSize: 14 }}>🔍</span>
+                    <SearchIcon size={16} color="#aaa" />
                     <input
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
@@ -250,7 +251,7 @@ function Wardrobe() {
                 </div>
             ) : filteredItems.length === 0 ? (
                 <div style={{ background: 'white', borderRadius: 20, padding: '60px', textAlign: 'center', border: '1px solid #eaedf2' }}>
-                    <p style={{ fontSize: 48, margin: '0 0 12px' }}>👗</p>
+                    <div style={{ marginBottom: 12 }}><WardrobeIcon size={48} color="#ccc" /></div>
                     <p style={{  fontWeight: 600, fontSize: 16, color: '#1a1a2e', margin: '0 0 8px' }}>
                         {selectedCategory === '전체' ? '옷장이 비어있어요' : `${selectedCategory} 카테고리에 아이템이 없어요`}
                     </p>
@@ -276,8 +277,8 @@ function Wardrobe() {
                                     imgStyle={{ width: '100%', height: 140, objectFit: 'cover', display: 'block' }}
                                 />
                             ) : (
-                                <div style={{ height: 140, background: getColorHex(item.color), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 44 }}>
-                                    👗
+                                <div style={{ height: 140, background: getColorHex(item.color), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <WardrobeIcon size={40} color="rgba(255,255,255,0.75)" />
                                 </div>
                             )}
                             <div style={{ padding: '12px 14px' }}>
@@ -331,8 +332,8 @@ function Wardrobe() {
                                     imgStyle={{ width: '100%', height: 260, objectFit: 'cover', borderRadius: 16, display: 'block' }}
                                 />
                             ) : (
-                                <div style={{ width: '100%', height: 260, background: getColorHex(selectedItem.color), borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 60 }}>
-                                    👗
+                                <div style={{ width: '100%', height: 260, background: getColorHex(selectedItem.color), borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <WardrobeIcon size={60} color="rgba(255,255,255,0.75)" />
                                 </div>
                             )}
                         </div>

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { wardrobeAPI } from '../api/api';
 import { AI_BASE_URL } from '../api/env';
 import { theme } from '../styles/theme';
+import { WardrobeIcon, StudioIcon, CloseIcon } from '../components/Icons';
 
 interface WardrobeItem {
     id: number;
@@ -459,7 +460,9 @@ function StylingStudio() {
                                         style={{ width: '100%', height: 88, objectFit: 'cover', display: 'block', pointerEvents: 'none' }}
                                     />
                                 ) : (
-                                    <div style={{ height: 88, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>👗</div>
+                                    <div style={{ height: 88, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <WardrobeIcon size={28} color="#bbb" />
+                                    </div>
                                 )}
                                 <p style={{
                                     margin: 0,
@@ -505,7 +508,9 @@ function StylingStudio() {
                             alignItems: 'center', justifyContent: 'center',
                             pointerEvents: 'none',
                         }}>
-                            <div style={{ fontSize: 52, marginBottom: 14, opacity: 0.35 }}>👗</div>
+                            <div style={{ marginBottom: 14, opacity: 0.35 }}>
+                                <StudioIcon size={48} color="#bcc5d4" />
+                            </div>
                             <p style={{  fontWeight: 600, fontSize: 15, color: '#bcc5d4', margin: 0 }}>
                                 여기에 아이템을 드래그해 보세요
                             </p>
@@ -589,15 +594,13 @@ function StylingStudio() {
                                             position: 'absolute', top: -12, right: -12,
                                             width: 24, height: 24, borderRadius: '50%',
                                             background: '#FF5A5A', border: 'none',
-                                            color: 'white', fontSize: 11,
                                             cursor: 'pointer',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                                             boxShadow: '0 2px 6px rgba(255,90,90,0.45)',
                                             zIndex: 10,
-                                            lineHeight: 1,
                                         }}
                                     >
-                                        ✕
+                                        <CloseIcon size={12} color="white" />
                                     </button>
                                 )}
 
