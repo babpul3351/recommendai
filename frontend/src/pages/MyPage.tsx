@@ -3,7 +3,7 @@ import { theme } from '../styles/theme';
 import { usePageAnimation } from '../hooks/usePageAnimation';
 import { useNavigate } from 'react-router-dom';
 import { userAPI, recommendationAPI, colorAssistantAPI, wardrobeAPI } from '../api/api';
-import { SparkleIcon, WardrobeIcon, CalendarIcon, WarningIcon, CloseIcon } from '../components/Icons';
+import { CloseIcon } from '../components/Icons';
 
 const STYLES = ['casual', 'formal', 'business', 'lovely', 'feminine', 'sporty', 'comfort'];
 const STYLE_LABELS: Record<string, string> = {
@@ -231,9 +231,12 @@ function MyPage() {
     const [editForm, setEditForm] = useState<EditForm>({ nickname: '', ageGroup: '', gender: '', colorType: '', styles: [] });
     const [history, setHistory] = useState<HistoryRecord[]>([]);
     const [loading, setLoading] = useState(false);
-    const [notifCodi, setNotifCodi] = useState(true);
-    const [notifWeather, setNotifWeather] = useState(true);
-    const [notifReport, setNotifReport] = useState(false);
+    const [bgImage, setBgImage] = useState<string | null>(null);
+    const [profileImage, setProfileImage] = useState<string | null>(null);
+    const [hoverBg, setHoverBg] = useState(false);
+    const [hoverAvatar, setHoverAvatar] = useState(false);
+    const bgInputRef = useRef<HTMLInputElement>(null);
+    const profileInputRef = useRef<HTMLInputElement>(null);
     const [showColorTest, setShowColorTest] = useState(false);
     const [testActive, setTestActive] = useState(false);
     const [testResult, setTestResult] = useState<string | null>(null);
@@ -259,6 +262,40 @@ function MyPage() {
     };
 
     useEffect(() => { fetchProfile(); fetchHistory(); fetchWardrobe(); }, []);
+
+    useEffect(() => {
+        setBgImage(localStorage.getItem('profileBgImage'));
+        setProfileImage(localStorage.getItem('profileAvatarImage'));
+    }, []);
+
+    const handleBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        e.target.value = '';
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const b64 = reader.result as string;
+            setBgImage(b64);
+            try { localStorage.setItem('profileBgImage', b64); } catch {}
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleProfilePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        e.target.value = '';
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const b64 = reader.result as string;
+            setProfileImage(b64);
+            try {
+                localStorage.setItem('profileAvatarImage', b64);
+                window.dispatchEvent(new Event('profileImageUpdated'));
+            } catch {}
+        };
+        reader.readAsDataURL(file);
+    };
 
     const handleLogout = () => {
         if (window.confirm('로그아웃 하시겠습니까?')) { localStorage.clear(); navigate('/login'); }
@@ -326,71 +363,80 @@ function MyPage() {
                 <p data-sub style={{  fontWeight: 400, fontSize: 14, color: '#888', margin: '6px 0 0' }}>계정과 앱 설정을 관리하세요</p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 24, alignItems: 'start' }}>
-                {/* Left: Profile card */}
-                <div>
-                    <div data-card style={{ ...cardStyle, overflow: 'hidden', padding: 0 }}>
-                        <div style={{ height: 80, background: 'linear-gradient(135deg, #71b3e5, #b0cbe0)' }} />
-                        <div style={{ padding: '0 24px 24px' }}>
-                            <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg, #5a9fd4, #bae3ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, border: '4px solid white', marginTop: -36, marginBottom: 12 }}>
-                                {profile.nickname?.charAt(0).toUpperCase()}
-                            </div>
-                            <h2 style={{  fontWeight: 700, fontSize: 20, color: '#1a1a2e', margin: 0 }}>{profile.nickname}</h2>
-                            <p style={{  fontWeight: 400, fontSize: 13, color: '#aaa', margin: '4px 0 16px' }}>@{profile.loginId}</p>
-                            <button onClick={handleLogout} style={{ width: '100%', background: 'none', border: '1px solid #ffcdd2', borderRadius: 10, padding: 10,  fontWeight: 600, fontSize: 13, color: '#e57373', cursor: 'pointer' }}>
-                                로그아웃
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Quick stats */}
-                    <div style={cardStyle}>
-                        <h3 style={{  fontWeight: 700, fontSize: 14, color: '#1a1a2e', margin: '0 0 16px' }}>나의 통계</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            {[
-                                { label: 'AI 추천 횟수', value: history.length, Icon: SparkleIcon, color: '#71b3e5' },
-                                { label: '선호 스타일 수', value: (profile.styles || []).length, Icon: WardrobeIcon, color: '#e625c6' },
-                                { label: '가입일', value: formatDate(profile.createdAt), Icon: CalendarIcon, color: '#84c98e' },
-                            ].map(({ label, value, Icon, color }) => (
-                                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: '#f8f9fc', borderRadius: 12 }}>
-                                    <span style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                        <Icon color={color} size={20} />
-                                    </span>
-                                    <span style={{  fontWeight: 400, fontSize: 13, color: '#555', flex: 1 }}>{label}</span>
-                                    <span style={{  fontWeight: 700, fontSize: 13, color }}>{value}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Notification settings */}
-                    <div style={cardStyle}>
-                        <h3 style={{  fontWeight: 700, fontSize: 14, color: '#1a1a2e', margin: '0 0 4px' }}>알림 설정</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            {([
-                                { key: 'codi', label: '코디 추천 알림', desc: '매일 아침 오늘의 코디를 알려드려요', state: notifCodi, toggle: () => setNotifCodi(p => !p) },
-                                { key: 'weather', label: '날씨 변화 알림', desc: '갑작스러운 날씨 변화 시 알림', state: notifWeather, toggle: () => setNotifWeather(p => !p) },
-                                { key: 'report', label: '의류 순환 리포트', desc: '매달 나의 의류를 분석한 결과를 보내드려요', state: notifReport, toggle: () => setNotifReport(p => !p) },
-                            ] as const).map(({ key, label, desc, state, toggle }, i, arr) => (
-                                <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: i < arr.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
-                                    <div style={{ flex: 1, minWidth: 0, paddingRight: 12 }}>
-                                        <p style={{  fontWeight: 600, fontSize: 14, color: '#1a1a2e', margin: 0 }}>{label}</p>
-                                        <p style={{  fontWeight: 400, fontSize: 12, color: '#aaa', margin: '4px 0 0' }}>{desc}</p>
-                                    </div>
-                                    <button
-                                        onClick={toggle}
-                                        style={{ width: 44, height: 24, borderRadius: 12, background: state ? '#71b3e5' : '#d0d5dd', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}
-                                    >
-                                        <div style={{ position: 'absolute', top: 2, left: state ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: 'white', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
+            {/* User info */}
+            <div data-card style={{ ...cardStyle, overflow: 'hidden', padding: 0, marginBottom: 24 }}>
+                {/* Banner */}
+                <div
+                    onClick={() => bgInputRef.current?.click()}
+                    onMouseEnter={() => setHoverBg(true)}
+                    onMouseLeave={() => setHoverBg(false)}
+                    style={{
+                        height: 140,
+                        background: bgImage ? undefined : 'linear-gradient(135deg, #71b3e5, #b0cbe0)',
+                        backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        position: 'relative',
+                        cursor: 'pointer',
+                    }}
+                >
+                    <div style={{
+                        position: 'absolute', inset: 0,
+                        background: 'rgba(0,0,0,0.28)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        opacity: hoverBg ? 1 : 0,
+                        transition: 'opacity 0.18s',
+                    }}>
+                        <span style={{ color: 'white', fontSize: 12, fontWeight: 600 }}>배경 사진 변경</span>
                     </div>
                 </div>
+                <input ref={bgInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleBgUpload} />
 
-                {/* Right: Tabs */}
-                <div>
+                <div style={{ padding: '0 28px 24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 20 }}>
+                        <div
+                            onClick={() => profileInputRef.current?.click()}
+                            onMouseEnter={() => setHoverAvatar(true)}
+                            onMouseLeave={() => setHoverAvatar(false)}
+                            style={{
+                                width: 88, height: 88, borderRadius: '50%',
+                                border: '4px solid white', marginTop: -48, flexShrink: 0,
+                                cursor: 'pointer', position: 'relative', overflow: 'hidden',
+                                display: 'inline-block',
+                            }}
+                        >
+                            {profileImage ? (
+                                <img src={profileImage} alt="프로필" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                            ) : (
+                                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #5a9fd4, #bae3ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>
+                                    {profile.nickname?.charAt(0).toUpperCase()}
+                                </div>
+                            )}
+                            <div style={{
+                                position: 'absolute', inset: 0,
+                                background: 'rgba(0,0,0,0.38)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                opacity: hoverAvatar ? 1 : 0,
+                                transition: 'opacity 0.18s',
+                            }}>
+                                <span style={{ color: 'white', fontSize: 11, fontWeight: 700 }}>편집</span>
+                            </div>
+                        </div>
+                        <input ref={profileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleProfilePhotoUpload} />
+
+                        <div style={{ paddingBottom: 4 }}>
+                            <h2 style={{ fontWeight: 700, fontSize: 22, color: '#1a1a2e', margin: '0 0 4px' }}>{profile.nickname}</h2>
+                            <p style={{ fontWeight: 400, fontSize: 13, color: '#aaa', margin: 0 }}>@{profile.loginId}</p>
+                        </div>
+                    </div>
+                    <button onClick={handleLogout} style={{ background: 'none', border: '1px solid #ffcdd2', borderRadius: 10, padding: '9px 20px', fontWeight: 600, fontSize: 13, color: '#e57373', cursor: 'pointer', flexShrink: 0 }}>
+                        로그아웃
+                    </button>
+                </div>
+            </div>
+
+            {/* Tabs */}
+            <div>
                     {/* Tab bar */}
                     <div style={{ display: 'flex', background: 'white', borderRadius: 14, padding: 4, border: '1px solid #eaedf2', marginBottom: 20, gap: 4 }}>
                         {TABS.map(t => (
@@ -749,7 +795,6 @@ function MyPage() {
                             )}
                         </div>
                     )}
-                </div>
             </div>
         </div>
     );
