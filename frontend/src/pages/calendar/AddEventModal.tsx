@@ -116,7 +116,7 @@ function AddEventModal({ form, onFormChange, onClose, onSubmit }: Props) {
                                     <div
                                         onClick={() => selectOutfit(null)}
                                         style={{
-                                            flexShrink: 0, width: 68, height: 68, borderRadius: 12,
+                                            flexShrink: 0, width: 96, height: 96, borderRadius: 12,
                                             border: !form.selectedOutfit ? '2px solid #71b3e5' : '1.5px solid #eaedf2',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                                             cursor: 'pointer',
@@ -136,7 +136,7 @@ function AddEventModal({ form, onFormChange, onClose, onSubmit }: Props) {
                                                 key={outfit.id}
                                                 onClick={() => selectOutfit(outfit)}
                                                 style={{
-                                                    flexShrink: 0, width: 68, height: 68, borderRadius: 12,
+                                                    flexShrink: 0, width: 96, height: 96, borderRadius: 12,
                                                     border: isSelected ? '2px solid #71b3e5' : '1.5px solid #eaedf2',
                                                     overflow: 'hidden', cursor: 'pointer', position: 'relative',
                                                     boxShadow: isSelected ? '0 0 0 3px rgba(113,179,229,0.25)' : 'none',
