@@ -279,12 +279,18 @@ function Outfits() {
 
     const composeCanvas = useCallback(async (): Promise<string> => {
         const el = canvasRef.current!;
+        const dpr = window.devicePixelRatio || 1;
+        const cssW = el.offsetWidth;
+        const cssH = el.offsetHeight;
+
         const canvas = document.createElement('canvas');
-        canvas.width = el.offsetWidth;
-        canvas.height = el.offsetHeight;
+        canvas.width = cssW * dpr;
+        canvas.height = cssH * dpr;
+
         const ctx = canvas.getContext('2d')!;
+        ctx.scale(dpr, dpr);
         ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0, 0, cssW, cssH);
 
         const sorted = [...canvasItems].sort((a, b) => a.zIndex - b.zIndex);
         for (const item of sorted) {
@@ -297,7 +303,7 @@ function Outfits() {
                 img.src = src;
             });
         }
-        return canvas.toDataURL('image/jpeg', 0.85);
+        return canvas.toDataURL('image/jpeg', 0.92);
     }, [canvasItems, getItemDataUrl]);
 
     const handleSaveToWardrobe = async (tpo: string) => {
@@ -667,29 +673,27 @@ function Outfits() {
                         <p style={{ fontSize: 11, color: '#cdd4de', margin: '4px 0 0' }}>위에서 코디를 만들고 옷장에 저장해보세요!</p>
                     </div>
                 ) : (
-                    <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 8 }}>
+                    <div style={{ display: 'flex', gap: 20, overflowX: 'auto', paddingBottom: 8 }}>
                         {savedOutfits.map((outfit, idx) => (
                             <div
                                 key={outfit.id}
                                 onClick={() => setPreviewOutfit(outfit)}
                                 style={{
                                     flexShrink: 0,
-                                    width: 158,
+                                    width: 200,
                                     background: 'white',
                                     borderRadius: 16,
-                                    border: '1px solid #eaedf2',
                                     overflow: 'hidden',
                                     cursor: 'pointer',
-                                    boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-                                    transition: 'box-shadow 0.15s, transform 0.15s',
-                                    position: 'relative',
+                                    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                                    transition: 'box-shadow 0.18s, transform 0.18s',
                                 }}
                                 onMouseEnter={e => {
-                                    (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 20px rgba(0,0,0,0.1)';
+                                    (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.12)';
                                     (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
                                 }}
                                 onMouseLeave={e => {
-                                    (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 10px rgba(0,0,0,0.05)';
+                                    (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)';
                                     (e.currentTarget as HTMLElement).style.transform = 'none';
                                 }}
                             >
@@ -698,44 +702,48 @@ function Outfits() {
                                         <img
                                             src={outfit.imageUrl}
                                             alt="저장한 코디"
-                                            style={{ width: '100%', height: 158, objectFit: 'cover', display: 'block' }}
+                                            style={{ width: '100%', height: 210, objectFit: 'cover', display: 'block' }}
                                         />
                                     ) : (
-                                        <div style={{ height: 158, background: '#f5f7fa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <WardrobeIcon size={32} color="#bbb" />
+                                        <div style={{ height: 210, background: '#f5f7fa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <WardrobeIcon size={36} color="#bbb" />
                                         </div>
                                     )}
                                     {outfit.material && (
                                         <span style={{
-                                            position: 'absolute', top: 8, left: 8,
+                                            position: 'absolute', top: 10, left: 10,
                                             background: TPO_COLORS[outfit.material] || '#888',
                                             color: 'white',
                                             fontSize: 10, fontWeight: 600,
-                                            padding: '3px 8px', borderRadius: 999,
+                                            padding: '3px 9px', borderRadius: 999,
                                             boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
                                         }}>
                                             {outfit.material}
                                         </span>
                                     )}
                                 </div>
-                                <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <span style={{ fontSize: 11, color: '#888', fontWeight: 500 }}>코디 #{idx + 1}</span>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleDeleteOutfit(outfit.id); }}
-                                        disabled={deletingId === outfit.id}
-                                        style={{
-                                            width: 22, height: 22,
-                                            borderRadius: '50%',
-                                            border: '1px solid #eaedf2',
-                                            background: 'white',
-                                            cursor: deletingId === outfit.id ? 'not-allowed' : 'pointer',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            padding: 0,
-                                            flexShrink: 0,
-                                        }}
-                                    >
-                                        <CloseIcon size={10} color={deletingId === outfit.id ? '#ccc' : '#FF5A5A'} />
-                                    </button>
+                                <div style={{ padding: '14px 16px 16px' }}>
+                                    <p style={{ fontWeight: 600, fontSize: 15, color: '#1a1a2e', margin: '0 0 10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        코디 #{idx + 1}
+                                    </p>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <span style={{ fontSize: 12, color: '#999' }}>코디 조합</span>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteOutfit(outfit.id); }}
+                                            disabled={deletingId === outfit.id}
+                                            style={{
+                                                width: 22, height: 22,
+                                                borderRadius: '50%',
+                                                border: '1px solid #eaedf2',
+                                                background: 'white',
+                                                cursor: deletingId === outfit.id ? 'not-allowed' : 'pointer',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                padding: 0, flexShrink: 0,
+                                            }}
+                                        >
+                                            <CloseIcon size={10} color={deletingId === outfit.id ? '#ccc' : '#FF5A5A'} />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         ))}
