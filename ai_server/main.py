@@ -193,3 +193,12 @@ async def remove_background(req: RemoveBackgroundRequest):
         return {"resultB64": result_b64, "confidence": confidence}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/ai/idle-analysis")
+async def idle_analysis(user_id: str, threshold_days: int = 30, idle_only: bool = True):
+    try:
+        from services.idle_analysis_service import get_idle_analysis
+        results = get_idle_analysis(user_id, threshold_days=threshold_days, idle_only=idle_only)
+        return {"items": results, "count": len(results)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
