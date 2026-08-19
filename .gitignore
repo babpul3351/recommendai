@@ -59,4 +59,4 @@ ai_server/chroma_data/
 
 ### 환경변수 (API 키 — 절대 업로드XX) ###
 .env
-ai_server/.env
+ai_server/.envai_server/wear_history.csv
