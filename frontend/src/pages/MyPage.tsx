@@ -298,7 +298,14 @@ function MyPage() {
     };
 
     const handleLogout = () => {
-        if (window.confirm('로그아웃 하시겠습니까?')) { localStorage.clear(); navigate('/login'); }
+        if (window.confirm('로그아웃 하시겠습니까?')) {
+            const keepKeys = ['profileBgImage', 'profileAvatarImage'];
+            const kept: Record<string, string> = {};
+            keepKeys.forEach(k => { const v = localStorage.getItem(k); if (v) kept[k] = v; });
+            localStorage.clear();
+            Object.entries(kept).forEach(([k, v]) => localStorage.setItem(k, v));
+            navigate('/login');
+        }
     };
 
     const handleSave = async () => {
