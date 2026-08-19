@@ -52,8 +52,12 @@ function Calendar() {
     const handleAddEvent = async () => {
         if (!form.eventName || !form.eventDatetime) { showToast('일정 이름과 날짜를 입력해주세요', 'error'); return; }
         try {
-            await calendarAPI.addEvent(form);
-            setForm({ eventName: '', eventDatetime: '', tpoKeyword: '일상' });
+            const { selectedOutfit, ...eventData } = form;
+            const res = await calendarAPI.addEvent(eventData);
+            if (selectedOutfit?.imageUrl && res.data?.eventId) {
+                localStorage.setItem(`calendar_outfit_${res.data.eventId}`, selectedOutfit.imageUrl);
+            }
+            setForm({ eventName: '', eventDatetime: '', tpoKeyword: '일상', selectedOutfit: null });
             setShowForm(false);
             await fetchEvents();
             showToast('일정이 추가됐습니다', 'success');
@@ -64,6 +68,7 @@ function Calendar() {
         if (!window.confirm('삭제하시겠습니까?')) return;
         try {
             await calendarAPI.deleteEvent(eventId);
+            localStorage.removeItem(`calendar_outfit_${eventId}`);
             setEvents(events.filter(e => e.eventId !== eventId));
             setActiveEvent(null);
             showToast('일정이 삭제됐습니다', 'success');
