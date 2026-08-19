@@ -16,4 +16,5 @@ export interface EventForm {
     eventName: string;
     eventDatetime: string;
     tpoKeyword: string;
+    selectedOutfit?: { imageUrl: string; tpo?: string } | null;
 }

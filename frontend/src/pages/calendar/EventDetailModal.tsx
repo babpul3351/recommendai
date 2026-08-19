@@ -13,6 +13,8 @@ interface Props {
 }
 
 function EventDetailModal({ event, onClose, onDelete }: Props) {
+    const outfitImageUrl = localStorage.getItem(`calendar_outfit_${event.eventId}`) || null;
+
     return (
         <>
             <div style={{ position: 'fixed', inset: 0, zIndex: 200 }} onClick={onClose} />
@@ -20,15 +22,27 @@ function EventDetailModal({ event, onClose, onDelete }: Props) {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <div style={{ width: 10, height: 10, borderRadius: 3, background: TPO_COLORS[event.tpoKeyword] || '#71b3e5' }} />
-                        <span style={{  fontWeight: 700, fontSize: 11, color: TPO_COLORS[event.tpoKeyword] || '#71b3e5' }}>{event.tpoKeyword}</span>
+                        <span style={{ fontWeight: 700, fontSize: 11, color: TPO_COLORS[event.tpoKeyword] || '#71b3e5' }}>{event.tpoKeyword}</span>
                     </div>
                     <button onClick={onClose} style={{ ...btnBase, fontSize: 18, color: '#aaa' }}>✕</button>
                 </div>
-                <h3 style={{  fontWeight: 700, fontSize: 18, color: '#1a1a2e', margin: '0 0 8px' }}>{event.eventName}</h3>
-                <p style={{  fontSize: 13, color: '#888', margin: '0 0 20px' }}>
+                <h3 style={{ fontWeight: 700, fontSize: 18, color: '#1a1a2e', margin: '0 0 6px' }}>{event.eventName}</h3>
+                <p style={{ fontSize: 13, color: '#888', margin: '0 0 16px' }}>
                     {dayjs(event.eventDatetime).format('YYYY년 M월 D일 (ddd) HH:mm')}
                 </p>
-                <button onClick={() => onDelete(event.eventId)} style={{ width: '100%', padding: 11, background: 'none', border: '1.5px solid #ffcdd2', borderRadius: 10, color: '#e57373', cursor: 'pointer',  fontWeight: 600, fontSize: 13 }}>
+
+                {outfitImageUrl && (
+                    <div style={{ marginBottom: 16 }}>
+                        <p style={{ fontSize: 11, color: '#aaa', fontWeight: 600, margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>선택한 코디</p>
+                        <img
+                            src={outfitImageUrl}
+                            alt="선택한 코디"
+                            style={{ width: '100%', borderRadius: 12, display: 'block', objectFit: 'cover', maxHeight: 220 }}
+                        />
+                    </div>
+                )}
+
+                <button onClick={() => onDelete(event.eventId)} style={{ width: '100%', padding: 11, background: 'none', border: '1.5px solid #ffcdd2', borderRadius: 10, color: '#e57373', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
                     삭제
                 </button>
             </div>
