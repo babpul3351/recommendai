@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { wardrobeAPI } from '../../api/api';
-import { AI_BASE_URL } from '../../api/env';
+import { AI_BASE_URL, BASE_URL } from '../../api/env';
 import { WardrobeIcon, StudioIcon, CloseIcon } from '../../components/Icons';
+import { TPO_LIST, TPO_COLORS } from '../recommend/constants';
 
 interface WardrobeItem {
     id: number;
@@ -9,6 +10,7 @@ interface WardrobeItem {
     type?: string;
     category?: string;
     color?: string;
+    material?: string;
 }
 
 interface CanvasItem {
@@ -78,18 +80,27 @@ function Outfits() {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [draggingItem, setDraggingItem] = useState<WardrobeItem | null>(null);
     const [saving, setSaving] = useState(false);
+    const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [previewOutfit, setPreviewOutfit] = useState<WardrobeItem | null>(null);
+    const [tpoModalOpen, setTpoModalOpen] = useState(false);
+    const [pendingTpo, setPendingTpo] = useState('');
+    const [tpoEditTarget, setTpoEditTarget] = useState<WardrobeItem | null>(null);
     const canvasRef = useRef<HTMLDivElement>(null);
     const moveRef = useRef<{ id: string; startX: number; startY: number; initX: number; initY: number } | null>(null);
     const resizeRef = useRef<{ id: string; corner: string; startX: number; startY: number; initW: number; initH: number; initX: number; initY: number } | null>(null);
     const zCounter = useRef(1);
 
-    useEffect(() => {
+    const fetchWardrobe = useCallback(() => {
         setWardrobeLoading(true);
         wardrobeAPI.getWardrobe()
             .then(res => setWardrobeItems(res.data))
             .catch(console.error)
             .finally(() => setWardrobeLoading(false));
     }, []);
+
+    useEffect(() => {
+        fetchWardrobe();
+    }, [fetchWardrobe]);
 
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
@@ -242,6 +253,30 @@ function Outfits() {
         setSelectedId(null);
     };
 
+    const getItemDataUrl = useCallback(async (item: CanvasItem): Promise<string | null> => {
+        if (item.displaySrc.startsWith('data:')) return item.displaySrc;
+        if (item.cachedB64) return item.cachedB64;
+        // S3 URL을 직접 쓰면 canvas가 tainted돼서 toDataURL()이 SecurityError를 던짐.
+        // 백엔드 프록시를 통해 가져오면 CORS 문제 없이 data URI로 변환 가능.
+        try {
+            const token = localStorage.getItem('token');
+            const proxyUrl = `${BASE_URL}/wardrobe/image-proxy?url=${encodeURIComponent(item.originalSrc)}`;
+            const resp = await fetch(proxyUrl, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+            if (!resp.ok) return null;
+            const blob = await resp.blob();
+            return await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        } catch {
+            return null;
+        }
+    }, []);
+
     const composeCanvas = useCallback(async (): Promise<string> => {
         const el = canvasRef.current!;
         const canvas = document.createElement('canvas');
@@ -253,9 +288,7 @@ function Outfits() {
 
         const sorted = [...canvasItems].sort((a, b) => a.zIndex - b.zIndex);
         for (const item of sorted) {
-            const src = item.displaySrc.startsWith('data:')
-                ? item.displaySrc
-                : (item.cachedB64 ?? item.originalSrc);
+            const src = await getItemDataUrl(item);
             if (!src) continue;
             await new Promise<void>((resolve) => {
                 const img = new Image();
@@ -264,31 +297,18 @@ function Outfits() {
                 img.src = src;
             });
         }
-        return canvas.toDataURL('image/png');
-    }, [canvasItems]);
+        return canvas.toDataURL('image/jpeg', 0.85);
+    }, [canvasItems, getItemDataUrl]);
 
-    const handleSaveToWardrobe = async () => {
+    const handleSaveToWardrobe = async (tpo: string) => {
         if (canvasItems.length === 0 || saving) return;
         setSaving(true);
+        setTpoModalOpen(false);
         try {
-            const before = await wardrobeAPI.getWardrobe();
-            const beforeIds = new Set<number>(before.data.map((i: any) => i.id));
-
             const b64 = await composeCanvas();
-            await wardrobeAPI.uploadItem(b64);
-
-            const after = await wardrobeAPI.getWardrobe();
-            const newItem = after.data.find((i: any) => !beforeIds.has(i.id));
-
-            if (newItem) {
-                await wardrobeAPI.updateItem(newItem.id, {
-                    category: '저장한 코디',
-                    type: '코디 조합',
-                    color: '',
-                    material: '',
-                });
-            }
-            alert('코디가 내 옷장에 저장됐습니다!');
+            await wardrobeAPI.saveOutfit(b64, tpo);
+            fetchWardrobe();
+            alert('코디가 저장됐습니다!');
         } catch (err) {
             console.error(err);
             alert('저장에 실패했습니다. 다시 시도해 주세요.');
@@ -297,8 +317,49 @@ function Outfits() {
         }
     };
 
+    const handleUpdateTpo = async (newTpo: string) => {
+        if (!tpoEditTarget) return;
+        setTpoModalOpen(false);
+        try {
+            await wardrobeAPI.updateItem(tpoEditTarget.id, {
+                category: '저장한 코디',
+                type: '코디 조합',
+                color: '',
+                material: newTpo,
+            });
+            setWardrobeItems(prev =>
+                prev.map(i => i.id === tpoEditTarget.id ? { ...i, material: newTpo } : i)
+            );
+            if (previewOutfit?.id === tpoEditTarget.id) {
+                setPreviewOutfit(prev => prev ? { ...prev, material: newTpo } : null);
+            }
+        } catch (err) {
+            console.error(err);
+            alert('TPO 변경에 실패했습니다.');
+        } finally {
+            setTpoEditTarget(null);
+        }
+    };
+
+    const handleDeleteOutfit = async (id: number) => {
+        if (deletingId !== null) return;
+        setDeletingId(id);
+        try {
+            await wardrobeAPI.deleteItem(id);
+            setWardrobeItems(prev => prev.filter(i => i.id !== id));
+        } catch (err) {
+            console.error(err);
+            alert('삭제에 실패했습니다.');
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
+    const savedOutfits = wardrobeItems.filter(item => item.category === '저장한 코디');
+
     const filtered = wardrobeItems.filter(item =>
-        selectedCategory === '전체' || normalizeCategory(item.category) === selectedCategory
+        item.category !== '저장한 코디' &&
+        (selectedCategory === '전체' || normalizeCategory(item.category) === selectedCategory)
     );
 
     const selected = canvasItems.find(i => i.id === selectedId);
@@ -319,7 +380,7 @@ function Outfits() {
                     새 코디 만들기
                 </button>
                 <button
-                    onClick={handleSaveToWardrobe}
+                    onClick={() => { if (canvasItems.length === 0 || saving) return; setPendingTpo(''); setTpoModalOpen(true); }}
                     disabled={canvasItems.length === 0 || saving}
                     style={btnStyle(canvasItems.length === 0 || saving, 'primary')}
                 >
@@ -583,6 +644,265 @@ function Outfits() {
                     })}
                 </div>
             </div>
+
+            {/* Saved Outfits Section */}
+            <div style={{ marginTop: 28 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 14 }}>
+                    <p style={{ fontWeight: 700, fontSize: 16, color: '#1a1a2e', margin: 0 }}>만든 코디</p>
+                    <p style={{ fontSize: 12, color: '#aaa', margin: 0 }}>{savedOutfits.length}개</p>
+                </div>
+
+                {savedOutfits.length === 0 ? (
+                    <div style={{
+                        background: 'white',
+                        borderRadius: 16,
+                        border: '1.5px dashed #dde4ef',
+                        padding: '36px 0',
+                        textAlign: 'center',
+                    }}>
+                        <div style={{ marginBottom: 8, opacity: 0.35 }}>
+                            <StudioIcon size={36} color="#bcc5d4" />
+                        </div>
+                        <p style={{ fontSize: 13, color: '#bcc5d4', margin: 0 }}>아직 저장된 코디가 없어요</p>
+                        <p style={{ fontSize: 11, color: '#cdd4de', margin: '4px 0 0' }}>위에서 코디를 만들고 옷장에 저장해보세요!</p>
+                    </div>
+                ) : (
+                    <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 8 }}>
+                        {savedOutfits.map((outfit, idx) => (
+                            <div
+                                key={outfit.id}
+                                onClick={() => setPreviewOutfit(outfit)}
+                                style={{
+                                    flexShrink: 0,
+                                    width: 158,
+                                    background: 'white',
+                                    borderRadius: 16,
+                                    border: '1px solid #eaedf2',
+                                    overflow: 'hidden',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+                                    transition: 'box-shadow 0.15s, transform 0.15s',
+                                    position: 'relative',
+                                }}
+                                onMouseEnter={e => {
+                                    (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 20px rgba(0,0,0,0.1)';
+                                    (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                                }}
+                                onMouseLeave={e => {
+                                    (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 10px rgba(0,0,0,0.05)';
+                                    (e.currentTarget as HTMLElement).style.transform = 'none';
+                                }}
+                            >
+                                <div style={{ position: 'relative' }}>
+                                    {outfit.imageUrl ? (
+                                        <img
+                                            src={outfit.imageUrl}
+                                            alt="저장한 코디"
+                                            style={{ width: '100%', height: 158, objectFit: 'cover', display: 'block' }}
+                                        />
+                                    ) : (
+                                        <div style={{ height: 158, background: '#f5f7fa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <WardrobeIcon size={32} color="#bbb" />
+                                        </div>
+                                    )}
+                                    {outfit.material && (
+                                        <span style={{
+                                            position: 'absolute', top: 8, left: 8,
+                                            background: TPO_COLORS[outfit.material] || '#888',
+                                            color: 'white',
+                                            fontSize: 10, fontWeight: 600,
+                                            padding: '3px 8px', borderRadius: 999,
+                                            boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+                                        }}>
+                                            {outfit.material}
+                                        </span>
+                                    )}
+                                </div>
+                                <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <span style={{ fontSize: 11, color: '#888', fontWeight: 500 }}>코디 #{idx + 1}</span>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleDeleteOutfit(outfit.id); }}
+                                        disabled={deletingId === outfit.id}
+                                        style={{
+                                            width: 22, height: 22,
+                                            borderRadius: '50%',
+                                            border: '1px solid #eaedf2',
+                                            background: 'white',
+                                            cursor: deletingId === outfit.id ? 'not-allowed' : 'pointer',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            padding: 0,
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <CloseIcon size={10} color={deletingId === outfit.id ? '#ccc' : '#FF5A5A'} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Preview Modal */}
+            {previewOutfit && (
+                <div
+                    onClick={() => setPreviewOutfit(null)}
+                    style={{
+                        position: 'fixed', inset: 0,
+                        background: 'rgba(0,0,0,0.55)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        zIndex: 1000,
+                    }}
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            background: 'white',
+                            borderRadius: 24,
+                            overflow: 'hidden',
+                            width: 400,
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+                        }}
+                    >
+                        {previewOutfit.imageUrl ? (
+                            <img src={previewOutfit.imageUrl} alt="코디 미리보기" style={{ width: '100%', display: 'block' }} />
+                        ) : (
+                            <div style={{ height: 300, background: '#f5f7fa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <WardrobeIcon size={48} color="#bbb" />
+                            </div>
+                        )}
+                        <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a2e' }}>코디 #{savedOutfits.findIndex(o => o.id === previewOutfit.id) + 1}</span>
+                                {previewOutfit.material && (
+                                    <span style={{
+                                        background: TPO_COLORS[previewOutfit.material] || '#888',
+                                        color: 'white',
+                                        fontSize: 11, fontWeight: 600,
+                                        padding: '3px 10px', borderRadius: 999,
+                                    }}>
+                                        {previewOutfit.material}
+                                    </span>
+                                )}
+                            </div>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <button
+                                    onClick={() => {
+                                        setTpoEditTarget(previewOutfit);
+                                        setPendingTpo(previewOutfit.material || '');
+                                        setTpoModalOpen(true);
+                                    }}
+                                    style={{ ...btnStyle(false), fontSize: 12 }}
+                                >
+                                    TPO 변경
+                                </button>
+                                <button
+                                    onClick={() => { handleDeleteOutfit(previewOutfit.id); setPreviewOutfit(null); }}
+                                    style={{ ...btnStyle(false, 'danger'), fontSize: 12 }}
+                                >
+                                    삭제
+                                </button>
+                                <button
+                                    onClick={() => setPreviewOutfit(null)}
+                                    style={{ ...btnStyle(false), fontSize: 12 }}
+                                >
+                                    닫기
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* TPO 선택 모달 */}
+            {tpoModalOpen && (
+                <div
+                    onClick={() => { setTpoModalOpen(false); setTpoEditTarget(null); }}
+                    style={{
+                        position: 'fixed', inset: 0,
+                        background: 'rgba(0,0,0,0.45)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        zIndex: 1001,
+                    }}
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            background: 'white',
+                            borderRadius: 24,
+                            padding: '28px 28px 24px',
+                            width: 380,
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+                        }}
+                    >
+                        <p style={{ fontWeight: 700, fontSize: 17, color: '#1a1a2e', margin: '0 0 6px' }}>
+                            {tpoEditTarget ? 'TPO 변경' : 'TPO 선택'}
+                        </p>
+                        <p style={{ fontSize: 13, color: '#aaa', margin: '0 0 20px' }}>
+                            {tpoEditTarget ? '변경할 TPO를 선택해주세요' : '이 코디는 언제 입을 건가요?'}
+                        </p>
+
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
+                            {TPO_LIST.map(({ key, color }) => {
+                                const isSelected = pendingTpo === key;
+                                return (
+                                    <button
+                                        key={key}
+                                        onClick={() => setPendingTpo(isSelected ? '' : key)}
+                                        style={{
+                                            padding: '8px 18px',
+                                            borderRadius: 999,
+                                            border: `2px solid ${isSelected ? color : '#eaedf2'}`,
+                                            background: isSelected ? color : 'white',
+                                            color: isSelected ? 'white' : '#555',
+                                            fontSize: 13,
+                                            fontWeight: isSelected ? 700 : 400,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.15s',
+                                        }}
+                                    >
+                                        {key}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: 8 }}>
+                            {tpoEditTarget ? (
+                                <>
+                                    <button
+                                        onClick={() => { setTpoModalOpen(false); setTpoEditTarget(null); }}
+                                        style={{ ...btnStyle(false), flex: 1, justifyContent: 'center', display: 'flex' }}
+                                    >
+                                        취소
+                                    </button>
+                                    <button
+                                        onClick={() => handleUpdateTpo(pendingTpo)}
+                                        style={{ ...btnStyle(false, 'primary'), flex: 2, justifyContent: 'center', display: 'flex' }}
+                                    >
+                                        {pendingTpo ? `'${pendingTpo}'로 변경` : 'TPO 없이 저장'}
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button
+                                        onClick={() => handleSaveToWardrobe('')}
+                                        style={{ ...btnStyle(false), flex: 1, justifyContent: 'center', display: 'flex' }}
+                                    >
+                                        건너뛰기
+                                    </button>
+                                    <button
+                                        onClick={() => handleSaveToWardrobe(pendingTpo)}
+                                        style={{ ...btnStyle(false, 'primary'), flex: 2, justifyContent: 'center', display: 'flex' }}
+                                    >
+                                        {pendingTpo ? `'${pendingTpo}' 코디로 저장` : '저장하기'}
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </>
