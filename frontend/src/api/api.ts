@@ -82,6 +82,7 @@ export const weatherAPI = {
 export const wardrobeAPI = {
     getWardrobe: () => api.get('/wardrobe'),
     uploadItem: (imageB64: string) => api.post('/wardrobe/upload', { imageB64 }),
+    saveOutfit: (imageB64: string, tpo?: string) => api.post('/wardrobe/save-outfit', { imageB64, tpo: tpo || '' }),
     deleteItem: (itemId: number) => api.delete(`/wardrobe/${itemId}`),
     updateItem: (itemId: number, data: UpdateItemData) => api.put(`/wardrobe/${itemId}`, data),
     recommend: (data: RecommendData) => api.post('/wardrobe/recommend', data)

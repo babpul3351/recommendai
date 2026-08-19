@@ -165,6 +165,30 @@ public class WardrobeController {
         return ResponseEntity.ok(aiResult);
     }
 
+    // 코디 스튜디오 저장 (AI 분석 없이 S3에 직접 업로드)
+    @PostMapping("/save-outfit")
+    public ResponseEntity<WardrobeItemResponse> saveOutfit(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody Map<String, String> body) {
+
+        String imageB64 = body.get("imageB64");
+        if (imageB64 == null || imageB64.isEmpty()) {
+            throw new IllegalArgumentException("imageB64가 비어있습니다");
+        }
+        String tpo = body.getOrDefault("tpo", "");
+
+        WardrobeItemResponse response = wardrobeService.addItem(
+                userDetails.getUsername(),
+                imageB64,
+                "저장한 코디",
+                "코디 조합",
+                "",
+                tpo,
+                ""
+        );
+        return ResponseEntity.ok(response);
+    }
+
     // 옷장 아이템 삭제
     @DeleteMapping("/{itemId}")
     public ResponseEntity<String> deleteItem(
