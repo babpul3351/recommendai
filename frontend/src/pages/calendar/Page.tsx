@@ -175,7 +175,7 @@ function Calendar() {
             {toast && (
                 <div style={{
                     position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)',
-                    background: toast.type === 'success' ? '#1a1a2e' : '#e57373',
+                    background: toast.type === 'success' ? '#71B3E5' : '#e57373',
                     color: 'white', borderRadius: 12, padding: '12px 24px',
                      fontSize: 14, fontWeight: 600,
                     zIndex: 300, boxShadow: '0 8px 24px rgba(0,0,0,0.2)',

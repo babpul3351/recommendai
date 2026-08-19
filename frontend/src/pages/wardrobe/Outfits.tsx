@@ -85,10 +85,16 @@ function Outfits() {
     const [tpoModalOpen, setTpoModalOpen] = useState(false);
     const [pendingTpo, setPendingTpo] = useState('');
     const [tpoEditTarget, setTpoEditTarget] = useState<WardrobeItem | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
     const canvasRef = useRef<HTMLDivElement>(null);
     const moveRef = useRef<{ id: string; startX: number; startY: number; initX: number; initY: number } | null>(null);
     const resizeRef = useRef<{ id: string; corner: string; startX: number; startY: number; initW: number; initH: number; initX: number; initY: number } | null>(null);
     const zCounter = useRef(1);
+
+    const showToast = useCallback((message: string, type: 'success' | 'error') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 2500);
+    }, []);
 
     const fetchWardrobe = useCallback(() => {
         setWardrobeLoading(true);
@@ -314,10 +320,10 @@ function Outfits() {
             const b64 = await composeCanvas();
             await wardrobeAPI.saveOutfit(b64, tpo);
             fetchWardrobe();
-            alert('코디가 저장됐습니다!');
+            showToast('코디가 저장됐습니다!', 'success');
         } catch (err) {
             console.error(err);
-            alert('저장에 실패했습니다. 다시 시도해 주세요.');
+            showToast('저장에 실패했습니다. 다시 시도해 주세요.', 'error');
         } finally {
             setSaving(false);
         }
@@ -341,7 +347,7 @@ function Outfits() {
             }
         } catch (err) {
             console.error(err);
-            alert('TPO 변경에 실패했습니다.');
+            showToast('TPO 변경에 실패했습니다.', 'error');
         } finally {
             setTpoEditTarget(null);
         }
@@ -355,7 +361,7 @@ function Outfits() {
             setWardrobeItems(prev => prev.filter(i => i.id !== id));
         } catch (err) {
             console.error(err);
-            alert('삭제에 실패했습니다.');
+            showToast('삭제에 실패했습니다.', 'error');
         } finally {
             setDeletingId(null);
         }
@@ -909,6 +915,19 @@ function Outfits() {
                             )}
                         </div>
                     </div>
+                </div>
+            )}
+
+            {toast && (
+                <div style={{
+                    position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)',
+                    background: toast.type === 'success' ? '#71B3E5' : '#e57373',
+                    color: 'white', borderRadius: 12, padding: '12px 24px',
+                    fontSize: 14, fontWeight: 600,
+                    zIndex: 300, boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+                    display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap',
+                }}>
+                    {toast.type === 'success' ? '✓' : '✕'} {toast.message}
                 </div>
             )}
 
