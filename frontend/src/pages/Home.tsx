@@ -112,6 +112,15 @@ function Home() {
     const navigate = useNavigate();
     const nickname = localStorage.getItem('nickname') || '사용자';
     const today = useMemo(() => new Date(), []);
+    const [colorType, setColorType] = useState<string>(localStorage.getItem('colorType') || '');
+
+    useEffect(() => {
+        const load = () => setColorType(localStorage.getItem('colorType') || '');
+        window.addEventListener('colorTypeUpdated', load);
+        return () => window.removeEventListener('colorTypeUpdated', load);
+    }, []);
+
+    const hasColorDeficiency = colorType && colorType !== 'normal';
 
     const [weather, setWeather]             = useState<Weather | null>(null);
     const [todayEvents, setTodayEvents]     = useState<CalendarEvent[]>([]);
@@ -276,10 +285,11 @@ function Home() {
                 />
                 <div style={{ display: 'flex', gap: 36 }}>
                     {([
-                        { label: 'WEATHER',    fn: () => scrollTo('weather') },
-                        { label: 'MY CLOSET',  fn: () => navigate('/wardrobe') },
-                        { label: 'CALENDAR',   fn: () => navigate('/calendar') },
-                        { label: 'PROFILE',    fn: () => navigate('/mypage') },
+                        { label: 'WEATHER',      fn: () => scrollTo('weather') },
+                        { label: 'MY CLOSET',    fn: () => navigate('/wardrobe') },
+                        { label: 'CALENDAR',     fn: () => navigate('/calendar') },
+                        ...(hasColorDeficiency ? [{ label: 'COLOR VISION', fn: () => navigate('/color-correction') }] : []),
+                        { label: 'PROFILE',      fn: () => navigate('/mypage') },
                     ] as { label: string; fn: () => void }[]).map(({ label, fn }) => (
                         <button key={label} onClick={fn} style={{
                             background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',

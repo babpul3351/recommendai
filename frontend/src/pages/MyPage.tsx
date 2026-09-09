@@ -250,6 +250,8 @@ function MyPage() {
             const res = await userAPI.getProfile();
             setProfile(res.data);
             setEditForm({ nickname: res.data.nickname, ageGroup: res.data.ageGroup, gender: res.data.gender, colorType: res.data.colorType, styles: res.data.styles || [] });
+            localStorage.setItem('colorType', res.data.colorType || '');
+            window.dispatchEvent(new Event('colorTypeUpdated'));
         } catch (err) { console.error(err); }
     };
 
@@ -327,6 +329,8 @@ function MyPage() {
     const handleSaveColorType = async (colorType: string) => {
         try {
             await colorAssistantAPI.updateColorType(colorType);
+            localStorage.setItem('colorType', colorType);
+            window.dispatchEvent(new Event('colorTypeUpdated'));
             await fetchProfile(); setShowColorTest(false); setTestActive(false); setTestResult(null);
             alert(`'${COLOR_TYPE_LABELS[colorType]}'으로 저장됐습니다.`);
         } catch (err) { alert('저장 실패'); }
