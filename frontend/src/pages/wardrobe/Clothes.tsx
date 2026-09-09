@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { wardrobeAPI, userAPI } from '../../api/api';
 import DaltonizedImage from '../../components/DaltonizedImage';
+import ComparisonSlider from '../../components/ComparisonSlider';
 import { ColorType } from '../../daltonization';
 import { SearchIcon, WardrobeIcon } from '../../components/Icons';
 
@@ -300,13 +301,22 @@ function Clothes() {
 
                         <div style={{ padding: '0 20px', marginBottom: 16 }}>
                             {selectedItem.imageUrl ? (
-                                <DaltonizedImage
-                                    src={selectedItem.imageUrl}
-                                    alt={selectedItem.type || ''}
-                                    colorType={colorType || 'normal'}
-                                    correctionEnabled={correctionEnabled}
-                                    imgStyle={{ width: '100%', height: 260, objectFit: 'cover', borderRadius: 16, display: 'block' }}
-                                />
+                                correctionEnabled && hasColorDeficiency ? (
+                                    <ComparisonSlider
+                                        src={selectedItem.imageUrl}
+                                        colorType={colorType as ColorType}
+                                        height={260}
+                                        borderRadius={16}
+                                    />
+                                ) : (
+                                    <DaltonizedImage
+                                        src={selectedItem.imageUrl}
+                                        alt={selectedItem.type || ''}
+                                        colorType={colorType || 'normal'}
+                                        correctionEnabled={correctionEnabled}
+                                        imgStyle={{ width: '100%', height: 260, objectFit: 'cover', borderRadius: 16, display: 'block' }}
+                                    />
+                                )
                             ) : (
                                 <div style={{ width: '100%', height: 260, background: getColorHex(selectedItem.color), borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <WardrobeIcon size={60} color="rgba(255,255,255,0.75)" />

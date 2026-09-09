@@ -4,6 +4,7 @@ import { usePageAnimation } from '../hooks/usePageAnimation';
 import { useNavigate } from 'react-router-dom';
 import { userAPI, recommendationAPI, colorAssistantAPI, wardrobeAPI } from '../api/api';
 import { CloseIcon } from '../components/Icons';
+import BeforeAfterSlider from '../components/BeforeAfterSlider';
 
 const STYLES = ['casual', 'formal', 'business', 'lovely', 'feminine', 'sporty', 'comfort'];
 const STYLE_LABELS: Record<string, string> = {
@@ -784,17 +785,18 @@ function MyPage() {
                                     {daltonizeResult && (
                                         <>
                                             <button onClick={() => fileInputRef.current?.click()} style={{ ...btnSecondary, marginTop: 12, marginLeft: 8 }}>다른 사진 보정하기</button>
-                                            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 16 }}>
-                                                {[
-                                                    { label: '원본', src: daltonizeResult.original },
-                                                    { label: '색각 이상 시뮬레이션', src: daltonizeResult.simulated },
-                                                    { label: '보정 후', src: daltonizeResult.corrected },
-                                                ].map(item => (
-                                                    <div key={item.label} style={{ flex: 1, minWidth: 140, textAlign: 'center' }}>
-                                                        <p style={{  fontSize: 12, color: '#888', fontWeight: 600, marginBottom: 8 }}>{item.label}</p>
-                                                        <img src={item.src} alt={item.label} style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: 12 }} />
-                                                    </div>
-                                                ))}
+                                            <div style={{ marginTop: 16 }}>
+                                                <p style={{ fontSize: 12, color: '#888', fontWeight: 600, marginBottom: 8 }}>
+                                                    드래그해서 원본 ↔ 보정 후 비교
+                                                </p>
+                                                <BeforeAfterSlider
+                                                    before={daltonizeResult.simulated}
+                                                    after={daltonizeResult.corrected}
+                                                    beforeLabel="색약자 시점"
+                                                    afterLabel="보정 후"
+                                                    height={480}
+                                                    borderRadius={12}
+                                                />
                                             </div>
                                         </>
                                     )}

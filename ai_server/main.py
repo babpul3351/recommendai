@@ -179,9 +179,14 @@ async def embedding_stats():
 @app.post("/ai/daltonize")
 async def daltonize(req: DaltonizeRequest):
     try:
-        from services.daltonization_service import simulate_color_blindness
+        from services.daltonization_service import simulate_color_blindness, simulate_only
         corrected = simulate_color_blindness(req.imageB64, req.colorType)
-        return {"corrected": corrected}
+        simulated = simulate_only(req.imageB64, req.colorType)
+        return {
+            "original":  req.imageB64,
+            "simulated": simulated,
+            "corrected": corrected,
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
