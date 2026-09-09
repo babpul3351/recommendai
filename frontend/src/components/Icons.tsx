@@ -4,7 +4,7 @@ import {
     Sun, Cloud, CloudSun, CloudRain, CloudSnow,
     Heart, Briefcase, Dumbbell, PartyPopper, Plane, Award,
     RefreshCw, Check, Bot, Clock, Thermometer, MapPin,
-    AlertTriangle, X, Wind, Search,
+    AlertTriangle, X, Wind, Search, Eye,
 } from 'lucide-react';
 
 interface IconProps { color?: string; size?: number; }
@@ -152,4 +152,8 @@ export function CloseIcon({ color = '#aaa', size = 18 }: IconProps) {
 
 export function WaveIcon({ color = '#555', size = 22 }: IconProps) {
     return <Wind size={size} color={color} strokeWidth={SW} />;
+}
+
+export function EyeIcon({ color = '#555', size = 22 }: IconProps) {
+    return <Eye size={size} color={color} strokeWidth={SW} />;
 }

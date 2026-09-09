@@ -7,6 +7,7 @@ import Wardrobe from './pages/wardrobe/Page';
 import Recommend from './pages/recommend/Page';
 import Calendar from './pages/calendar/Page';
 import MyPage from './pages/MyPage';
+import ColorCorrectionPage from './pages/ColorCorrectionPage';
 import Navbar from './components/Navbar';
 import api from './api/api';
 
@@ -61,6 +62,7 @@ function App() {
                     <Route path="/wardrobe" element={<Wardrobe />} />
                     <Route path="/recommend" element={<Recommend />} />
                     <Route path="/calendar" element={<Calendar />} />
+                    <Route path="/color-correction" element={<ColorCorrectionPage />} />
                     <Route path="/mypage" element={<MyPage />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />

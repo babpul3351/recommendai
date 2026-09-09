@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { theme } from '../styles/theme';
-import { HomeIcon, WardrobeIcon, CalendarIcon, SparkleIcon, UserIcon } from './Icons';
+import { HomeIcon, WardrobeIcon, CalendarIcon, SparkleIcon, UserIcon, EyeIcon } from './Icons';
 
-const navItems: { path: string; label: string; icon: React.ComponentType<{ color?: string }> }[] = [
+const BASE_NAV_ITEMS: { path: string; label: string; icon: React.ComponentType<{ color?: string }>; colorBlindOnly?: boolean }[] = [
     { path: '/', label: '홈', icon: HomeIcon },
     { path: '/wardrobe', label: '내 옷장', icon: WardrobeIcon },
     { path: '/calendar', label: '캘린더', icon: CalendarIcon },
     { path: '/recommend', label: 'AI 추천', icon: SparkleIcon },
+    { path: '/color-correction', label: '색상 보정 뷰어', icon: EyeIcon, colorBlindOnly: true },
     { path: '/mypage', label: '마이페이지', icon: UserIcon },
 ];
 
@@ -27,6 +28,7 @@ function Navbar() {
     const location = useLocation();
     const nickname = localStorage.getItem('nickname') || '사용자';
     const [profileImage, setProfileImage] = useState<string | null>(null);
+    const [colorType, setColorType] = useState<string>(localStorage.getItem('colorType') || '');
 
     useEffect(() => {
         const load = () => setProfileImage(localStorage.getItem('profileAvatarImage'));
@@ -34,6 +36,15 @@ function Navbar() {
         window.addEventListener('profileImageUpdated', load);
         return () => window.removeEventListener('profileImageUpdated', load);
     }, []);
+
+    useEffect(() => {
+        const load = () => setColorType(localStorage.getItem('colorType') || '');
+        window.addEventListener('colorTypeUpdated', load);
+        return () => window.removeEventListener('colorTypeUpdated', load);
+    }, []);
+
+    const hasColorDeficiency = colorType && colorType !== 'normal';
+    const navItems = BASE_NAV_ITEMS.filter(item => !item.colorBlindOnly || hasColorDeficiency);
 
     const isActive = (path: string): boolean => {
         if (path === '/') return location.pathname === '/';
