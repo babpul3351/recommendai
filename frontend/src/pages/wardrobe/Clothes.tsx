@@ -4,6 +4,22 @@ import DaltonizedImage from '../../components/DaltonizedImage';
 import { ColorType } from '../../daltonization';
 import { SearchIcon, WardrobeIcon } from '../../components/Icons';
 
+/*
+ * 변경 사항 (기존 대비)
+ * ------------------
+ * 1. correctionEnabled를 더 이상 항상 false로 시작한 뒤 자동으로 true로
+ *    덮어쓰지XX. 서버(/user/profile 응답의 correctionEnabled)에서
+ *    가져온 값을 그대로 사용.
+ *    → 이전에는 colorType이 있으면 무조건 setCorrectionEnabled(true)로
+ *      덮어써서, 사용자가 꺼둔 설정이 화면 재진입 시마다 초기화.
+ *
+ * 2. 토글 클릭 시 handleToggleCorrection()이 서버에 즉시 저장.
+ *    (PUT /user/profile 로 correctionEnabled 값 전송)
+ *
+ * 그 외 로직(옷장 조회, 업로드, 삭제, 수정, 검색/필터, 팝업 등)은
+ * 전부 기존 유지.
+ */
+
 const CATEGORIES_FILTER = ['전체', '상의', '하의', '아우터', '원피스', '기타'];
 const CATEGORIES_EDIT = ['상의', '하의', '아우터', '원피스', '기타'];
 const COLORS = ['블랙', '화이트', '그레이', '네이비', '블루', '레드', '핑크',
@@ -65,21 +81,38 @@ function Clothes() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [colorType, setColorType] = useState<ColorType | 'normal' | null>(null);
     const [correctionEnabled, setCorrectionEnabled] = useState(false);
+    const [savingToggle, setSavingToggle] = useState(false);
 
     const fetchUserColorType = async () => {
         try {
             const res = await userAPI.getProfile();
             const ct: ColorType | 'normal' = res.data.colorType;
             setColorType(ct);
-            if (ct && ct !== 'normal') setCorrectionEnabled(true);
+            setCorrectionEnabled(!!res.data.correctionEnabled);
         } catch {}
+    };
+
+    const handleToggleCorrection = async () => {
+        if (savingToggle) return;
+        const next = !correctionEnabled;
+
+        setCorrectionEnabled(next);
+        setSavingToggle(true);
+
+        try {
+            await userAPI.updateProfile({ correctionEnabled: next });
+        } catch {
+            setCorrectionEnabled(!next);
+            alert('설정 저장에 실패했습니다. 다시 시도해주세요.');
+        } finally {
+            setSavingToggle(false);
+        }
     };
 
     const fetchWardrobe = async () => {
         setLoading(true);
         try {
             const res = await wardrobeAPI.getWardrobe();
-            // 저장한 코디는 내 코디 탭에서 관리
             setItems(res.data.filter((item: WardrobeItem) => normalizeCategory(item.category) !== '저장한 코디'));
         } catch {}
         finally { setLoading(false); }
@@ -138,17 +171,17 @@ function Clothes() {
 
     return (
         <>
-            {/* Color correction toggle + item count */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                 <span style={{ fontSize: 14, color: '#888' }}>총 {items.length}개의 아이템</span>
                 {hasColorDeficiency && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: savingToggle ? 0.6 : 1 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: correctionEnabled ? '#71b3e5' : '#888' }}>
                             색약 보정 {correctionEnabled ? 'ON' : 'OFF'}
                         </span>
                         <button
-                            onClick={() => setCorrectionEnabled(p => !p)}
-                            style={{ width: 44, height: 24, borderRadius: 12, background: correctionEnabled ? '#71b3e5' : '#d0d5dd', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}
+                            onClick={handleToggleCorrection}
+                            disabled={savingToggle}
+                            style={{ width: 44, height: 24, borderRadius: 12, background: correctionEnabled ? '#71b3e5' : '#d0d5dd', border: 'none', cursor: savingToggle ? 'default' : 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}
                         >
                             <div style={{ position: 'absolute', top: 2, left: correctionEnabled ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: 'white', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
                         </button>
@@ -156,7 +189,6 @@ function Clothes() {
                 )}
             </div>
 
-            {/* Search + filter row */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
                 <div style={{ background: 'white', border: '1px solid #eaedf2', borderRadius: 10, padding: '9px 14px', display: 'flex', alignItems: 'center', gap: 8, width: 200, flexShrink: 0 }}>
                     <SearchIcon size={15} color="#aaa" />
@@ -193,7 +225,6 @@ function Clothes() {
                 <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
             </div>
 
-            {/* Grid */}
             {loading ? (
                 <div style={{ textAlign: 'center', padding: '80px 0' }}>
                     <p style={{ color: '#aaa', fontSize: 14 }}>불러오는 중...</p>
@@ -247,11 +278,10 @@ function Clothes() {
                 </div>
             )}
 
-            {/* Item detail popup */}
             {selectedItem && (
                 <>
                     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 200 }}
-                        onClick={() => { setSelectedItem(null); setEditMode(false); }} />
+                         onClick={() => { setSelectedItem(null); setEditMode(false); }} />
                     <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'white', borderRadius: 24, width: 380, maxWidth: '90vw', maxHeight: '85vh', overflowY: 'auto', zIndex: 201, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 20px 0', marginBottom: 16 }}>
                             <h2 style={{ fontWeight: 700, fontSize: 18, color: '#1a1a2e', margin: 0 }}>옷 상세 정보</h2>

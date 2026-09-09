@@ -4,7 +4,14 @@ import { BASE_URL } from './env';
 interface SignupData      { loginId: string; nickname: string; ageGroup: string; gender: string; password: string; styles: string[]; }
 interface LoginData       { loginId: string; password: string; }
 interface AddEventData    { eventName: string; eventDatetime: string; tpoKeyword: string; }
-interface UpdateProfileData { nickname: string; ageGroup: string; gender: string; colorType: string; styles: string[]; }
+interface UpdateProfileData {
+    nickname?: string;
+    ageGroup?: string;
+    gender?: string;
+    colorType?: string;
+    styles?: string[];
+    correctionEnabled?: boolean;
+}
 interface AcceptOutfitData  { outfitIndex: number; style: string; description: string; }
 interface UpdateItemData  { category: string; type: string; color: string; material: string; }
 interface RecommendData {
