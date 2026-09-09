@@ -124,29 +124,42 @@ function randomInCircle(cx: number, cy: number, radius: number): { x: number; y:
     return { x: cx + Math.cos(angle) * dist, y: cy + Math.sin(angle) * dist };
 }
 
+function shuffleArray<T>(arr: T[]): T[] {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
 function ColorTest({ onResult }: { onResult: (result: string) => void }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [step, setStep] = useState(0);
     const [answers, setAnswers] = useState<string[]>([]);
     const [rendered, setRendered] = useState(false);
+    const [shuffledOptions, setShuffledOptions] = useState<string[]>(() => shuffleArray(PLATES[0].options));
 
     const drawPlate = useCallback((canvas: HTMLCanvasElement, plate: Plate) => {
         const W = canvas.width, cx = W / 2, cy = W / 2, radius = W * 0.45;
         const ctx = canvas.getContext('2d')!;
         ctx.clearRect(0, 0, W, W); ctx.fillStyle = '#f7fafc'; ctx.fillRect(0, 0, W, W);
         const mask = createTextMask(W, plate.text, plate.isWord || false);
-        for (let i = 0; i < 1450; i++) { const p = randomInCircle(cx, cy, radius); drawDot(ctx, p.x, p.y, 5 + Math.random() * 9, plate.bg); }
+        // 배경 도트: 밀도 증가
+        for (let i = 0; i < 1900; i++) { const p = randomInCircle(cx, cy, radius); drawDot(ctx, p.x, p.y, 4 + Math.random() * 10, plate.bg); }
+        // 전경 도트 (숫자/글자 영역)
         let drawn = 0, attempts = 0;
-        while (drawn < 620 && attempts < 620 * 18) {
+        while (drawn < 750 && attempts < 750 * 20) {
             attempts++;
-            const p = randomInCircle(cx, cy, radius * 0.82);
+            const p = randomInCircle(cx, cy, radius * 0.84);
             if (!isTextPixel(mask, p.x, p.y)) continue;
-            drawDot(ctx, p.x, p.y, 7 + Math.random() * 10, plate.fg); drawn++;
+            drawDot(ctx, p.x, p.y, 6 + Math.random() * 11, plate.fg); drawn++;
         }
-        for (let i = 0; i < 260; i++) {
+        // 경계 혼합 도트
+        for (let i = 0; i < 320; i++) {
             const p = randomInCircle(cx, cy, radius);
             const colors = isTextPixel(mask, p.x, p.y) ? plate.fg : plate.bg;
-            drawDot(ctx, p.x, p.y, 3 + Math.random() * 5, colors);
+            drawDot(ctx, p.x, p.y, 3 + Math.random() * 6, colors);
         }
         ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.lineWidth = 6; ctx.strokeStyle = '#d7dee6'; ctx.stroke();
         setRendered(true);
@@ -155,6 +168,7 @@ function ColorTest({ onResult }: { onResult: (result: string) => void }) {
     useEffect(() => {
         if (!canvasRef.current) return;
         setRendered(false);
+        setShuffledOptions(shuffleArray(PLATES[step].options));
         const raf = requestAnimationFrame(() => { if (canvasRef.current) drawPlate(canvasRef.current, PLATES[step]); });
         return () => cancelAnimationFrame(raf);
     }, [step, drawPlate]);
@@ -202,7 +216,7 @@ function ColorTest({ onResult }: { onResult: (result: string) => void }) {
                 <canvas ref={canvasRef} width={400} height={400} style={{ width: 220, height: 220, borderRadius: '50%', boxShadow: '0 6px 24px rgba(0,0,0,0.18)', display: 'block' }} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {plate.options.map(opt => (
+                {shuffledOptions.map(opt => (
                     <button key={opt} onClick={() => handleAnswer(opt)} style={{ width: '100%', padding: '13px 18px', border: '1.5px solid #eaedf2', borderRadius: 12, backgroundColor: 'white', fontSize: 15, fontWeight: 500, color: '#1a1a2e', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12,  transition: 'border-color 0.15s' }}>
                         <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid #eaedf2', flexShrink: 0 }} />
                         {opt}
