@@ -86,9 +86,9 @@ function DayView({ selectedDate, today, events, outfits, onPrevDay, onNextDay, o
 
             {/* Outfit section */}
             {dayOutfits.length > 0 && (
-                <div style={{ padding: '14px 20px', borderBottom: '1px solid #f0f2f6', background: 'rgba(230,37,198,0.03)' }}>
-                    <p style={{ fontSize: 11, fontWeight: 700, color: '#e625c6', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <WardrobeIcon color="#e625c6" size={12} />
+                <div style={{ padding: '14px 20px', borderBottom: '1px solid #f5e9a0', background: '#FFFDE7' }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: '#7a5800', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <WardrobeIcon color="#c89000" size={12} />
                         {isToday ? '오늘의 추천 코디' : '이 날의 추천 코디'}
                     </p>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -97,12 +97,12 @@ function DayView({ selectedDate, today, events, outfits, onPrevDay, onNextDay, o
                                 key={i}
                                 src={item.imageUrl}
                                 alt=""
-                                style={{ width: 56, height: 56, borderRadius: 10, objectFit: 'cover', border: '1.5px solid rgba(230,37,198,0.15)' }}
+                                style={{ width: 56, height: 56, borderRadius: 10, objectFit: 'cover', border: '1.5px solid #FFE082' }}
                             />
                         ))}
                         {dayOutfits[0].description && (
-                            <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', background: 'rgba(230,37,198,0.07)', borderRadius: 10, maxWidth: 260 }}>
-                                <p style={{ fontSize: 12, color: '#c020a8', margin: 0, lineHeight: 1.5 }}>{dayOutfits[0].description}</p>
+                            <div style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', background: '#FFE082', borderRadius: 10, flex: 1, minWidth: 0 }}>
+                                <p style={{ fontSize: 12, color: '#7a5800', margin: 0, lineHeight: 1.6 }}>{dayOutfits[0].description}</p>
                             </div>
                         )}
                     </div>
