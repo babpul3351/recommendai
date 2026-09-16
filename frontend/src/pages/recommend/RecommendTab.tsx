@@ -11,6 +11,8 @@ interface Props {
     todayEvents: CalendarEvent[];
     selectedTpo: string | null;
     setSelectedTpo: (tpo: string | null) => void;
+    customTpo: string;
+    setCustomTpo: (v: string) => void;
     numOutfits: number;
     setNumOutfits: (n: number) => void;
     loading: boolean;
@@ -25,7 +27,8 @@ interface Props {
 
 function RecommendTab({
     weather, weatherUnavailable, todayEvents,
-    selectedTpo, setSelectedTpo, numOutfits, setNumOutfits,
+    selectedTpo, setSelectedTpo, customTpo, setCustomTpo,
+    numOutfits, setNumOutfits,
     loading, error, aiStep,
     outfitPool, acceptedPoolIdx, accepting,
     onRecommend, onAccept,
@@ -96,13 +99,13 @@ function RecommendTab({
                     )}
                 </div>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, opacity: customTpo.trim() ? 0.45 : 1, transition: 'opacity 0.2s' }}>
                     {TPO_LIST.map(t => {
-                        const active = selectedTpo === t.key;
+                        const active = selectedTpo === t.key && !customTpo.trim();
                         return (
                             <button
                                 key={t.key}
-                                onClick={() => setSelectedTpo(t.key)}
+                                onClick={() => { setSelectedTpo(t.key); setCustomTpo(''); }}
                                 style={{
                                     display: 'inline-flex', alignItems: 'center', gap: 6,
                                     padding: '8px 14px', borderRadius: 999, cursor: 'pointer',
@@ -115,6 +118,37 @@ function RecommendTab({
                             </button>
                         );
                     })}
+                </div>
+
+                {/* Free-text TPO input */}
+                <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #f0f0f0' }}>
+                    <p style={{ fontWeight: 600, fontSize: 12, color: '#aaa', margin: '0 0 8px' }}>또는 상황을 자유롭게 적어보세요</p>
+                    <div style={{ position: 'relative' }}>
+                        <input
+                            value={customTpo}
+                            onChange={e => setCustomTpo(e.target.value)}
+                            placeholder="예: 친구 결혼식 하객, 비 오는 날 카페에서 공부..."
+                            style={{
+                                width: '100%', boxSizing: 'border-box',
+                                padding: '10px 36px 10px 14px',
+                                borderRadius: 10, fontSize: 13, outline: 'none',
+                                border: customTpo.trim() ? '1.5px solid #71b3e5' : '1.5px solid #e8ecf0',
+                                background: customTpo.trim() ? 'rgba(113,179,229,0.05)' : 'white',
+                                color: '#1a1a2e', transition: 'border-color 0.15s, background 0.15s',
+                            }}
+                        />
+                        {customTpo && (
+                            <button
+                                onClick={() => setCustomTpo('')}
+                                style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', fontSize: 14, padding: 2, lineHeight: 1 }}
+                            >✕</button>
+                        )}
+                    </div>
+                    {customTpo.trim() && (
+                        <p style={{ fontSize: 11, color: '#71b3e5', margin: '6px 0 0', fontWeight: 500 }}>
+                            ✓ 직접 입력한 내용으로 추천받습니다
+                        </p>
+                    )}
                 </div>
 
                 {!isRetry && (
