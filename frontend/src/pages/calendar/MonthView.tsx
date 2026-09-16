@@ -159,8 +159,8 @@ function MonthView({ calYear, calMonth, today, events, outfits, onPrevMonth, onN
                             {/* Outfit badge */}
                             {hasOutfitToday && (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 4 }}>
-                                    <WardrobeIcon color="#e625c6" size={9} />
-                                    <span style={{ fontSize: 9, color: '#e625c6', fontWeight: 600 }}>코디</span>
+                                    <WardrobeIcon color="#c89000" size={9} />
+                                    <span style={{ fontSize: 9, color: '#c89000', fontWeight: 600 }}>코디</span>
                                 </div>
                             )}
                         </div>
