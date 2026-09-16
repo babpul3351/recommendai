@@ -17,6 +17,7 @@ function RecommendPage() {
     const [todayEvents, setTodayEvents] = useState<CalendarEvent[]>([]);
     const [selectedEventIds, setSelectedEventIds] = useState<number[]>([]);
     const [selectedTpo, setSelectedTpo] = useState<string | null>(null);
+    const [customTpo, setCustomTpo] = useState('');
     const [numOutfits, setNumOutfits] = useState(2);
     const [outfitPool, setOutfitPool] = useState<PoolEntry[]>([]);
     const [acceptedPoolIdx, setAcceptedPoolIdx] = useState<number | null>(null);
@@ -63,7 +64,7 @@ function RecommendPage() {
     };
 
     const handleRecommend = async () => {
-        const tpo = selectedTpo ?? '일상';
+        const tpo = customTpo.trim() || selectedTpo || '일상';
         setLoading(true); setError(''); setAiStep(0);
         const lastRecId = outfitPool.length > 0 ? outfitPool[outfitPool.length - 1].recId : null;
         const usedItemIds = outfitPool
@@ -162,6 +163,8 @@ function RecommendPage() {
                     todayEvents={todayEvents}
                     selectedTpo={selectedTpo}
                     setSelectedTpo={setSelectedTpo}
+                    customTpo={customTpo}
+                    setCustomTpo={setCustomTpo}
                     numOutfits={numOutfits}
                     setNumOutfits={setNumOutfits}
                     loading={loading}
