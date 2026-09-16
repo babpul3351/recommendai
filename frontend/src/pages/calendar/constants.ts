@@ -1,6 +1,7 @@
 export const TPO_OPTIONS = ['데이트', '직장', '캐주얼', '운동', '파티', '여행', '일상', '격식'];
 export const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 export const DAY_EN = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+export const DAY_KO = ['일', '월', '화', '수', '목', '금', '토'];
 
 export const TPO_COLORS: Record<string, string> = {
     '데이트': '#FF6B9D', '직장': '#5B8FF9', '캐주얼': '#5AD8A6',
