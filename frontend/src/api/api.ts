@@ -16,6 +16,7 @@ interface AcceptOutfitData  { outfitIndex: number; style: string; description: s
 interface UpdateItemData  { category: string; type: string; color: string; material: string; }
 interface RecommendData {
     tpo: string;
+    tpoDetail?: string;
     mode: string;
     linkedEvents?: number[];
     linkedEventIds?: number[];

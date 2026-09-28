@@ -3,11 +3,11 @@ main.py 전체 최종본
 
 이전 버전(ChromaDB 통합 v2) 대비 변경 사항
 ----------------------------------------
-/ai/daltonize 엔드포인트를 추가했습니다. (DaltonizeRequest 모델 포함)
-daltonization_service.py의 simulate_color_blindness()를 호출합니다.
+/ai/daltonize 엔드포인트를 추가. (DaltonizeRequest 모델 포함)
+daltonization_service.py의 simulate_color_blindness()를 호출.
 
 그 외 엔드포인트(/ai/analyze, /ai/recommend, /ai/wardrobe/embed 등)는
-이전 버전과 동일합니다. 변경 없습니다.
+이전 버전과 동일. 변경 사항 없음.
 """
 
 from fastapi import FastAPI, HTTPException
@@ -42,6 +42,8 @@ class WardrobeItemData(BaseModel):
 
 class RecommendRequest(BaseModel):
     tpo: str
+    tpoDetail: Optional[str] = ""
+    numOutfits: Optional[int] = 2
     mode: str = "rag"
     weather: dict
     profile: dict
@@ -100,7 +102,9 @@ async def recommend(req: RecommendRequest):
             profile=req.profile,
             mode=req.mode,
             wardrobe_items=[item.dict() for item in req.wardrobeItems],
-            linked_events=req.linkedEvents
+            linked_events=req.linkedEvents,
+            tpo_detail=req.tpoDetail or "",
+            num_outfits=req.numOutfits or 2,
         )
 
         if isinstance(outfits, dict):
