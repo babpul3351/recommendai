@@ -4,9 +4,8 @@ package com.capstone.recommendai.service;
  * 기존 대비 변경 사항
  * ------------------
  * registerEmbedding(), deleteEmbedding() 메서드 추가.
- * 기존 analyzeImage(), recommend()와 동일한 스타일(RestTemplate + aiServerUrl)로 작성했습니다.
- *
- * 적용 방법: 기존 AIService.java 파일 전체를 이 내용으로 교체하세요.
+ * 기존 analyzeImage(), recommend()와 동일한 스타일(RestTemplate + aiServerUrl)로 작성.
+ *.
  */
 
 import lombok.RequiredArgsConstructor;
@@ -30,6 +29,7 @@ public class AIService {
         return restTemplate.postForObject(aiServerUrl + "/ai/analyze", body, Map.class);
     }
 
+    // 기존 시그니처 유지 (tpoDetail 없이 호출하는 곳과의 호환용)
     public Map recommend(
             String tpo, String mode,
             Map<String, Object> weather,
@@ -37,6 +37,18 @@ public class AIService {
             List<Map<String, Object>> wardrobeItems,
             List<Map<String, Object>> linkedEvents,
             int numOutfits) {
+        return recommend(tpo, mode, weather, profile, wardrobeItems, linkedEvents, numOutfits, "");
+    }
+
+    // [신규] tpoDetail(사용자가 직접 입력한 상황 설명) 포함 버전
+    public Map recommend(
+            String tpo, String mode,
+            Map<String, Object> weather,
+            Map<String, Object> profile,
+            List<Map<String, Object>> wardrobeItems,
+            List<Map<String, Object>> linkedEvents,
+            int numOutfits,
+            String tpoDetail) {
         Map<String, Object> body = new HashMap<>();
         body.put("tpo",          tpo);
         body.put("mode",         mode);
@@ -45,6 +57,9 @@ public class AIService {
         body.put("wardrobeItems", wardrobeItems);
         body.put("linkedEvents", linkedEvents);
         body.put("numOutfits",   numOutfits);
+        if (tpoDetail != null && !tpoDetail.isEmpty()) {
+            body.put("tpoDetail", tpoDetail);
+        }
         return restTemplate.postForObject(aiServerUrl + "/ai/recommend", body, Map.class);
     }
 

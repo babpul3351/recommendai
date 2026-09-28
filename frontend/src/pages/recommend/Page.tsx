@@ -64,7 +64,8 @@ function RecommendPage() {
     };
 
     const handleRecommend = async () => {
-        const tpo = customTpo.trim() || selectedTpo || '일상';
+        const tpo = selectedTpo || '일상';
+        const tpoDetail = customTpo.trim();
         setLoading(true); setError(''); setAiStep(0);
         const lastRecId = outfitPool.length > 0 ? outfitPool[outfitPool.length - 1].recId : null;
         const usedItemIds = outfitPool
@@ -77,6 +78,7 @@ function RecommendPage() {
             const [res] = await Promise.all([
                 wardrobeAPI.recommend({
                     tpo, mode: 'rag',
+                    ...(tpoDetail ? { tpoDetail } : {}),
                     linkedEventIds: selectedEventIds,
                     outfitDate: toDateStr(today),
                     numOutfits, parentRecId: lastRecId,

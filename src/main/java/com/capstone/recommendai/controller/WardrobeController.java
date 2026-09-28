@@ -124,6 +124,14 @@ public class WardrobeController {
         String parentRecId = (String) body.get("parentRecId");
         String outfitDate  = (String) body.getOrDefault("outfitDate", null);
 
+        // [신규] 사용자가 직접 입력한 상황 설명 (선택). 클라이언트 값은 신뢰하지 않고 길이를 서버에서도 제한
+        Object tpoDetailRaw = body.get("tpoDetail");
+        String tpoDetail = "";
+        if (tpoDetailRaw instanceof String) {
+            tpoDetail = ((String) tpoDetailRaw).trim();
+            if (tpoDetail.length() > 200) tpoDetail = tpoDetail.substring(0, 200);
+        }
+
         @SuppressWarnings("unchecked")
         List<String> excludeItemIds = (List<String>) body.getOrDefault("excludeItemIds", new ArrayList<>());
 
@@ -142,7 +150,8 @@ public class WardrobeController {
                             return map;
                         }).collect(Collectors.toList()),
                 linkedEvents,
-                numOutfits);
+                numOutfits,
+                tpoDetail);
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> outfits =
