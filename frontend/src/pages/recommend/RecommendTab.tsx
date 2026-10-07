@@ -8,7 +8,11 @@ import ResultsSection from './ResultsSection';
 interface Props {
     weather: Weather | null;
     weatherUnavailable: boolean;
-    todayEvents: CalendarEvent[];
+    dateEvents: CalendarEvent[];
+    selectedDate: string;
+    onDateChange: (d: string) => void;
+    selectedEventIds: number[];
+    setSelectedEventIds: (ids: number[]) => void;
     selectedTpo: string | null;
     setSelectedTpo: (tpo: string | null) => void;
     customTpo: string;
@@ -26,7 +30,8 @@ interface Props {
 }
 
 function RecommendTab({
-    weather, weatherUnavailable, todayEvents,
+    weather, weatherUnavailable,
+    dateEvents, selectedDate, onDateChange, selectedEventIds, setSelectedEventIds,
     selectedTpo, setSelectedTpo, customTpo, setCustomTpo,
     numOutfits, setNumOutfits,
     loading, error, aiStep,
@@ -65,26 +70,82 @@ function RecommendTab({
                 </div>
 
                 <div style={{ padding: '22px 28px' }}>
-                    <p style={{ fontWeight: 600, fontSize: 11, color: '#aaa', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>오늘 일정</p>
-                    {todayEvents.length === 0 ? (
+                    {/* 헤더: 일정 레이블 + 날짜 선택 */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <p style={{ fontWeight: 600, fontSize: 11, color: '#aaa', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>일정</p>
+                        <input
+                            type="date"
+                            value={selectedDate}
+                            onChange={e => onDateChange(e.target.value)}
+                            style={{
+                                fontSize: 12, color: '#555', fontWeight: 600,
+                                border: '1.5px solid #e8ecf0', borderRadius: 8,
+                                padding: '4px 8px', cursor: 'pointer', outline: 'none',
+                                background: 'white',
+                            }}
+                        />
+                    </div>
+
+                    {dateEvents.length === 0 ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <div style={{ width: 34, height: 34, borderRadius: 10, background: '#f5f7fa', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                 <CalendarIcon color="#ccc" size={16} />
                             </div>
-                            <p style={{ fontSize: 13, color: '#bbb', margin: 0 }}>등록된 일정이 없어요</p>
+                            <p style={{ fontSize: 13, color: '#bbb', margin: 0 }}>이 날 등록된 일정이 없어요</p>
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            {todayEvents.slice(0, 2).map(ev => {
+                            <p style={{ fontSize: 11, color: '#aaa', margin: '0 0 6px' }}>추천에 반영할 일정을 선택하세요</p>
+                            {dateEvents.map(ev => {
                                 const color = TPO_LIST.find(t => t.key === ev.tpoKeyword)?.color ?? '#71b3e5';
+                                const checked = selectedEventIds.includes(ev.eventId);
                                 return (
-                                    <div key={ev.eventId} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                                    <div
+                                        key={ev.eventId}
+                                        onClick={() => {
+                                            setSelectedEventIds(
+                                                checked
+                                                    ? selectedEventIds.filter(id => id !== ev.eventId)
+                                                    : [...selectedEventIds, ev.eventId]
+                                            );
+                                        }}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: 8,
+                                            padding: '8px 10px', borderRadius: 10, cursor: 'pointer',
+                                            background: checked ? `${color}14` : '#f8f9fc',
+                                            border: `1.5px solid ${checked ? color + '55' : '#eaedf2'}`,
+                                            transition: 'all 0.15s',
+                                        }}
+                                    >
+                                        <div style={{
+                                            width: 16, height: 16, borderRadius: 4, flexShrink: 0,
+                                            background: checked ? color : 'white',
+                                            border: `2px solid ${checked ? color : '#ccc'}`,
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        }}>
+                                            {checked && <span style={{ color: 'white', fontSize: 10, lineHeight: 1 }}>✓</span>}
+                                        </div>
                                         <span style={{ fontSize: 13, color: '#1a1a2e', fontWeight: 600, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.eventName}</span>
                                         <span style={{ fontSize: 11, color, fontWeight: 600, flexShrink: 0 }}>{ev.tpoKeyword}</span>
                                     </div>
                                 );
                             })}
+                            {/* 일정 없이 추천 토글 */}
+                            {selectedEventIds.length > 0 ? (
+                                <button
+                                    onClick={() => setSelectedEventIds([])}
+                                    style={{ marginTop: 4, background: 'none', border: 'none', fontSize: 11, color: '#aaa', cursor: 'pointer', textAlign: 'left', padding: '2px 0', textDecoration: 'underline' }}
+                                >
+                                    일정 없이 추천받기
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => setSelectedEventIds(dateEvents.map(e => e.eventId))}
+                                    style={{ marginTop: 4, background: 'none', border: 'none', fontSize: 11, color: '#71b3e5', cursor: 'pointer', textAlign: 'left', padding: '2px 0', textDecoration: 'underline' }}
+                                >
+                                    모든 일정 반영하기
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>
@@ -94,7 +155,7 @@ function RecommendTab({
             <div style={{ background: 'white', borderRadius: 20, padding: '20px 22px', border: '1px solid #eaedf2' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                     <p style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', margin: 0 }}>어떤 자리인가요?</p>
-                    {todayEvents.length > 0 && (
+                    {dateEvents.length > 0 && selectedEventIds.length > 0 && (
                         <span style={{ fontSize: 12, color: '#aaa' }}>일정 TPO 자동 선택됨</span>
                     )}
                 </div>
