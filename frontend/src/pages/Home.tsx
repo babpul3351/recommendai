@@ -25,18 +25,26 @@ interface CalendarEvent {
 interface OutfitItem {
     type?: string;
     color?: string;
+}
+interface MatchedItem {
+    id?: string;
+    category?: string;
+    type?: string;
+    color?: string;
     imageUrl?: string;
     imageB64?: string;
+    matched?: boolean;
 }
 interface Outfit {
     top?: OutfitItem;
     bottom?: OutfitItem;
     outer?: OutfitItem;
     description?: string;
+    style?: string;
 }
 interface Recommendation {
-    outfit?: Outfit;
-    matched_items?: OutfitItem[];
+    outfits?: Outfit[];
+    matched_items_per_outfit?: MatchedItem[][];
 }
 interface WardrobeItem {
     id: number;
@@ -128,6 +136,9 @@ function Home() {
     const [wardrobeItems, setWardrobeItems] = useState<WardrobeItem[]>([]);
     const [recentOutfits, setRecentOutfits] = useState<WeekOutfit[]>([]);
     const [selectedTpo, setSelectedTpo]     = useState<string>('일상');
+    const [customTpo, setCustomTpo]         = useState<string>('');
+    const [numOutfits, setNumOutfits]       = useState<number>(2);
+    const [acceptedOutfitIdx, setAcceptedOutfitIdx] = useState<number | null>(null);
     const [loading, setLoading]             = useState(false);
     const [aiStep, setAiStep]               = useState<number>(-1);
     const [activeSection, setActiveSection] = useState<string>('hero');
@@ -234,32 +245,32 @@ function Home() {
         if (loading) return;
         setLoading(true);
         setRecommendation(null);
+        setAcceptedOutfitIdx(null);
         setAiStep(0);
         const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
         try {
             await delay(500); setAiStep(1);
             await delay(500); setAiStep(2);
-            const body = { tpo: selectedTpo, mode: 'rag', linkedEvents: todayEvents.slice(0, 1).map(e => e.eventId) };
+            const body = {
+                tpo: selectedTpo,
+                mode: 'rag',
+                numOutfits,
+                linkedEvents: todayEvents.slice(0, 1).map(e => e.eventId),
+                ...(customTpo.trim() ? { tpoDetail: customTpo.trim() } : {}),
+            };
             const [res] = await Promise.all([wardrobeAPI.recommend(body), delay(700)]);
             setAiStep(3);
             await delay(400);
             setRecommendation(res.data);
         } catch {}
         finally { setLoading(false); }
-    }, [loading, selectedTpo, todayEvents]);
+    }, [loading, selectedTpo, customTpo, numOutfits, todayEvents]);
 
     // ── Derived values ─────────────────────────────────────────────────────────
 
     const weatherGradient = weather ? getWeatherGradient(weather.desc) : 'linear-gradient(160deg, #71b3e5 0%, #bfdbfe 60%, #fff9e6 100%)';
     const heroTextColor   = weather ? getHeroTextColor(weather.desc) : 'white';
     const todayLabel      = `${today.getMonth() + 1}월 ${today.getDate()}일 (${WEEKDAYS[today.getDay()]})`;
-    const outfitSlots     = recommendation?.outfit
-        ? ([
-            { label: '상의',   item: recommendation.outfit.top },
-            { label: '하의',   item: recommendation.outfit.bottom },
-            { label: '아우터', item: recommendation.outfit.outer },
-          ] as { label: string; item: OutfitItem | undefined }[]).filter(s => s.item)
-        : [];
 
     const heroSubColor = heroTextColor === 'white' ? 'rgba(255,255,255,0.82)' : 'rgba(0,0,0,0.55)';
 
@@ -285,9 +296,9 @@ function Home() {
                 />
                 <div style={{ display: 'flex', gap: 36 }}>
                     {([
-                        { label: 'WEATHER',      fn: () => scrollTo('weather') },
                         { label: 'MY CLOSET',    fn: () => navigate('/wardrobe') },
                         { label: 'CALENDAR',     fn: () => navigate('/calendar') },
+                        { label: 'AI RECOMMEND', fn: () => navigate('/recommend') },
                         ...(hasColorDeficiency ? [{ label: 'COLOR VISION', fn: () => navigate('/color-correction') }] : []),
                         { label: 'PROFILE',      fn: () => navigate('/mypage') },
                     ] as { label: string; fn: () => void }[]).map(({ label, fn }) => (
@@ -373,20 +384,12 @@ function Home() {
                                 : '오늘의 날씨와 일정을 분석해 코디를 추천해 드려요.'}
                         </p>
                         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                            <button onClick={() => scrollTo('weather')} style={{
-                                background: 'white', border: 'none', borderRadius: 999,
-                                padding: '16px 36px', cursor: 'pointer',
-                                 fontWeight: 700, fontSize: 15,
-                                color: '#71b3e5', boxShadow: '0 8px 32px rgba(0,0,0,0.14)',
-                            }}>
-                                오늘의 코디 확인하기 ↓
-                            </button>
                             {todayEvents[0] && (
                                 <button onClick={() => scrollTo('tpo')} style={{
                                     background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)',
                                     border: '1.5px solid rgba(255,255,255,0.45)', borderRadius: 999,
                                     padding: '16px 28px', cursor: 'pointer',
-                                     fontWeight: 600, fontSize: 14,
+                                    fontWeight: 600, fontSize: 14,
                                     color: heroTextColor,
                                 }}>
                                     {todayEvents[0].eventName} 코디
@@ -414,10 +417,10 @@ function Home() {
                             }}>
                                 <WeatherIcon desc={weather.desc} size={34} />
                                 <div>
-                                    <p style={{  fontWeight: 700, fontSize: 24, color: '#1a1a2e', margin: 0 }}>
+                                    <p style={{ fontWeight: 700, fontSize: 24, color: '#1a1a2e', margin: 0 }}>
                                         {Math.round(weather.temp)}℃
                                     </p>
-                                    <p style={{  fontSize: 12, color: '#888', margin: '2px 0 0' }}>
+                                    <p style={{ fontSize: 12, color: '#888', margin: '2px 0 0' }}>
                                         {weather.city}
                                     </p>
                                 </div>
@@ -481,7 +484,7 @@ function Home() {
                             오늘 일정: {todayEvents.map(e => e.eventName).join(', ')}
                         </p>
                     )}
-                    <div data-animate style={{ display: 'flex', flexWrap: 'wrap', gap: 12, margin: `${todayEvents.length ? 0 : 40}px 0 48px` }}>
+                    <div data-animate style={{ display: 'flex', flexWrap: 'wrap', gap: 12, margin: `${todayEvents.length ? 0 : 40}px 0 32px` }}>
                         {TPO_LIST.map(({ key, color }) => {
                             const active = selectedTpo === key;
                             return (
@@ -494,7 +497,6 @@ function Home() {
                                 }}>
                                     <TpoIcon tpo={key} color={active ? color : '#bbb'} size={20} />
                                     <span style={{
-                                        
                                         fontWeight: active ? 700 : 500, fontSize: 15,
                                         color: active ? color : '#666',
                                     }}>{key}</span>
@@ -502,11 +504,57 @@ function Home() {
                             );
                         })}
                     </div>
+
+                    {/* 자유 문장 입력 */}
+                    <div data-animate style={{ marginBottom: 28 }}>
+                        <p style={{ fontWeight: 600, fontSize: 13, color: '#888', margin: '0 0 10px' }}>
+                            상황을 더 자세히 알려주세요 <span style={{ fontWeight: 400, color: '#bbb' }}>(선택)</span>
+                        </p>
+                        <input
+                            type="text"
+                            value={customTpo}
+                            onChange={e => setCustomTpo(e.target.value)}
+                            placeholder="예: 야외 피크닉, 격식 있는 회의, 친구 생일파티..."
+                            maxLength={100}
+                            style={{
+                                width: '100%', maxWidth: 560, boxSizing: 'border-box',
+                                padding: '14px 18px', borderRadius: 14,
+                                border: '1.5px solid #e0e4ea', outline: 'none',
+                                fontSize: 15, color: '#1a1a2e',
+                                background: 'white',
+                                transition: 'border-color 0.2s',
+                            }}
+                            onFocus={e => { e.currentTarget.style.borderColor = '#71b3e5'; }}
+                            onBlur={e => { e.currentTarget.style.borderColor = '#e0e4ea'; }}
+                        />
+                    </div>
+
+                    {/* 코디 수 선택 */}
+                    <div data-animate style={{ marginBottom: 40 }}>
+                        <p style={{ fontWeight: 600, fontSize: 13, color: '#888', margin: '0 0 10px' }}>
+                            추천받을 코디 수
+                        </p>
+                        <div style={{ display: 'flex', gap: 10 }}>
+                            {[2, 3].map(n => (
+                                <button key={n} onClick={() => setNumOutfits(n)} style={{
+                                    padding: '10px 28px', borderRadius: 999, cursor: 'pointer',
+                                    border: numOutfits === n ? '2px solid #71b3e5' : '1.5px solid #e0e4ea',
+                                    background: numOutfits === n ? 'rgba(113,179,229,0.1)' : 'white',
+                                    fontWeight: numOutfits === n ? 700 : 500, fontSize: 14,
+                                    color: numOutfits === n ? '#71b3e5' : '#666',
+                                    transition: 'all 0.2s',
+                                }}>
+                                    {n}가지
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     <button data-animate onClick={() => { scrollTo('recommendation'); fetchRecommendation(); }} style={{
                         background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)',
                         border: 'none', borderRadius: 999,
                         padding: '18px 48px', cursor: 'pointer',
-                         fontWeight: 700, fontSize: 16,
+                        fontWeight: 700, fontSize: 16,
                         color: 'white', boxShadow: '0 8px 28px rgba(113,179,229,0.4)',
                         display: 'inline-flex', alignItems: 'center', gap: 10,
                     }}>
@@ -571,61 +619,122 @@ function Home() {
                             textAlign: 'center', border: '2px dashed #dde3ea',
                         }}>
                             <SparkleIcon color="#ccc" size={52} />
-                            <p style={{  fontSize: 16, color: '#ccc', margin: '16px 0 0' }}>
+                            <p style={{ fontSize: 16, color: '#ccc', margin: '16px 0 0' }}>
                                 위에서 TPO를 선택하고 추천받기를 눌러보세요
                             </p>
                         </div>
                     ) : recommendation ? (
-                        <div data-animate style={{
-                            background: 'linear-gradient(135deg, #d4eaf9 0%, #f0f7ff 100%)',
-                            borderRadius: 28, padding: '48px',
-                            border: '2px solid rgba(113,179,229,0.28)',
-                        }}>
+                        <div data-animate>
+                            {/* 헤더 */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 32 }}>
                                 <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <SparkleIcon color="white" size={22} />
                                 </div>
                                 <div>
-                                    <p style={{  fontWeight: 700, fontSize: 11, color: '#71b3e5', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>오늘의 추천 코디</p>
-                                    <p style={{  fontWeight: 700, fontSize: 22, color: '#1a1a2e', margin: '4px 0 0' }}>{selectedTpo} 스타일</p>
+                                    <p style={{ fontWeight: 700, fontSize: 11, color: '#71b3e5', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>오늘의 추천 코디</p>
+                                    <p style={{ fontWeight: 700, fontSize: 22, color: '#1a1a2e', margin: '4px 0 0' }}>{selectedTpo} 스타일 · {(recommendation.outfits || []).length}가지</p>
                                 </div>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 16, marginBottom: 28 }}>
-                                {outfitSlots.map(({ label, item }) => (
-                                    <div key={label} style={{ background: 'white', borderRadius: 18, padding: '20px', textAlign: 'center' }}>
-                                        <div style={{ aspectRatio: '1', borderRadius: 12, overflow: 'hidden', marginBottom: 12, background: 'rgba(113,179,229,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            {(item?.imageUrl || item?.imageB64)
-                                                ? <img src={item.imageUrl || item.imageB64} alt={item?.type} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                : <WardrobeIcon color="#71b3e5" size={36} />
-                                            }
+
+                            {/* 코디 카드 목록 */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                                {(recommendation.outfits || []).map((outfit, idx) => {
+                                    const matchedList = recommendation.matched_items_per_outfit?.[idx] || [];
+                                    const byCategory: Record<string, MatchedItem> = {};
+                                    matchedList.forEach(m => { if (m.category) byCategory[m.category] = m; });
+                                    const slots = ([
+                                        { label: '상의',   item: outfit.top },
+                                        { label: '하의',   item: outfit.bottom },
+                                        { label: '아우터', item: outfit.outer },
+                                    ] as { label: string; item: OutfitItem | undefined }[]).filter(s => s.item);
+                                    const isAccepted = acceptedOutfitIdx === idx;
+                                    const isOther    = acceptedOutfitIdx !== null && !isAccepted;
+                                    return (
+                                        <div key={idx} style={{
+                                            background: isAccepted
+                                                ? 'linear-gradient(135deg, #d4eaf9 0%, #e8f4ff 100%)'
+                                                : 'linear-gradient(135deg, #f4f7fb 0%, #edf1f7 100%)',
+                                            borderRadius: 24, overflow: 'hidden',
+                                            border: `2px solid ${isAccepted ? '#71b3e5' : '#dde3ea'}`,
+                                            opacity: isOther ? 0.55 : 1,
+                                            transition: 'opacity 0.3s, border-color 0.3s',
+                                            boxShadow: isAccepted ? '0 4px 20px rgba(113,179,229,0.18)' : '0 2px 10px rgba(0,0,0,0.05)',
+                                        }}>
+                                            {/* 카드 헤더 */}
+                                            <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                <div style={{
+                                                    width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                                                    background: isAccepted ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : '#dde3ea',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    fontWeight: 900, fontSize: 15, color: 'white',
+                                                }}>
+                                                    {idx + 1}
+                                                </div>
+                                                {outfit.style && (
+                                                    <span style={{ fontWeight: 700, fontSize: 16, color: isAccepted ? '#1a1a2e' : '#555' }}>{outfit.style}</span>
+                                                )}
+                                                {isAccepted && (
+                                                    <span style={{ marginLeft: 'auto', fontWeight: 700, fontSize: 11, color: '#71b3e5', background: 'white', border: '1.5px solid #71b3e5', padding: '3px 10px', borderRadius: 20, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                                        <CheckIcon color="#71b3e5" size={11} /> 선택됨
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* 아이템 이미지 그리드 */}
+                                            {slots.length > 0 && (
+                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, padding: '16px 24px' }}>
+                                                    {slots.map(({ label, item }) => {
+                                                        const matched = byCategory[label];
+                                                        const imgSrc  = matched?.imageUrl || matched?.imageB64;
+                                                        return (
+                                                            <div key={label} style={{ background: 'white', borderRadius: 16, padding: '16px', textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                                                                <div style={{ aspectRatio: '1', borderRadius: 12, overflow: 'hidden', marginBottom: 10, background: 'rgba(113,179,229,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                                    {imgSrc
+                                                                        ? <img src={imgSrc} alt={matched?.type || item?.type} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                                        : <WardrobeIcon color="#71b3e5" size={32} />
+                                                                    }
+                                                                </div>
+                                                                <p style={{ fontWeight: 700, fontSize: 9, color: '#71b3e5', margin: '0 0 3px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</p>
+                                                                <p style={{ fontWeight: 600, fontSize: 13, color: '#1a1a2e', margin: 0 }}>{matched?.type || item?.type}</p>
+                                                                {(matched?.color || item?.color) && <p style={{ fontSize: 11, color: '#aaa', margin: '3px 0 0' }}>{matched?.color || item?.color}</p>}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+
+                                            {/* 설명 */}
+                                            {outfit.description && (
+                                                <div style={{ margin: '0 24px 16px', background: 'white', borderRadius: 12, padding: '14px 16px', borderLeft: '3px solid #71b3e5', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                                                    <p style={{ fontSize: 13, color: '#555', lineHeight: 1.7, margin: 0 }}>"{outfit.description}"</p>
+                                                </div>
+                                            )}
+
+                                            {/* 선택 버튼 */}
+                                            <div style={{ padding: '0 24px 20px' }}>
+                                                {!isAccepted ? (
+                                                    <button onClick={() => setAcceptedOutfitIdx(idx)} style={{
+                                                        width: '100%', padding: '13px',
+                                                        background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)',
+                                                        color: 'white', border: 'none', borderRadius: 12,
+                                                        fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                                                    }}>
+                                                        <CheckIcon color="white" size={15} /> 이 코디 선택
+                                                    </button>
+                                                ) : (
+                                                    <div style={{ padding: '13px', background: 'rgba(113,179,229,0.12)', borderRadius: 12, textAlign: 'center' }}>
+                                                        <span style={{ fontWeight: 700, fontSize: 14, color: '#71b3e5', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                                            선택한 코디예요 <CheckIcon color="#71b3e5" size={15} />
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                        <p style={{  fontWeight: 700, fontSize: 10, color: '#71b3e5', margin: '0 0 4px', textTransform: 'uppercase' }}>{label}</p>
-                                        <p style={{  fontWeight: 600, fontSize: 14, color: '#1a1a2e', margin: 0 }}>{item?.type}</p>
-                                        {item?.color && <p style={{  fontSize: 11, color: '#aaa', margin: '4px 0 0' }}>{item.color}</p>}
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
-                            {recommendation.outfit?.description && (
-                                <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 16, padding: '20px 24px', borderLeft: '3px solid #71b3e5', marginBottom: 24 }}>
-                                    <p style={{  fontSize: 14, color: '#555', lineHeight: 1.7, margin: 0 }}>
-                                        "{recommendation.outfit.description}"
-                                    </p>
-                                </div>
-                            )}
-                            <div style={{ display: 'flex', gap: 12 }}>
-                                <button onClick={() => navigate('/wardrobe')} style={{
-                                    flex: 1, padding: '14px', background: 'white',
-                                    border: '1.5px solid rgba(113,179,229,0.4)', borderRadius: 14,
-                                     fontWeight: 600, fontSize: 14,
-                                    color: '#71b3e5', cursor: 'pointer',
-                                }}>내 옷장에 추가하기 →</button>
-                                <button onClick={() => navigate('/calendar')} style={{
-                                    flex: 1, padding: '14px', background: 'white',
-                                    border: '1.5px solid rgba(113,179,229,0.4)', borderRadius: 14,
-                                     fontWeight: 600, fontSize: 14,
-                                    color: '#71b3e5', cursor: 'pointer',
-                                }}>캘린더에 저장하기 →</button>
-                            </div>
+
                         </div>
                     ) : null}
                 </div>
