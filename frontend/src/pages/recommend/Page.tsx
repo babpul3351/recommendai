@@ -14,7 +14,8 @@ function RecommendPage() {
     const [weather, setWeather] = useState<Weather | null>(null);
     const [weatherUnavailable, setWeatherUnavailable] = useState(false);
     const [allEvents, setAllEvents] = useState<CalendarEvent[]>([]);
-    const [todayEvents, setTodayEvents] = useState<CalendarEvent[]>([]);
+    const [selectedDate, setSelectedDate] = useState<string>(toDateStr(today));
+    const [dateEvents, setDateEvents] = useState<CalendarEvent[]>([]);
     const [selectedEventIds, setSelectedEventIds] = useState<number[]>([]);
     const [selectedTpo, setSelectedTpo] = useState<string | null>(null);
     const [customTpo, setCustomTpo] = useState('');
@@ -43,18 +44,26 @@ function RecommendPage() {
         try { const r = await recommendationAPI.getHistory(); setHistory(r.data); } catch {}
     }, []);
 
-    const updateTodayEvents = useCallback(() => {
+    const updateDateEvents = useCallback((dateStr: string) => {
+        const [y, m, d] = dateStr.split('-').map(Number);
         const evts = allEvents.filter(e => {
-            const d = new Date(e.eventDatetime);
-            return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
+            const dt = new Date(e.eventDatetime);
+            return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
         });
-        setTodayEvents(evts);
+        setDateEvents(evts);
         setSelectedEventIds(evts.map(e => e.eventId));
         setSelectedTpo(evts.length > 0 ? evts[0].tpoKeyword : '일상');
-    }, [allEvents, today]);
+    }, [allEvents]);
+
+    const handleDateChange = useCallback((newDate: string) => {
+        setSelectedDate(newDate);
+        setOutfitPool([]);
+        setAcceptedPoolIdx(null);
+        setAiStep(-1);
+    }, []);
 
     useEffect(() => { fetchWeather(); fetchAllEvents(); fetchHistory(); }, [fetchWeather, fetchAllEvents, fetchHistory]);
-    useEffect(() => { updateTodayEvents(); }, [updateTodayEvents]);
+    useEffect(() => { updateDateEvents(selectedDate); }, [updateDateEvents, selectedDate]);
 
     const handleChangeAccept = async (recId: number, outfitIndex: number, info?: OutfitInfoH) => {
         try {
@@ -80,7 +89,7 @@ function RecommendPage() {
                     tpo, mode: 'rag',
                     ...(tpoDetail ? { tpoDetail } : {}),
                     linkedEventIds: selectedEventIds,
-                    outfitDate: toDateStr(today),
+                    outfitDate: selectedDate,
                     numOutfits, parentRecId: lastRecId,
                     excludeItemIds: usedItemIds,
                 }),
@@ -162,7 +171,11 @@ function RecommendPage() {
                 <RecommendTab
                     weather={weather}
                     weatherUnavailable={weatherUnavailable}
-                    todayEvents={todayEvents}
+                    dateEvents={dateEvents}
+                    selectedDate={selectedDate}
+                    onDateChange={handleDateChange}
+                    selectedEventIds={selectedEventIds}
+                    setSelectedEventIds={setSelectedEventIds}
                     selectedTpo={selectedTpo}
                     setSelectedTpo={setSelectedTpo}
                     customTpo={customTpo}

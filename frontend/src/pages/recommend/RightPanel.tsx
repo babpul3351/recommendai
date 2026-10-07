@@ -15,6 +15,15 @@ function formatOutfitDate(dateStr: string): string {
     return `${m}월 ${d}일 (${WEEKDAYS[dt.getDay()]})`;
 }
 
+function isRecordToday(rec: HistoryRecord): boolean {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const recDate = rec.outfitDate
+        ? (() => { const [y, m, d] = rec.outfitDate!.split('-').map(Number); return new Date(y, m - 1, d); })()
+        : (() => { const dt = new Date(rec.createdAt); dt.setHours(0, 0, 0, 0); return dt; })();
+    return recDate.getTime() === now.getTime();
+}
+
 function RightPanel({ history, onChangeAccept }: Props) {
     if (history.length === 0) {
         return (
@@ -35,7 +44,9 @@ function RightPanel({ history, onChangeAccept }: Props) {
                 <p style={{ fontWeight: 400, fontSize: 13, color: '#888', margin: 0 }}>이전에 추천받은 코디를 확인하고 변경할 수 있어요 ({history.length}건)</p>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {history.map((rec, i) => (
+                {history.map((rec, i) => {
+                    const isToday = isRecordToday(rec);
+                    return (
                     <div key={rec.recId || i} style={{ background: 'white', borderRadius: 20, overflow: 'hidden', border: '1px solid #eaedf2' }}>
                         <div style={{ padding: '16px 20px 14px', background: `linear-gradient(135deg, ${TPO_COLORS[rec.tpo] || '#71b3e5'}DD, ${TPO_COLORS[rec.tpo] || '#71b3e5'}88)` }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10, flexWrap: 'wrap' }}>
@@ -101,7 +112,7 @@ function RightPanel({ history, onChangeAccept }: Props) {
                                             ) : (
                                                 <p style={{ fontSize: 11, color: '#aaa', margin: 0, padding: '6px 0' }}>매칭 아이템 없음</p>
                                             )}
-                                            {!isAccepted && (
+                                            {!isAccepted && isToday && (
                                                 <button onClick={() => onChangeAccept(rec.recId, idx, info)} style={{ marginTop: 12, width: '100%', padding: 10, background: 'white', border: '1.5px solid #71b3e5', borderRadius: 10, fontSize: 13, fontWeight: 700, color: '#71b3e5', cursor: 'pointer' }}>
                                                     이 코디로 변경하기
                                                 </button>
@@ -114,7 +125,8 @@ function RightPanel({ history, onChangeAccept }: Props) {
                             )}
                         </div>
                     </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );
