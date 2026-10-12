@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { userAPI, recommendationAPI, colorAssistantAPI, wardrobeAPI } from '../api/api';
 import { CloseIcon } from '../components/Icons';
 import BeforeAfterSlider from '../components/BeforeAfterSlider';
+import IdleReportSection from './idle/IdleReportSection';
 
 const STYLES = ['casual', 'formal', 'business', 'lovely', 'feminine', 'sporty', 'comfort'];
 const STYLE_LABELS: Record<string, string> = {
@@ -628,6 +629,8 @@ function MyPage() {
                                         </div>
                                     ))}
                                 </div>
+
+                                <IdleReportSection />
 
                                 {/* TPO 활용 현황 */}
                                 <div style={{ ...cardStyle, marginBottom: 16 }}>

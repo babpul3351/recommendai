@@ -204,10 +204,31 @@ async def remove_background(req: RemoveBackgroundRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/ai/idle-analysis")
-async def idle_analysis(user_id: str, threshold_days: int = 30, idle_only: bool = True):
+async def idle_analysis(user_id: str, threshold_days: int = 60, idle_only: bool = True):
     try:
         from services.idle_analysis_service import get_idle_analysis
         results = get_idle_analysis(user_id, threshold_days=threshold_days, idle_only=idle_only)
         return {"items": results, "count": len(results)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class ResaleDraftRequest(BaseModel):
+    category: str = ""
+    type: str = ""
+    color: str = ""
+    material: str = ""
+    brand: str = ""
+    size: str = ""
+    condition: str = ""
+    price: str = ""
+
+
+@app.post("/ai/resale-draft")
+async def resale_draft(req: ResaleDraftRequest):
+    try:
+        from services.resale_service import generate_resale_draft
+        item = {"category": req.category, "type": req.type, "color": req.color, "material": req.material}
+        extra = {"brand": req.brand, "size": req.size, "condition": req.condition, "price": req.price}
+        return generate_resale_draft(item, extra)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

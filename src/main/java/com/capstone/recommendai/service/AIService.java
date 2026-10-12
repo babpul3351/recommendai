@@ -5,7 +5,7 @@ package com.capstone.recommendai.service;
  * ------------------
  * registerEmbedding(), deleteEmbedding() 메서드 추가.
  * 기존 analyzeImage(), recommend()와 동일한 스타일(RestTemplate + aiServerUrl)로 작성.
- *.
+ * [신규] idleAnalysis(), resaleDraft() 추가 (유휴 의류 분석 / 중고거래 판매글 초안)
  */
 
 import lombok.RequiredArgsConstructor;
@@ -87,5 +87,21 @@ public class AIService {
     // ─────────────────────────────────────────────
     public void deleteEmbedding(String itemId) {
         restTemplate.delete(aiServerUrl + "/ai/wardrobe/embed/" + itemId);
+    }
+
+    // ─────────────────────────────────────────────
+    // [신규] 유휴 의류 분석 (전체 아이템에 status를 붙여서 반환)
+    // ─────────────────────────────────────────────
+    public Map idleAnalysis(String userId, int thresholdDays) {
+        return restTemplate.getForObject(
+                aiServerUrl + "/ai/idle-analysis?user_id={uid}&threshold_days={days}&idle_only=false",
+                Map.class, userId, thresholdDays);
+    }
+
+    // ─────────────────────────────────────────────
+    // [신규] 중고거래 판매글 초안
+    // ─────────────────────────────────────────────
+    public Map resaleDraft(Map<String, Object> body) {
+        return restTemplate.postForObject(aiServerUrl + "/ai/resale-draft", body, Map.class);
     }
 }
