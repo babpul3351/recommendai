@@ -32,6 +32,10 @@ public class WardrobeItem {
     @Column(length = 30)
     private String material;
 
+    // [신규] 사용자가 직접 지정한 계절: summer / winter / mid / all. null이면 이름 키워드로 자동 분류
+    @Column(length = 10)
+    private String season;
+
     @Column(name = "image_thumbnail", length = 500)
     private String imageThumbnail;
 

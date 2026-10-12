@@ -13,7 +13,7 @@ interface UpdateProfileData {
     correctionEnabled?: boolean;
 }
 interface AcceptOutfitData  { outfitIndex: number; style: string; description: string; }
-interface UpdateItemData  { category: string; type: string; color: string; material: string; }
+interface UpdateItemData  { category?: string; type?: string; color?: string; material?: string; season?: string; }
 interface RecommendData {
     tpo: string;
     tpoDetail?: string;
@@ -92,8 +92,16 @@ export const wardrobeAPI = {
     uploadItem: (imageB64: string) => api.post('/wardrobe/upload', { imageB64 }),
     saveOutfit: (imageB64: string, tpo?: string) => api.post('/wardrobe/save-outfit', { imageB64, tpo: tpo || '' }),
     deleteItem: (itemId: number) => api.delete(`/wardrobe/${itemId}`),
-    updateItem: (itemId: number, data: UpdateItemData) => api.put(`/wardrobe/${itemId}`, data),
+    updateItem: (itemId: number | string, data: UpdateItemData) => api.put(`/wardrobe/${itemId}`, data),
     recommend: (data: RecommendData) => api.post('/wardrobe/recommend', data)
+};
+
+export const idleAPI = {
+    getHistory: () => api.get('/idle/history'),
+    getItems: () => api.get('/idle/items'),
+    decide: (itemId: string, decision: string) => api.post(`/idle/${itemId}/decision`, { decision }),
+    resaleDraft: (itemId: string, extra: { brand?: string; size?: string; condition?: string; price?: string }) =>
+        api.post(`/idle/${itemId}/resale-draft`, extra),
 };
 
 export default api;

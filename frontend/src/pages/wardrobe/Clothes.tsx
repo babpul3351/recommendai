@@ -4,7 +4,7 @@ import DaltonizedImage from '../../components/DaltonizedImage';
 import ComparisonSlider from '../../components/ComparisonSlider';
 import { ColorType } from '../../daltonization';
 import { SearchIcon, WardrobeIcon } from '../../components/Icons';
-
+import { matchesSeasonFilter, resolveSeason, isSeasonUnknown, SEASON_LABELS } from '../../utils/season';
 /*
  * 변경 사항 (기존 대비)
  * ------------------
@@ -22,6 +22,12 @@ import { SearchIcon, WardrobeIcon } from '../../components/Icons';
  */
 
 const CATEGORIES_FILTER = ['전체', '상의', '하의', '아우터', '원피스', '기타'];
+const SEASON_BUTTONS: Array<{ label: string; value: 'ALL' | 'summer' | 'winter' | 'mid' }> = [
+    { label: '전체 계절', value: 'ALL' },
+    { label: '여름', value: 'summer' },
+    { label: '간절기', value: 'mid' },
+    { label: '겨울', value: 'winter' },
+];
 const CATEGORIES_EDIT = ['상의', '하의', '아우터', '원피스', '기타'];
 const COLORS = ['블랙', '화이트', '그레이', '네이비', '블루', '레드', '핑크',
     '옐로우', '그린', '카키', '브라운', '갈색', '베이지', '퍼플', '오렌지',
@@ -35,6 +41,7 @@ interface WardrobeItem {
     category?: string;
     color?: string;
     material?: string;
+    season?: string;
 }
 
 interface EditForm {
@@ -42,6 +49,7 @@ interface EditForm {
     type: string;
     color: string;
     material: string;
+    season: string;
 }
 
 export function normalizeCategory(category?: string): string {
@@ -70,15 +78,24 @@ function getColorHex(colorName?: string): string {
     return '#e0e0e0';
 }
 
+function seasonLabel(item: WardrobeItem): string {
+    const cat = normalizeCategory(item.category);
+    const label = SEASON_LABELS[resolveSeason(item.season, item.type, cat)];
+    if (item.season) return label;
+    if (isSeasonUnknown(item.season, item.type, cat)) return '미지정';
+    return `${label} (자동)`;
+}
+
 function Clothes() {
     const [items, setItems] = useState<WardrobeItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('전체');
+    const [selectedSeason, setSelectedSeason] = useState<'ALL' | 'summer' | 'winter' | 'mid'>('ALL');
     const [search, setSearch] = useState('');
     const [selectedItem, setSelectedItem] = useState<WardrobeItem | null>(null);
     const [editMode, setEditMode] = useState(false);
-    const [editForm, setEditForm] = useState<EditForm>({ category: '', type: '', color: '', material: '' });
+    const [editForm, setEditForm] = useState<EditForm>({ category: '', type: '', color: '', material: '', season: '' });
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [colorType, setColorType] = useState<ColorType | 'normal' | null>(null);
     const [correctionEnabled, setCorrectionEnabled] = useState(false);
@@ -114,7 +131,13 @@ function Clothes() {
         setLoading(true);
         try {
             const res = await wardrobeAPI.getWardrobe();
-            setItems(res.data.filter((item: WardrobeItem) => normalizeCategory(item.category) !== '저장한 코디'));
+            setItems(
+                res.data
+                    .filter((item: WardrobeItem) => normalizeCategory(item.category) !== '저장한 코디')
+                    .map((item: WardrobeItem) =>
+                        /가디건|cardigan/i.test(item.type || '') ? { ...item, category: '상의' } : item
+                    )
+            );
         } catch {}
         finally { setLoading(false); }
     };
@@ -159,12 +182,13 @@ function Clothes() {
 
     const openPopup = (item: WardrobeItem) => {
         setSelectedItem(item);
-        setEditForm({ category: normalizeCategory(item.category), type: item.type || '', color: item.color || '', material: item.material || '' });
+        setEditForm({ category: normalizeCategory(item.category), type: item.type || '', color: item.color || '', material: item.material || '', season: item.season || '' });
         setEditMode(false);
     };
 
     const filteredItems = items.filter(i =>
         (selectedCategory === '전체' || normalizeCategory(i.category) === selectedCategory) &&
+        matchesSeasonFilter(resolveSeason(i.season, i.type, normalizeCategory(i.category)), selectedSeason) &&
         (search === '' || (i.type || '').includes(search))
     );
 
@@ -188,6 +212,24 @@ function Clothes() {
                         </button>
                     </div>
                 )}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                {SEASON_BUTTONS.map(({ label, value }) => {
+                    const isActive = value === selectedSeason;
+                    return (
+                        <button key={value} onClick={() => setSelectedSeason(value)} style={{
+                            background: isActive ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : 'white',
+                            border: isActive ? 'none' : '1px solid #eaedf2',
+                            borderRadius: 8, padding: '8px 16px',
+                            fontWeight: isActive ? 600 : 400,
+                            fontSize: 13, color: isActive ? 'white' : '#555',
+                            cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                        }}>
+                            {label}
+                        </button>
+                    );
+                })}
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
@@ -234,7 +276,7 @@ function Clothes() {
                 <div style={{ background: 'white', borderRadius: 20, padding: '80px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
                     <div style={{ marginBottom: 16 }}><WardrobeIcon size={48} color="#ccc" /></div>
                     <p style={{ fontWeight: 600, fontSize: 16, color: '#1a1a2e', margin: '0 0 8px' }}>
-                        {selectedCategory === '전체' ? '옷장이 비어있어요' : `${selectedCategory} 카테고리에 아이템이 없어요`}
+                        {items.length === 0 ? '옷장이 비어있어요' : '조건에 맞는 아이템이 없어요'}
                     </p>
                     <p style={{ fontSize: 13, color: '#aaa', margin: 0 }}>위 버튼으로 아이템을 추가해보세요</p>
                 </div>
@@ -331,6 +373,7 @@ function Clothes() {
                                     { label: '종류', value: selectedItem.type || '-' },
                                     { label: '색상', value: selectedItem.color || '-' },
                                     { label: '소재', value: selectedItem.material || '-' },
+                                    { label: '계절', value: seasonLabel(selectedItem) },
                                 ].map(row => (
                                     <div key={row.label} style={{ display: 'flex', alignItems: 'center', padding: '11px 0', borderBottom: '1px solid #f0f0f0' }}>
                                         <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0 }}>{row.label}</span>
@@ -365,6 +408,16 @@ function Clothes() {
                                     <select style={{ flex: 1, padding: '8px 10px', borderRadius: 10, border: '1px solid #eaedf2', fontSize: 14, background: 'white' }} value={editForm.material} onChange={e => setEditForm({ ...editForm, material: e.target.value })}>
                                         <option value="">선택</option>
                                         {MATERIALS.map(m => <option key={m} value={m}>{m}</option>)}
+                                    </select>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'flex-start', padding: '11px 0', borderTop: '1px solid #f0f0f0', gap: 12 }}>
+                                    <span style={{ width: 70, fontSize: 13, color: '#888', flexShrink: 0, paddingTop: 2 }}>계절</span>
+                                    <select style={{ flex: 1, padding: '8px 10px', borderRadius: 10, border: '1px solid #eaedf2', fontSize: 14, background: 'white' }} value={editForm.season} onChange={e => setEditForm({ ...editForm, season: e.target.value })}>
+                                        <option value="">자동 분류</option>
+                                        <option value="summer">여름</option>
+                                        <option value="mid">간절기</option>
+                                        <option value="winter">겨울</option>
+                                        <option value="all">사계절</option>
                                     </select>
                                 </div>
                             </div>

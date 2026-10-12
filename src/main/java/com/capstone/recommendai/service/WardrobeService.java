@@ -6,18 +6,19 @@ package com.capstone.recommendai.service;
  * 1. @Slf4j 추가 (AI 서버 호출 실패 시 로그 남기기 위함)
  * 2. AIService 의존성 추가 (생성자 주입, @RequiredArgsConstructor가 자동 처리)
  * 3. addItem() — wardrobeRepository.save(item) 직후, AI 서버에 ChromaDB 임베딩 등록 요청 추가
- *    - 실패해도 옷장 저장 자체는 그대로 진행되도록 try-catch로 감쌌습니다.
- *    - 기존 WardrobeEmbedding(MySQL) 저장 로직은 그대로 유지했습니다. (건드리지 않음)
+ *    - 실패해도 옷장 저장 자체는 그대로 진행되도록 try-catch로 오류 제어.
+ *    - 기존 WardrobeEmbedding(MySQL) 저장 로직은 그대로 유지. (건드리지 않음)
  * 4. deleteItem() — wardrobeRepository.delete(item) 이후, AI 서버에 ChromaDB 임베딩 삭제 요청 추가
- *    - 마찬가지로 실패해도 삭제 자체는 진행되도록 try-catch로 감쌌습니다.
- *
- * 적용 방법: 기존 WardrobeService.java 파일 전체를 이 내용으로 교체하세요.
+ *    - 마찬가지로 실패해도 삭제 자체는 진행되도록 try-catch로 오류 제어.
+ * 5. [신규] updateItem() — season(사용자 지정 계절) 저장 지원. 허용값: summer/winter/mid/all, 빈 값이면 null(자동 분류)
+ * 6. [신규] deleteItem() — 처분 의사 기록(item_disposition)도 함께 삭제
  */
 
 import com.capstone.recommendai.dto.WardrobeItemResponse;
 import com.capstone.recommendai.entity.User;
 import com.capstone.recommendai.entity.WardrobeEmbedding;
 import com.capstone.recommendai.entity.WardrobeItem;
+import com.capstone.recommendai.repository.ItemDispositionRepository;
 import com.capstone.recommendai.repository.UserRepository;
 import com.capstone.recommendai.repository.WardrobeEmbeddingRepository;
 import com.capstone.recommendai.repository.WardrobeRepository;
@@ -26,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.Map;
 
@@ -34,8 +36,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class WardrobeService {
 
+    private static final Set<String> ALLOWED_SEASONS = Set.of("summer", "winter", "mid", "all");
+
     private final WardrobeRepository wardrobeRepository;
     private final WardrobeEmbeddingRepository embeddingRepository;
+    private final ItemDispositionRepository itemDispositionRepository;
     private final UserRepository userRepository;
     private final S3Service s3Service;
     private final AIService aiService;
@@ -91,8 +96,8 @@ public class WardrobeService {
         }
 
         // [신규] ChromaDB에 임베딩 등록 요청
-        // AI 서버가 imageB64로부터 직접 CLIP 임베딩을 생성해서 저장합니다.
-        // 실패해도 옷장 아이템 저장 자체는 실패하지 않도록 예외를 여기서 처리합니다.
+        // AI 서버가 imageB64로부터 직접 CLIP 임베딩을 생성해서 저장.
+        // 실패해도 옷장 아이템 저장 자체는 실패하지 않도록 예외를 여기서 처리.
         if (imageB64 != null && !imageB64.isEmpty()) {
             try {
                 aiService.registerEmbedding(
@@ -124,6 +129,11 @@ public class WardrobeService {
 
         wardrobeRepository.delete(item);
 
+        // [신규] 처분 의사 기록도 함께 삭제
+        if (itemDispositionRepository.existsById(itemId)) {
+            itemDispositionRepository.deleteById(itemId);
+        }
+
         // [신규] ChromaDB에서도 임베딩 삭제
         try {
             aiService.deleteEmbedding(itemId);
@@ -148,6 +158,18 @@ public class WardrobeService {
         if (body.containsKey("type")) item.setItemType(body.get("type"));
         if (body.containsKey("color")) item.setColor(body.get("color"));
         if (body.containsKey("material")) item.setMaterial(body.get("material"));
+
+        // [신규] 사용자가 직접 지정한 계절. 빈 값이면 지정 해제(자동 분류로 복귀)
+        if (body.containsKey("season")) {
+            String season = body.get("season");
+            if (season == null || season.isBlank()) {
+                item.setSeason(null);
+            } else if (ALLOWED_SEASONS.contains(season)) {
+                item.setSeason(season);
+            } else {
+                throw new IllegalArgumentException("잘못된 계절 값입니다.");
+            }
+        }
 
         wardrobeRepository.save(item);
     }
