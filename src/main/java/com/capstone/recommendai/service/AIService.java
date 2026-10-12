@@ -10,8 +10,10 @@ package com.capstone.recommendai.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +24,17 @@ public class AIService {
     @Value("${ai.server.url}")
     private String aiServerUrl;
     private final RestTemplate restTemplate;
+
+    // 코디 합성은 YOLO+SAM 추론이 아이템 수만큼 돌아 오래 걸릴 수 있어서, 무한 대기를 막으려고 타임아웃을 둔 별도 RestTemplate을 사용.
+    // (초기값이 있는 final 필드는 @RequiredArgsConstructor 생성자에 포함 XX. 180초는 실측 없이 잡은 임의의 상한.)
+    private final RestTemplate compositeRestTemplate = buildCompositeRestTemplate();
+
+    private static RestTemplate buildCompositeRestTemplate() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofSeconds(5));
+        factory.setReadTimeout(Duration.ofSeconds(180));
+        return new RestTemplate(factory);
+    }
 
     public Map analyzeImage(String imageB64) {
         Map<String, String> body = new HashMap<>();
@@ -96,6 +109,16 @@ public class AIService {
         return restTemplate.getForObject(
                 aiServerUrl + "/ai/idle-analysis?user_id={uid}&threshold_days={days}&idle_only=false",
                 Map.class, userId, thresholdDays);
+    }
+
+    // ─────────────────────────────────────────────
+    // [신규] 코디 합성 이미지 (YOLO 검출 + SAM 누끼 + 흰 배경 합성)
+    // items: [{category: "상의", imageB64: "..."}, ...] -> {imageB64: "data:image/jpeg;base64,...", items: [...]}
+    // ─────────────────────────────────────────────
+    public Map composeOutfit(List<Map<String, String>> items) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("items", items);
+        return compositeRestTemplate.postForObject(aiServerUrl + "/ai/outfit-composite", body, Map.class);
     }
 
     // ─────────────────────────────────────────────

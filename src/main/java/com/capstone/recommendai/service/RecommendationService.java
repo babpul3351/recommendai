@@ -3,8 +3,10 @@ package com.capstone.recommendai.service;
 import com.capstone.recommendai.dto.RecommendationResponse;
 import com.capstone.recommendai.entity.*;
 import com.capstone.recommendai.repository.*;
+import com.capstone.recommendai.event.OutfitAcceptedEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -20,6 +22,7 @@ public class RecommendationService {
     private final WardrobeRepository wardrobeRepository;
     private final CalendarEventRepository calendarEventRepository;
     private final ObjectMapper objectMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     private User getUser(String userId) {
         return userRepository.findByUserId(userId)
@@ -135,9 +138,18 @@ public class RecommendationService {
         if (!rec.getUser().getUserId().equals(userId)) {
             throw new RuntimeException("권한 없음");
         }
+        // 이전에 만들어 둔 합성 이미지는 이번 선택과 맞지 않으므로 참조를 끊고(파일 삭제는 새 합성 작업이 처리) 다시 생성.
+        // 같은 코디를 다시 선택해도 재생성. (모델을 교체한 뒤 다시 선택하면 새 모델 결과로 갱신됨)
+        String previousCompositeUrl = rec.getCompositeImageUrl();
+
         rec.setAcceptedOutfitIndex(outfitIndex);
         if (style != null && !style.isEmpty())             rec.setStyle(style);
         if (description != null && !description.isEmpty()) rec.setDescription(description);
+        rec.setCompositeImageUrl(null);
+        rec.setCompositeStatus(OutfitCompositeService.PENDING);
         recommendationRepository.save(rec);
+
+        // 커밋 이후 비동기로 합성 시작 (OutfitCompositeService.onOutfitAccepted)
+        eventPublisher.publishEvent(new OutfitAcceptedEvent(recId, outfitIndex, previousCompositeUrl));
     }
 }

@@ -43,6 +43,7 @@ interface Outfit {
     style?: string;
 }
 interface Recommendation {
+    recId?: string | number;   // /wardrobe/recommend 응답에 포함되는 추천 ID (코디 선택 시 필요)
     outfits?: Outfit[];
     matched_items_per_outfit?: MatchedItem[][];
 }
@@ -56,7 +57,16 @@ interface WeekOutfit {
     outfitDate: string;
     matchedItems?: { imageUrl?: string }[];
     description?: string;
+    style?: string;
+    // 선택한 코디의 흰 배경 합성 이미지. compositeStatus: PENDING(생성 중) / DONE / FAILED / SKIPPED
+    // DONE이 아니면 compositeImageUrl은 null이므로 matchedItems 썸네일로 대체.
+    compositeImageUrl?: string | null;
+    compositeStatus?: 'PENDING' | 'DONE' | 'FAILED' | 'SKIPPED' | null;
 }
+
+// 합성 이미지 생성 중(PENDING)일 때 다시 조회하는 간격/최대 횟수
+const COMPOSITE_POLL_INTERVAL_MS = 4000;
+const COMPOSITE_POLL_MAX_TRIES   = 45;   // 4초 x 45 = 약 3분 (서버 읽기 타임아웃 180초와 맞춤)
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -135,6 +145,8 @@ function Home() {
     const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
     const [wardrobeItems, setWardrobeItems] = useState<WardrobeItem[]>([]);
     const [recentOutfits, setRecentOutfits] = useState<WeekOutfit[]>([]);
+    const [todayOutfit, setTodayOutfit]     = useState<WeekOutfit | null>(null);   // 오늘 선택한 코디 (Hero용)
+    const pollTriesRef = useRef(0);
     const [selectedTpo, setSelectedTpo]     = useState<string>('일상');
     const [customTpo, setCustomTpo]         = useState<string>('');
     const [numOutfits, setNumOutfits]       = useState<number>(2);
@@ -173,8 +185,8 @@ function Home() {
             const todayEvts = all.filter(e => {
                 const d = new Date(e.eventDatetime);
                 return d.getFullYear() === today.getFullYear() &&
-                       d.getMonth()    === today.getMonth()    &&
-                       d.getDate()     === today.getDate();
+                    d.getMonth()    === today.getMonth()    &&
+                    d.getDate()     === today.getDate();
             });
             setTodayEvents(todayEvts);
             if (todayEvts[0]) setSelectedTpo(todayEvts[0].tpoKeyword);
@@ -194,7 +206,11 @@ function Home() {
             const start = toDateStr(new Date(today.getFullYear(), today.getMonth(), 1));
             const end   = toDateStr(today);
             const res   = await recommendationAPI.getWeekOutfits(start, end);
-            setRecentOutfits((res.data || []).slice(0, 4));
+            const all: WeekOutfit[] = res.data || [];
+            setRecentOutfits(all.slice(0, 4));
+            // 오늘 날짜로 선택한 코디는 4개 제한과 상관없이 따로 찾아 둡니다.
+            const todayStr = toDateStr(today);
+            setTodayOutfit(all.find(o => o.outfitDate === todayStr) || null);
         } catch {}
     }, [today]);
 
@@ -204,6 +220,46 @@ function Home() {
         fetchWardrobeItems();
         fetchRecentOutfits();
     }, [fetchWeather, fetchCalendarData, fetchWardrobeItems, fetchRecentOutfits]);
+
+    // 합성 이미지가 아직 생성 중(PENDING)이면 일정 간격으로 다시 조회.
+    // PENDING이 없으면 조회하지 않고, 최대 횟수를 넘으면 stop. (서버가 중간에 재시작돼 PENDING이 남은 경우 대비)
+    const hasPendingComposite =
+        todayOutfit?.compositeStatus === 'PENDING' ||
+        recentOutfits.some(o => o.compositeStatus === 'PENDING');
+
+    useEffect(() => {
+        if (!hasPendingComposite) { pollTriesRef.current = 0; return; }
+        if (pollTriesRef.current >= COMPOSITE_POLL_MAX_TRIES) return;
+        const timer = setTimeout(() => {
+            pollTriesRef.current += 1;
+            fetchRecentOutfits();
+        }, COMPOSITE_POLL_INTERVAL_MS);
+        return () => clearTimeout(timer);
+    }, [hasPendingComposite, todayOutfit, recentOutfits, fetchRecentOutfits]);
+
+    // ── 코디 선택 (서버에 저장 → 합성 이미지 비동기 생성) ───────────────────────
+
+    const handleAcceptOutfit = useCallback(async (idx: number) => {
+        const outfit = recommendation?.outfits?.[idx];
+        const recId  = recommendation?.recId;
+        if (recId == null) {
+            // recId가 없으면 서버에 저장할 수 없으므로 화면 표시만 변경.
+            setAcceptedOutfitIdx(idx);
+            return;
+        }
+        try {
+            await recommendationAPI.acceptOutfit(recId as number, {
+                outfitIndex: idx,
+                style: outfit?.style || '',
+                description: outfit?.description || '',
+            });
+            setAcceptedOutfitIdx(idx);
+            pollTriesRef.current = 0;      // 새로 선택했으니 조회 횟수 초기화
+            await fetchRecentOutfits();    // PENDING 상태를 받아오면 위 effect가 자동 조회 이어감.
+        } catch {
+            alert('코디 선택에 실패했어요. 잠시 후 다시 시도해 주세요.');
+        }
+    }, [recommendation, fetchRecentOutfits]);
 
     // ── Section indicator tracking ─────────────────────────────────────────────
 
@@ -255,6 +311,7 @@ function Home() {
                 tpo: selectedTpo,
                 mode: 'rag',
                 numOutfits,
+                outfitDate: toDateStr(today),   // 날짜가 없으면 날짜별 코디 목록(/week)에 나오지 않음.
                 linkedEvents: todayEvents.slice(0, 1).map(e => e.eventId),
                 ...(customTpo.trim() ? { tpoDetail: customTpo.trim() } : {}),
             };
@@ -264,7 +321,7 @@ function Home() {
             setRecommendation(res.data);
         } catch {}
         finally { setLoading(false); }
-    }, [loading, selectedTpo, customTpo, numOutfits, todayEvents]);
+    }, [loading, selectedTpo, customTpo, numOutfits, todayEvents, today]);
 
     // ── Derived values ─────────────────────────────────────────────────────────
 
@@ -304,12 +361,12 @@ function Home() {
                     ] as { label: string; fn: () => void }[]).map(({ label, fn }) => (
                         <button key={label} onClick={fn} style={{
                             background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
-                             fontWeight: 600, fontSize: 11,
+                            fontWeight: 600, fontSize: 11,
                             color: '#666', letterSpacing: '0.09em',
                             transition: 'color 0.2s',
                         }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#71b3e5'; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#666'; }}>
+                                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#71b3e5'; }}
+                                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#666'; }}>
                             {label}
                         </button>
                     ))}
@@ -335,7 +392,7 @@ function Home() {
                                 transition: 'width 0.3s ease, background 0.3s ease',
                             }} />
                             <span style={{
-                                 fontWeight: 700, fontSize: 8,
+                                fontWeight: 700, fontSize: 8,
                                 color: active ? '#1a1a2e' : 'transparent',
                                 letterSpacing: '0.1em', whiteSpace: 'nowrap',
                                 transition: 'color 0.3s ease',
@@ -362,21 +419,21 @@ function Home() {
                     {/* Left */}
                     <div>
                         <p style={{
-                             fontWeight: 600, fontSize: 11,
+                            fontWeight: 600, fontSize: 11,
                             color: heroSubColor, letterSpacing: '0.12em', textTransform: 'uppercase', margin: '0 0 20px',
                         }}>
                             {todayLabel}
                             {weather && <span style={{ marginLeft: 14 }}>{Math.round(weather.temp)}℃ · {weather.desc}</span>}
                         </p>
                         <h1 style={{
-                             fontWeight: 700,
+                            fontWeight: 700,
                             fontSize: 52, lineHeight: 1.15, color: heroTextColor,
                             margin: '0 0 24px', letterSpacing: '-1px',
                         }}>
                             안녕하세요,<br />{nickname}님
                         </h1>
                         <p style={{
-                             fontWeight: 400, fontSize: 19,
+                            fontWeight: 400, fontSize: 19,
                             color: heroSubColor, margin: '0 0 44px', lineHeight: 1.65,
                         }}>
                             {weather
@@ -400,11 +457,16 @@ function Home() {
 
                     {/* Right: Hero image */}
                     <div style={{ position: 'relative' }}>
-                        <div style={{ borderRadius: 28, overflow: 'hidden', height: 520, boxShadow: '0 32px 80px rgba(0,0,0,0.22)' }}>
+                        <div style={{ borderRadius: 28, overflow: 'hidden', height: 520, boxShadow: '0 32px 80px rgba(0,0,0,0.22)', background: 'white' }}>
+                            {/* 오늘 선택한 코디의 합성 이미지가 있으면 그것을, 없으면 기존 사진을 보여줌.
+                                합성 이미지는 흰 배경 4:5 비율이라 잘리지 않게 contain으로 표시. */}
                             <img
-                                src="/img/danijela-prijovic-P05TTnXwaWE-unsplash.jpg"
+                                src={todayOutfit?.compositeImageUrl || '/img/danijela-prijovic-P05TTnXwaWE-unsplash.jpg'}
                                 alt="오늘의 패션"
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                style={{
+                                    width: '100%', height: '100%',
+                                    objectFit: todayOutfit?.compositeImageUrl ? 'contain' : 'cover',
+                                }}
                             />
                         </div>
                         {weather && (
@@ -599,7 +661,7 @@ function Home() {
                                         }
                                     </div>
                                     <span style={{
-                                        
+
                                         fontWeight: done ? 600 : 400, fontSize: 17,
                                         color: done ? '#1a1a2e' : '#bbb',
                                         transition: 'color 0.3s ease',
@@ -713,7 +775,7 @@ function Home() {
                                             {/* 선택 버튼 */}
                                             <div style={{ padding: '0 24px 20px' }}>
                                                 {!isAccepted ? (
-                                                    <button onClick={() => setAcceptedOutfitIdx(idx)} style={{
+                                                    <button onClick={() => handleAcceptOutfit(idx)} style={{
                                                         width: '100%', padding: '13px',
                                                         background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)',
                                                         color: 'white', border: 'none', borderRadius: 12,
@@ -789,7 +851,7 @@ function Home() {
                     <button data-animate onClick={() => navigate('/wardrobe')} style={{
                         background: '#71b3e5', border: 'none', borderRadius: 999,
                         padding: '16px 36px', cursor: 'pointer',
-                         fontWeight: 700, fontSize: 15,
+                        fontWeight: 700, fontSize: 15,
                         color: 'white', boxShadow: '0 8px 24px rgba(113,179,229,0.4)',
                     }}>
                         내 옷장에 추가하기 →
@@ -816,15 +878,17 @@ function Home() {
                                 const [y, m, d] = outfit.outfitDate.split('-').map(Number);
                                 const dt    = new Date(y, m - 1, d);
                                 const label = `${m}월 ${d}일 (${WEEKDAYS[dt.getDay()]})`;
-                                const thumb = outfit.matchedItems?.[0]?.imageUrl;
+                                // 합성 이미지가 있으면 그것을, 없으면(생성 중/실패 포함) 기존 첫 번째 아이템 썸네일 사용.
+                                const composite = outfit.compositeImageUrl || undefined;
+                                const thumb     = composite || outfit.matchedItems?.[0]?.imageUrl;
                                 return (
                                     <div key={i} className="wardrobe-card" style={{
                                         background: 'white', borderRadius: 20, overflow: 'hidden',
                                         border: '1px solid #eaedf2', cursor: 'pointer',
                                     }} onClick={() => navigate('/calendar')}>
-                                        <div style={{ height: 160, overflow: 'hidden', background: 'linear-gradient(135deg, #d4eaf9, #e8f4fd)' }}>
+                                        <div style={{ height: 160, overflow: 'hidden', background: composite ? 'white' : 'linear-gradient(135deg, #d4eaf9, #e8f4fd)' }}>
                                             {thumb
-                                                ? <img src={thumb} alt="코디" className="wardrobe-card-img" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                                                ? <img src={thumb} alt="코디" className="wardrobe-card-img" style={{ width: '100%', height: '100%', objectFit: composite ? 'contain' : 'cover', display: 'block' }} />
                                                 : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><WardrobeIcon color="#71b3e5" size={40} /></div>
                                             }
                                         </div>
@@ -835,7 +899,7 @@ function Home() {
                                             </div>
                                             {outfit.description && (
                                                 <p style={{
-                                                     fontSize: 13, color: '#555',
+                                                    fontSize: 13, color: '#555',
                                                     margin: 0, lineHeight: 1.5,
                                                     overflow: 'hidden', display: '-webkit-box',
                                                     WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
@@ -858,11 +922,11 @@ function Home() {
                     <button data-animate onClick={() => navigate('/calendar')} style={{
                         background: 'white', border: '2px solid #71b3e5', borderRadius: 999,
                         padding: '16px 36px', cursor: 'pointer',
-                         fontWeight: 700, fontSize: 15, color: '#71b3e5',
+                        fontWeight: 700, fontSize: 15, color: '#71b3e5',
                         transition: 'background 0.2s, color 0.2s',
                     }}
-                    onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = '#71b3e5'; b.style.color = 'white'; }}
-                    onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = 'white'; b.style.color = '#71b3e5'; }}>
+                            onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = '#71b3e5'; b.style.color = 'white'; }}
+                            onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = 'white'; b.style.color = '#71b3e5'; }}>
                         캘린더에서 보기 →
                     </button>
                 </div>
@@ -889,7 +953,7 @@ function Home() {
                         <button onClick={() => navigate('/recommend')} style={{
                             background: '#71b3e5', border: 'none', borderRadius: 999,
                             padding: '16px 40px', cursor: 'pointer',
-                             fontWeight: 700, fontSize: 16,
+                            fontWeight: 700, fontSize: 16,
                             color: 'white', boxShadow: '0 8px 24px rgba(113,179,229,0.5)',
                         }}>
                             AI 추천 전체 보기 →
@@ -898,7 +962,7 @@ function Home() {
                             background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(8px)',
                             border: '1.5px solid rgba(255,255,255,0.38)', borderRadius: 999,
                             padding: '16px 36px', cursor: 'pointer',
-                             fontWeight: 600, fontSize: 15,
+                            fontWeight: 600, fontSize: 15,
                             color: 'white',
                         }}>
                             내 옷장 보러가기
