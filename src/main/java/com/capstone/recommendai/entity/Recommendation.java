@@ -58,6 +58,14 @@ public class Recommendation {
 
     @Column(name = "parent_rec_id", length = 36)
     private String parentRecId;
+
+    // 선택한 코디의 아이템을 누끼 따서 흰 배경에 합성한 결과물 (S3 URL). 홈 화면 카드에서 사용.
+    @Column(name = "composite_image_url", length = 500)
+    private String compositeImageUrl;
+
+    // PENDING(생성 중) / DONE / FAILED / SKIPPED(합성할 아이템 없음). 코디를 선택한 적 없으면 null
+    @Column(name = "composite_status", length = 20)
+    private String compositeStatus;
     // ─────────────────────────────────────────
 
     @OneToMany(mappedBy = "recommendation", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -35,6 +35,11 @@ public class S3Service {
     }
 
     public String uploadBase64Image(String base64Image) {
+        return uploadBase64Image(base64Image, "wardrobe");
+    }
+
+    // folder: S3 키 접두사 (예: "wardrobe", "outfit-composite")
+    public String uploadBase64Image(String base64Image, String folder) {
         try {
             String base64Data = base64Image;
             String contentType = "image/jpeg";
@@ -48,7 +53,7 @@ public class S3Service {
             }
 
             byte[] imageBytes = Base64.getDecoder().decode(base64Data);
-            String fileName = "wardrobe/" + UUID.randomUUID() + getExtension(contentType);
+            String fileName = folder + "/" + UUID.randomUUID() + getExtension(contentType);
 
             PutObjectRequest putRequest = PutObjectRequest.builder()
                     .bucket(bucket)
@@ -69,7 +74,11 @@ public class S3Service {
     public void deleteImage(String imageUrl) {
         try {
             if (imageUrl == null || !imageUrl.contains("amazonaws.com")) return;
-            String key = imageUrl.substring(imageUrl.indexOf("wardrobe/"));
+            // wardrobe/ 뿐 아니라 outfit-composite/ 등 다른 폴더의 파일도 지울 수 있도록 도메인 뒤 전체를 키로 사용
+            String marker = ".amazonaws.com/";
+            int markerIdx = imageUrl.indexOf(marker);
+            if (markerIdx < 0) return;
+            String key = imageUrl.substring(markerIdx + marker.length());
             s3Client.deleteObject(DeleteObjectRequest.builder()
                     .bucket(bucket)
                     .key(key)

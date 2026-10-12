@@ -18,6 +18,11 @@ from PIL import Image
 from io import BytesIO
 import base64
 
+# 서비스 모듈(cutout_service, sam_service 등)은 import 시점에 환경변수를 읽기 때문에
+# 어떤 엔드포인트가 먼저 호출되든 .env가 먼저 로드되도록 여기서 한 번 로드.
+from dotenv import load_dotenv
+load_dotenv()
+
 app = FastAPI()
 
 app.add_middleware(
@@ -67,6 +72,13 @@ class DaltonizeRequest(BaseModel):
 
 class RemoveBackgroundRequest(BaseModel):
     imageB64: str
+
+class CompositeItem(BaseModel):
+    category: str          # 옷장에 저장된 카테고리 (상의/하의/아우터/원피스)
+    imageB64: str          # 옷장 원본 사진 (data URL 허용)
+
+class OutfitCompositeRequest(BaseModel):
+    items: List[CompositeItem]
 
 # ─────────────────────────────────────────────
 # 헬스 체크
@@ -178,7 +190,7 @@ async def embedding_stats():
 
 # ─────────────────────────────────────────────
 # [신규] 색각 보정 (Daltonization)
-# Spring Boot(UserController.daltonize)가 이 엔드포인트를 호출합니다.
+# Spring Boot(UserController.daltonize)가 이 엔드포인트를 호출.
 # ─────────────────────────────────────────────
 @app.post("/ai/daltonize")
 async def daltonize(req: DaltonizeRequest):
@@ -200,6 +212,25 @@ async def remove_background(req: RemoveBackgroundRequest):
         from services.sam_service import remove_background_b64
         result_b64, confidence = remove_background_b64(req.imageB64)
         return {"resultB64": result_b64, "confidence": confidence}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ─────────────────────────────────────────────
+# 코디 합성 이미지 (YOLO 검출 + SAM 누끼 + 흰 배경 합성)
+# 사용자가 코디를 "선택"했을 때 Spring Boot(OutfitCompositeService)가 호출.
+# 동기 함수(def)로 둬서 FastAPI가 스레드풀에서 실행하도록 설정. (추론 중 이벤트 루프를 막지 않음)
+# ─────────────────────────────────────────────
+@app.post("/ai/outfit-composite")
+def outfit_composite(req: OutfitCompositeRequest):
+    try:
+        from services.cutout_service import build_outfit_composite
+        jpeg_bytes, item_infos = build_outfit_composite([item.dict() for item in req.items])
+        return {
+            "imageB64": "data:image/jpeg;base64," + base64.b64encode(jpeg_bytes).decode("utf-8"),
+            "items": item_infos,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

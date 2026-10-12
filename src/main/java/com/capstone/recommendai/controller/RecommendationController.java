@@ -47,6 +47,8 @@ public class RecommendationController {
                     map.put("weatherCondition", rec.getWeatherCondition());
                     map.put("createdAt", rec.getCreatedAt());
                     map.put("acceptedOutfitIndex", rec.getAcceptedOutfitIndex());
+                    map.put("compositeImageUrl", rec.getCompositeImageUrl());
+                    map.put("compositeStatus", rec.getCompositeStatus());
                     map.put("retryCount", rec.getRetryCount() != null ? rec.getRetryCount() : 0);
                     map.put("parentRecId", rec.getParentRecId());
                     map.put("outfitDate",
@@ -147,6 +149,10 @@ public class RecommendationController {
             map.put("description", rec.getDescription());
             map.put("outfitDate", rec.getOutfitDate().toString());
             map.put("acceptedOutfitIndex", rec.getAcceptedOutfitIndex());
+            // 선택한 코디의 합성 결과물 (홈 카드용). compositeStatus: PENDING/DONE/FAILED/SKIPPED
+            // DONE이 아니면 compositeImageUrl은 null이므로, 프론트는 기존 matchedItems 썸네일로 대체 표시 가능.
+            map.put("compositeImageUrl", rec.getCompositeImageUrl());
+            map.put("compositeStatus", rec.getCompositeStatus());
 
             int displayIdx = rec.getAcceptedOutfitIndex(); // null 아님 (필터됨)
 
