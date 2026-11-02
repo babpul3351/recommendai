@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { wardrobeAPI } from '../../api/api';
-import { AI_BASE_URL, BASE_URL } from '../../api/env';
+import { BASE_URL } from '../../api/env';
 import { WardrobeIcon, StudioIcon, CloseIcon } from '../../components/Icons';
 import { TPO_LIST, TPO_COLORS } from '../recommend/constants';
 
@@ -42,7 +42,9 @@ function normalizeCategory(category?: string): string {
 }
 
 async function urlToBase64(url: string): Promise<string> {
-    const resp = await fetch(url, { mode: 'cors' });
+    // <img>가 Origin 헤더 없이 받아 캐시한 S3 응답(CORS 헤더 없음)을 재사용하면 CORS 오류가 난다.
+    // 이 요청만 캐시를 거치지 않게 해서 S3가 항상 CORS 헤더를 붙여 응답하도록 한다.
+    const resp = await fetch(url, { mode: 'cors', cache: 'no-store' });
     const blob = await resp.blob();
     return new Promise((resolve) => {
         const reader = new FileReader();
@@ -155,9 +157,14 @@ function Outfits() {
         }
 
         try {
-            const res = await fetch(`${AI_BASE_URL}/ai/remove-background`, {
+            // 배경 제거는 Spring을 거쳐 AI 서버로 전달된다 (로그인 토큰 필요, AI 서버는 외부 비공개).
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${BASE_URL}/wardrobe/remove-background`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
                 body: JSON.stringify({ imageB64: b64 }),
             });
             if (res.ok) {
