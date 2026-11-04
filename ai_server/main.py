@@ -10,9 +10,12 @@ daltonization_service.py의 simulate_color_blindness()를 호출.
 이전 버전과 동일. 변경 사항 없음.
 """
 
+import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+logger = logging.getLogger("ai_server")
 from typing import List, Optional
 from PIL import Image
 from io import BytesIO
@@ -232,6 +235,7 @@ def outfit_composite(req: OutfitCompositeRequest):
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
+        logger.exception("[outfit-composite] 처리 실패")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/ai/idle-analysis")

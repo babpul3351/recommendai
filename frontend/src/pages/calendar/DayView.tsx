@@ -40,11 +40,20 @@ function DayView({ selectedDate, today, events, outfits, onPrevDay, onNextDay, o
     const isToday = dayjs(selectedDate).isSame(dayjs(), 'day');
     const dow = selectedDate.getDay();
 
-    const dayEvents = events.filter(e => {
+    const allDayOnDay = events.filter(e => {
         const d = new Date(e.eventDatetime);
         return d.getFullYear() === selectedDate.getFullYear()
             && d.getMonth() === selectedDate.getMonth()
-            && d.getDate() === selectedDate.getDate();
+            && d.getDate() === selectedDate.getDate()
+            && d.getHours() === 0 && d.getMinutes() === 0;
+    });
+
+    const dayEvents = events.filter(e => {
+        const d = new Date(e.eventDatetime);
+        if (d.getFullYear() !== selectedDate.getFullYear()
+            || d.getMonth() !== selectedDate.getMonth()
+            || d.getDate() !== selectedDate.getDate()) return false;
+        return !(d.getHours() === 0 && d.getMinutes() === 0);
     }).sort((a, b) => new Date(a.eventDatetime).getTime() - new Date(b.eventDatetime).getTime());
 
     const dateStr = dayjs(selectedDate).format('YYYY-MM-DD');
@@ -84,28 +93,69 @@ function DayView({ selectedDate, today, events, outfits, onPrevDay, onNextDay, o
                 </button>
             </div>
 
+            {/* All-day events section */}
+            {allDayOnDay.length > 0 && (
+                <div style={{ padding: '10px 20px', borderBottom: '1px solid #eaedf2', background: '#f9fafb' }}>
+                    <p style={{ fontSize: 10, fontWeight: 700, color: '#aaa', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>하루종일</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {allDayOnDay.map((evt, i) => {
+                            const color = TPO_COLORS[evt.tpoKeyword] || '#71b3e5';
+                            return (
+                                <div
+                                    key={i}
+                                    onClick={() => onSelectEvent(evt)}
+                                    style={{
+                                        background: `${color}18`, borderLeft: `3px solid ${color}`,
+                                        borderRadius: '0 8px 8px 0', padding: '6px 12px', cursor: 'pointer',
+                                        display: 'flex', alignItems: 'center', gap: 8,
+                                    }}
+                                >
+                                    <span style={{ fontWeight: 700, fontSize: 13, color }}>{evt.eventName}</span>
+                                    <span style={{ fontSize: 10, color: `${color}bb`, background: `${color}15`, borderRadius: 4, padding: '1px 6px' }}>{evt.tpoKeyword}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
             {/* Outfit section */}
             {dayOutfits.length > 0 && (
                 <div style={{ padding: '14px 20px', borderBottom: '1px solid #f5e9a0', background: '#FFFDE7' }}>
-                    <p style={{ fontSize: 11, fontWeight: 700, color: '#7a5800', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: '#7a5800', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 5 }}>
                         <WardrobeIcon color="#c89000" size={12} />
                         {isToday ? '오늘의 추천 코디' : '이 날의 추천 코디'}
                     </p>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        {dayOutfits[0].matchedItems?.filter(item => item.imageUrl).slice(0, 6).map((item, i) => (
+                    {dayOutfits[0].compositeImageUrl ? (
+                        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                             <img
-                                key={i}
-                                src={item.imageUrl}
-                                alt=""
-                                style={{ width: 56, height: 56, borderRadius: 10, objectFit: 'cover', border: '1.5px solid #FFE082' }}
+                                src={dayOutfits[0].compositeImageUrl}
+                                alt="코디"
+                                style={{ width: 160, height: 200, borderRadius: 14, objectFit: 'contain', border: '1.5px solid #FFE082', background: 'white', flexShrink: 0 }}
                             />
-                        ))}
-                        {dayOutfits[0].description && (
-                            <div style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', background: '#FFE082', borderRadius: 10, flex: 1, minWidth: 0 }}>
-                                <p style={{ fontSize: 12, color: '#7a5800', margin: 0, lineHeight: 1.6 }}>{dayOutfits[0].description}</p>
-                            </div>
-                        )}
-                    </div>
+                            {dayOutfits[0].description && (
+                                <div style={{ padding: '12px 14px', background: '#FFE082', borderRadius: 12, flex: 1 }}>
+                                    <p style={{ fontSize: 13, color: '#7a5800', margin: 0, lineHeight: 1.7 }}>{dayOutfits[0].description}</p>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                            {dayOutfits[0].matchedItems?.filter(item => item.imageUrl).slice(0, 6).map((item, i) => (
+                                <img
+                                    key={i}
+                                    src={item.imageUrl}
+                                    alt=""
+                                    style={{ width: 96, height: 96, borderRadius: 12, objectFit: 'cover', border: '1.5px solid #FFE082' }}
+                                />
+                            ))}
+                            {dayOutfits[0].description && (
+                                <div style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', background: '#FFE082', borderRadius: 10, flex: 1, minWidth: 120 }}>
+                                    <p style={{ fontSize: 12, color: '#7a5800', margin: 0, lineHeight: 1.6 }}>{dayOutfits[0].description}</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -177,7 +227,7 @@ function DayView({ selectedDate, today, events, outfits, onPrevDay, onNextDay, o
                         })}
 
                         {/* Empty state */}
-                        {dayEvents.length === 0 && (
+                        {dayEvents.length === 0 && allDayOnDay.length === 0 && (
                             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
                                 <p style={{ fontSize: 13, color: '#ddd', fontWeight: 500, margin: 0 }}>일정이 없습니다</p>
                                 <p style={{ fontSize: 11, color: '#e8eaed', margin: '4px 0 0' }}>위 버튼으로 일정을 추가해보세요</p>

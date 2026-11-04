@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { usePageAnimation } from '../hooks/usePageAnimation';
 import { colorAssistantAPI, userAPI } from '../api/api';
 import BeforeAfterSlider from '../components/BeforeAfterSlider';
 
@@ -75,7 +74,6 @@ type Tab = 'viewer' | 'guide';
 
 function ColorCorrectionPage() {
     const pageRef = useRef<HTMLDivElement>(null);
-    usePageAnimation(pageRef);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [colorType] = useState<string>(localStorage.getItem('colorType') || '');
@@ -133,7 +131,7 @@ function ColorCorrectionPage() {
     const warnData = isColorDeficient ? COLOR_TYPE_WARN[colorType] : null;
 
     return (
-        <div ref={pageRef} style={{ padding: '70px 36px', maxWidth: 1100, width: '100%', boxSizing: 'border-box' }}>
+        <div ref={pageRef} style={{ padding: '70px 36px', maxWidth: 1100, width: '100%', boxSizing: 'border-box', margin: '0 auto' }}>
 
             {/* Header */}
             <div style={{ marginBottom: 20 }}>
