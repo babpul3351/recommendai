@@ -70,13 +70,41 @@ function AddEventModal({ form, onFormChange, onClose, onSubmit }: Props) {
 
                     {/* 날짜 & 시간 */}
                     <div>
-                        <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 6 }}>날짜 & 시간</label>
-                        <input
-                            type="datetime-local"
-                            value={form.eventDatetime}
-                            onChange={e => onFormChange({ ...form, eventDatetime: e.target.value })}
-                            style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid #eaedf2', fontSize: 14, boxSizing: 'border-box', outline: 'none' }}
-                        />
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                            <label style={{ fontSize: 12, color: '#888' }}>날짜 & 시간</label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 12, color: '#555', fontWeight: 600, userSelect: 'none' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={!!form.allDay}
+                                    onChange={e => {
+                                        const allDay = e.target.checked;
+                                        const dateOnly = form.eventDatetime.split('T')[0] || '';
+                                        onFormChange({
+                                            ...form,
+                                            allDay,
+                                            eventDatetime: allDay ? (dateOnly + 'T00:00') : (dateOnly + 'T09:00'),
+                                        });
+                                    }}
+                                    style={{ accentColor: '#71b3e5', width: 14, height: 14, cursor: 'pointer' }}
+                                />
+                                하루종일
+                            </label>
+                        </div>
+                        {form.allDay ? (
+                            <input
+                                type="date"
+                                value={form.eventDatetime.split('T')[0]}
+                                onChange={e => onFormChange({ ...form, eventDatetime: e.target.value + 'T00:00' })}
+                                style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid #eaedf2', fontSize: 14, boxSizing: 'border-box', outline: 'none' }}
+                            />
+                        ) : (
+                            <input
+                                type="datetime-local"
+                                value={form.eventDatetime}
+                                onChange={e => onFormChange({ ...form, eventDatetime: e.target.value })}
+                                style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid #eaedf2', fontSize: 14, boxSizing: 'border-box', outline: 'none' }}
+                            />
+                        )}
                     </div>
 
                     {/* TPO */}

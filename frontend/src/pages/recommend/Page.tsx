@@ -16,7 +16,7 @@ function RecommendPage() {
     const [allEvents, setAllEvents] = useState<CalendarEvent[]>([]);
     const [selectedDate, setSelectedDate] = useState<string>(toDateStr(today));
     const [dateEvents, setDateEvents] = useState<CalendarEvent[]>([]);
-    const [selectedEventIds, setSelectedEventIds] = useState<number[]>([]);
+    const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
     const [selectedTpo, setSelectedTpo] = useState<string | null>(null);
     const [customTpo, setCustomTpo] = useState('');
     const [numOutfits, setNumOutfits] = useState(2);
@@ -136,7 +136,7 @@ function RecommendPage() {
     ];
 
     return (
-        <div style={{ padding: '52px 36px 60px', maxWidth: 900, width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ padding: '52px 36px 60px', maxWidth: 1100, width: '100%', boxSizing: 'border-box', margin: '0 auto' }}>
             {/* Header */}
             <div style={{ marginBottom: 24 }}>
                 <h1 style={{ fontWeight: 800, fontSize: 28, color: '#1a1a2e', margin: 0, letterSpacing: '-0.5px' }}>AI 코디 추천</h1>
@@ -171,6 +171,7 @@ function RecommendPage() {
                 <RecommendTab
                     weather={weather}
                     weatherUnavailable={weatherUnavailable}
+                    allEvents={allEvents}
                     dateEvents={dateEvents}
                     selectedDate={selectedDate}
                     onDateChange={handleDateChange}

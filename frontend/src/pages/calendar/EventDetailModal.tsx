@@ -9,7 +9,7 @@ const btnBase: React.CSSProperties = { background: 'none', border: 'none', curso
 interface Props {
     event: CalendarEvent;
     onClose: () => void;
-    onDelete: (eventId: number) => void;
+    onDelete: (eventId: string) => void;
 }
 
 function EventDetailModal({ event, onClose, onDelete }: Props) {

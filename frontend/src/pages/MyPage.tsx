@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { theme } from '../styles/theme';
-import { usePageAnimation } from '../hooks/usePageAnimation';
 import { useNavigate } from 'react-router-dom';
 import { userAPI, recommendationAPI, colorAssistantAPI, wardrobeAPI } from '../api/api';
 import { CloseIcon } from '../components/Icons';
@@ -238,8 +237,6 @@ interface DaltonizeResult { original: string; simulated: string; corrected: stri
 
 function MyPage() {
     const navigate = useNavigate();
-    const pageRef = useRef<HTMLDivElement>(null);
-    usePageAnimation(pageRef);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [tab, setTab] = useState('프로필');
     const [profile, setProfile] = useState<Profile | null>(null);
@@ -247,12 +244,6 @@ function MyPage() {
     const [editForm, setEditForm] = useState<EditForm>({ nickname: '', ageGroup: '', gender: '', colorType: '', styles: [] });
     const [history, setHistory] = useState<HistoryRecord[]>([]);
     const [loading, setLoading] = useState(false);
-    const [bgImage, setBgImage] = useState<string | null>(null);
-    const [profileImage, setProfileImage] = useState<string | null>(null);
-    const [hoverBg, setHoverBg] = useState(false);
-    const [hoverAvatar, setHoverAvatar] = useState(false);
-    const bgInputRef = useRef<HTMLInputElement>(null);
-    const profileInputRef = useRef<HTMLInputElement>(null);
     const [showColorTest, setShowColorTest] = useState(false);
     const [testActive, setTestActive] = useState(false);
     const [testResult, setTestResult] = useState<string | null>(null);
@@ -281,47 +272,9 @@ function MyPage() {
 
     useEffect(() => { fetchProfile(); fetchHistory(); fetchWardrobe(); }, []);
 
-    useEffect(() => {
-        setBgImage(localStorage.getItem('profileBgImage'));
-        setProfileImage(localStorage.getItem('profileAvatarImage'));
-    }, []);
-
-    const handleBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        e.target.value = '';
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const b64 = reader.result as string;
-            setBgImage(b64);
-            try { localStorage.setItem('profileBgImage', b64); } catch {}
-        };
-        reader.readAsDataURL(file);
-    };
-
-    const handleProfilePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        e.target.value = '';
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const b64 = reader.result as string;
-            setProfileImage(b64);
-            try {
-                localStorage.setItem('profileAvatarImage', b64);
-                window.dispatchEvent(new Event('profileImageUpdated'));
-            } catch {}
-        };
-        reader.readAsDataURL(file);
-    };
-
     const handleLogout = () => {
         if (window.confirm('로그아웃 하시겠습니까?')) {
-            const keepKeys = ['profileBgImage', 'profileAvatarImage'];
-            const kept: Record<string, string> = {};
-            keepKeys.forEach(k => { const v = localStorage.getItem(k); if (v) kept[k] = v; });
             localStorage.clear();
-            Object.entries(kept).forEach(([k, v]) => localStorage.setItem(k, v));
             navigate('/login');
         }
     };
@@ -382,7 +335,7 @@ function MyPage() {
     const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #eaedf2', fontSize: 14, boxSizing: 'border-box',  marginBottom: 10 };
 
     return (
-        <div ref={pageRef} style={{ padding: '70px 36px', maxWidth: 1100, width: '100%' }}>
+        <div style={{ padding: '70px 36px', maxWidth: 1100, width: '100%', boxSizing: 'border-box', margin: '0 auto' }}>
             <div style={{ marginBottom: 28 }}>
                 <div style={{ overflow: 'hidden' }}>
                     <h1 style={{  fontWeight: 700, fontSize: 28, color: '#1a1a2e', margin: 0, letterSpacing: '-0.5px' }}>마이페이지</h1>
@@ -393,72 +346,33 @@ function MyPage() {
             {/* User info */}
             <div data-card style={{ ...cardStyle, overflow: 'hidden', padding: 0, marginBottom: 24 }}>
                 {/* Banner */}
-                <div
-                    onClick={() => bgInputRef.current?.click()}
-                    onMouseEnter={() => setHoverBg(true)}
-                    onMouseLeave={() => setHoverBg(false)}
-                    style={{
-                        height: 140,
-                        background: bgImage ? undefined : 'linear-gradient(135deg, #71b3e5, #b0cbe0)',
-                        backgroundImage: bgImage ? `url(${bgImage})` : undefined,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        position: 'relative',
-                        cursor: 'pointer',
-                    }}
-                >
+                <div style={{
+                    height: 140,
+                    background: 'linear-gradient(135deg, #71b3e5, #b0cbe0)',
+                }} />
+
+                <div style={{ padding: '0 28px 20px' }}>
+                    {/* 아바타 */}
                     <div style={{
-                        position: 'absolute', inset: 0,
-                        background: 'rgba(0,0,0,0.28)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        opacity: hoverBg ? 1 : 0,
-                        transition: 'opacity 0.18s',
+                        width: 88, height: 88, borderRadius: '50%',
+                        border: '4px solid white', marginTop: -48,
+                        overflow: 'hidden', display: 'inline-block',
                     }}>
-                        <span style={{ color: 'white', fontSize: 12, fontWeight: 600 }}>배경 사진 변경</span>
-                    </div>
-                </div>
-                <input ref={bgInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleBgUpload} />
-
-                <div style={{ padding: '0 28px 24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 20 }}>
-                        <div
-                            onClick={() => profileInputRef.current?.click()}
-                            onMouseEnter={() => setHoverAvatar(true)}
-                            onMouseLeave={() => setHoverAvatar(false)}
-                            style={{
-                                width: 88, height: 88, borderRadius: '50%',
-                                border: '4px solid white', marginTop: -48, flexShrink: 0,
-                                cursor: 'pointer', position: 'relative', overflow: 'hidden',
-                                display: 'inline-block',
-                            }}
-                        >
-                            {profileImage ? (
-                                <img src={profileImage} alt="프로필" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                            ) : (
-                                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #5a9fd4, #bae3ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>
-                                    {profile.nickname?.charAt(0).toUpperCase()}
-                                </div>
-                            )}
-                            <div style={{
-                                position: 'absolute', inset: 0,
-                                background: 'rgba(0,0,0,0.38)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                opacity: hoverAvatar ? 1 : 0,
-                                transition: 'opacity 0.18s',
-                            }}>
-                                <span style={{ color: 'white', fontSize: 11, fontWeight: 700 }}>편집</span>
-                            </div>
+                        <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #5a9fd4, #bae3ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>
+                            {profile.nickname?.charAt(0).toUpperCase()}
                         </div>
-                        <input ref={profileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleProfilePhotoUpload} />
+                    </div>
 
-                        <div style={{ paddingBottom: 4 }}>
+                    {/* 닉네임 + 로그아웃 */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
+                        <div>
                             <h2 style={{ fontWeight: 700, fontSize: 22, color: '#1a1a2e', margin: '0 0 4px' }}>{profile.nickname}</h2>
                             <p style={{ fontWeight: 400, fontSize: 13, color: '#aaa', margin: 0 }}>@{profile.loginId}</p>
                         </div>
+                        <button onClick={handleLogout} style={{ background: 'none', border: '1px solid #ffcdd2', borderRadius: 10, padding: '9px 20px', fontWeight: 600, fontSize: 13, color: '#e57373', cursor: 'pointer', flexShrink: 0 }}>
+                            로그아웃
+                        </button>
                     </div>
-                    <button onClick={handleLogout} style={{ background: 'none', border: '1px solid #ffcdd2', borderRadius: 10, padding: '9px 20px', fontWeight: 600, fontSize: 13, color: '#e57373', cursor: 'pointer', flexShrink: 0 }}>
-                        로그아웃
-                    </button>
                 </div>
             </div>
 

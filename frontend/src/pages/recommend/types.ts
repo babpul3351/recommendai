@@ -5,7 +5,7 @@ export interface Weather {
 }
 
 export interface CalendarEvent {
-    eventId: number;
+    eventId: string;
     eventName: string;
     eventDatetime: string;
     tpoKeyword: string;

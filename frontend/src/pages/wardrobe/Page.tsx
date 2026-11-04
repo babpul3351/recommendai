@@ -8,7 +8,7 @@ function WardrobePage() {
     const [activeTab, setActiveTab] = useState<Tab>('clothes');
 
     return (
-        <div style={{ padding: '70px 36px', maxWidth: 1200, width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ padding: '70px 36px', maxWidth: 1100, width: '100%', boxSizing: 'border-box', margin: '0 auto' }}>
             {/* Header */}
             <div style={{ marginBottom: 20 }}>
                 <h1 style={{ fontWeight: 700, fontSize: 28, color: '#1a1a2e', margin: 0 }}>내 옷장</h1>

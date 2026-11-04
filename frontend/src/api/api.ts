@@ -18,8 +18,8 @@ interface RecommendData {
     tpo: string;
     tpoDetail?: string;
     mode: string;
-    linkedEvents?: number[];
-    linkedEventIds?: number[];
+    linkedEvents?: string[];
+    linkedEventIds?: string[];
     outfitDate?: string;
     numOutfits?: number;
     parentRecId?: number | null;
@@ -44,7 +44,7 @@ api.interceptors.request.use(config => {
 api.interceptors.response.use(
     (response: AxiosResponse) => response,
     error => {
-        if (error.response?.status === 401) {
+        if (error.response?.status === 401 && !error.config?.skipAuthRedirect) {
             localStorage.removeItem('token');
             localStorage.removeItem('userId');
             window.location.href = '/login';
@@ -61,7 +61,7 @@ export const authAPI = {
 export const calendarAPI = {
     getEvents: () => api.get('/calendar'),
     addEvent: (data: AddEventData) => api.post('/calendar', data),
-    deleteEvent: (eventId: number) => api.delete(`/calendar/${eventId}`)
+    deleteEvent: (eventId: string) => api.delete(`/calendar/${eventId}`)
 };
 
 export const userAPI = {
@@ -71,7 +71,7 @@ export const userAPI = {
 
 export const recommendationAPI = {
     getHistory: () => api.get('/recommendations'),
-    getWeekOutfits: (start: string, end: string) => api.get(`/recommendations/week?start=${start}&end=${end}`),
+    getWeekOutfits: (start: string, end: string) => api.get(`/recommendations/week?start=${start}&end=${end}`, { skipAuthRedirect: true } as any),
     acceptOutfit: (recId: number, data: AcceptOutfitData) => api.put(`/recommendations/${recId}/accept`, data),
 };
 

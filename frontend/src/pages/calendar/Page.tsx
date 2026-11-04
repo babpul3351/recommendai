@@ -2,12 +2,13 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { calendarAPI, recommendationAPI } from '../../api/api';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
-import { TPO_COLORS } from './constants';
+import { TPO_COLORS, WEEKDAYS } from './constants';
 import { CalendarEvent, Outfit, EventForm } from './types';
 import MonthView from './MonthView';
 import DayView from './DayView';
 import EventDetailModal from './EventDetailModal';
 import AddEventModal from './AddEventModal';
+import { WardrobeIcon } from '../../components/Icons';
 dayjs.locale('ko');
 
 type ViewMode = 'month' | 'day';
@@ -24,6 +25,7 @@ function Calendar() {
     const [form, setForm] = useState<EventForm>({ eventName: '', eventDatetime: '', tpoKeyword: '일상' });
     const [activeEvent, setActiveEvent] = useState<CalendarEvent | null>(null);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+    const [outfitVisible, setOutfitVisible] = useState(5);
 
     const showToast = useCallback((message: string, type: 'success' | 'error') => {
         setToast({ message, type });
@@ -99,7 +101,7 @@ function Calendar() {
         } catch (err) { showToast('일정 추가에 실패했습니다', 'error'); }
     };
 
-    const handleDelete = async (eventId: number) => {
+    const handleDelete = async (eventId: string) => {
         if (!window.confirm('삭제하시겠습니까?')) return;
         try {
             await calendarAPI.deleteEvent(eventId);
@@ -120,7 +122,7 @@ function Calendar() {
     };
 
     return (
-        <div style={{ padding: '70px 36px', maxWidth: 1200, width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ padding: '70px 36px', maxWidth: 1100, width: '100%', boxSizing: 'border-box', margin: '0 auto' }}>
 
             {/* Header */}
             <div style={{ marginBottom: 20 }}>
@@ -186,9 +188,61 @@ function Calendar() {
                 />
             )}
 
-            {/* Right sidebar — TPO stats */}
-            <div style={{ background: 'white', borderRadius: 18, padding: 18, border: '1px solid #eaedf2', position: 'sticky', top: 80 }}>
-                <h3 style={{ fontWeight: 700, fontSize: 13, color: '#1a1a2e', margin: '0 0 14px' }}>일정 유형</h3>
+            {/* Right sidebar */}
+            <div style={{ background: 'white', borderRadius: 18, padding: 18, border: '1px solid #eaedf2', position: 'sticky', top: 80, display: 'flex', flexDirection: 'column', gap: 0 }}>
+
+                {/* 코디 기록 */}
+                <h3 style={{ fontWeight: 700, fontSize: 13, color: '#1a1a2e', margin: '0 0 10px' }}>코디 기록</h3>
+                {outfits.length === 0 ? (
+                    <p style={{ fontSize: 12, color: '#ccc', margin: '0 0 16px', textAlign: 'center', padding: '10px 0' }}>아직 코디 기록이 없어요</p>
+                ) : (() => {
+                    const sorted = [...outfits].sort((a, b) => b.outfitDate.localeCompare(a.outfitDate));
+                    const visible = sorted.slice(0, outfitVisible);
+                    const hasMore = sorted.length > outfitVisible;
+                    return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
+                            {visible.map((o, i) => {
+                                const [y, m, d] = o.outfitDate.split('-').map(Number);
+                                const dt = new Date(y, m - 1, d);
+                                const dayLabel = `${m}/${d} (${WEEKDAYS[dt.getDay()]})`;
+                                const thumb = o.compositeImageUrl || o.matchedItems?.[0]?.imageUrl;
+                                return (
+                                    <div
+                                        key={i}
+                                        onClick={() => { setSelectedDate(new Date(y, m - 1, d)); setView('day'); }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '6px 8px', borderRadius: 10, background: '#f9fafb', transition: 'background 0.15s' }}
+                                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#f0f7fd'}
+                                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#f9fafb'}
+                                    >
+                                        {thumb ? (
+                                            <img src={thumb} alt="" style={{ width: 38, height: 38, borderRadius: 8, objectFit: 'cover', flexShrink: 0, border: '1px solid #eaedf2' }} />
+                                        ) : (
+                                            <div style={{ width: 38, height: 38, borderRadius: 8, background: 'rgba(113,179,229,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                <WardrobeIcon color="#71b3e5" size={16} />
+                                            </div>
+                                        )}
+                                        <span style={{ fontSize: 12, color: '#555', fontWeight: 600 }}>{dayLabel}</span>
+                                    </div>
+                                );
+                            })}
+                            {hasMore && (
+                                <button
+                                    onClick={() => setOutfitVisible(v => v + 5)}
+                                    style={{
+                                        marginTop: 2, padding: '7px 0', borderRadius: 9, border: '1.5px solid #e8ecf0',
+                                        background: 'transparent', fontSize: 12, color: '#71b3e5', fontWeight: 600,
+                                        cursor: 'pointer', width: '100%',
+                                    }}
+                                >
+                                    더보기 ({sorted.length - outfitVisible}개)
+                                </button>
+                            )}
+                        </div>
+                    );
+                })()}
+
+                {/* 일정 유형 */}
+                <h3 style={{ fontWeight: 700, fontSize: 13, color: '#1a1a2e', margin: '0 0 10px', paddingTop: outfits.length > 0 ? 14 : 0, borderTop: outfits.length > 0 ? '1px solid #f0f0f0' : 'none' }}>일정 유형</h3>
                 {Object.entries(TPO_COLORS).map(([tpo, color]) => {
                     const count = events.filter(e => e.tpoKeyword === tpo).length;
                     if (count === 0) return null;

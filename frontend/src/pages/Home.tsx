@@ -17,7 +17,7 @@ interface Weather {
     tempMin?: number;
 }
 interface CalendarEvent {
-    eventId: number;
+    eventId: string;
     eventName: string;
     eventDatetime: string;
     tpoKeyword: string;
@@ -154,6 +154,8 @@ function Home() {
     const [loading, setLoading]             = useState(false);
     const [aiStep, setAiStep]               = useState<number>(-1);
     const [activeSection, setActiveSection] = useState<string>('hero');
+    const [carouselIdx, setCarouselIdx] = useState(0);
+    const carouselInitRef = useRef(false);
 
     // Section refs
     const heroRef           = useRef<HTMLElement>(null);
@@ -203,14 +205,16 @@ function Home() {
 
     const fetchRecentOutfits = useCallback(async () => {
         try {
-            const start = toDateStr(new Date(today.getFullYear(), today.getMonth(), 1));
+            const sevenDaysAgo = new Date(today);
+            sevenDaysAgo.setDate(today.getDate() - 6);
+            const start = toDateStr(sevenDaysAgo);
             const end   = toDateStr(today);
             const res   = await recommendationAPI.getWeekOutfits(start, end);
             const all: WeekOutfit[] = res.data || [];
-            setRecentOutfits(all.slice(0, 4));
-            // 오늘 날짜로 선택한 코디는 4개 제한과 상관없이 따로 찾아 둡니다.
+            const sorted = [...all].sort((a, b) => a.outfitDate.localeCompare(b.outfitDate));
+            setRecentOutfits(sorted.slice(0, 7));
             const todayStr = toDateStr(today);
-            setTodayOutfit(all.find(o => o.outfitDate === todayStr) || null);
+            setTodayOutfit(sorted.find(o => o.outfitDate === todayStr) || null);
         } catch {}
     }, [today]);
 
@@ -220,6 +224,15 @@ function Home() {
         fetchWardrobeItems();
         fetchRecentOutfits();
     }, [fetchWeather, fetchCalendarData, fetchWardrobeItems, fetchRecentOutfits]);
+
+    // 오늘 코디가 있으면 캐러셀을 오늘 위치로 초기화
+    useEffect(() => {
+        if (recentOutfits.length > 0 && !carouselInitRef.current) {
+            carouselInitRef.current = true;
+            const idx = recentOutfits.findIndex(o => o.outfitDate === toDateStr(today));
+            if (idx >= 0) setCarouselIdx(idx);
+        }
+    }, [recentOutfits, today]);
 
     // 합성 이미지가 아직 생성 중(PENDING)이면 일정 간격으로 다시 조회.
     // PENDING이 없으면 조회하지 않고, 최대 횟수를 넘으면 stop. (서버가 중간에 재시작돼 PENDING이 남은 경우 대비)
@@ -414,7 +427,7 @@ function Home() {
                 <div style={{
                     maxWidth: 1200, width: '100%', margin: '0 auto',
                     padding: '60px 80px 60px 100px',
-                    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center',
+                    display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: 60, alignItems: 'center',
                 }}>
                     {/* Left */}
                     <div>
@@ -452,43 +465,218 @@ function Home() {
                                     {todayEvents[0].eventName} 코디
                                 </button>
                             )}
+                            {!todayOutfit && (
+                                <button onClick={() => scrollTo('tpo')} style={{
+                                    background: 'linear-gradient(135deg, rgba(113,179,229,0.85), rgba(90,159,212,0.85))',
+                                    backdropFilter: 'blur(8px)',
+                                    border: '1.5px solid rgba(255,255,255,0.45)', borderRadius: 999,
+                                    padding: '16px 28px', cursor: 'pointer',
+                                    fontWeight: 700, fontSize: 14,
+                                    color: 'white',
+                                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                                    boxShadow: '0 4px 16px rgba(113,179,229,0.35)',
+                                }}>
+                                    <SparkleIcon color="white" size={16} />
+                                    오늘 코디 AI 추천 받기
+                                </button>
+                            )}
                         </div>
                     </div>
 
-                    {/* Right: Hero image */}
-                    <div style={{ position: 'relative' }}>
-                        <div style={{ borderRadius: 28, overflow: 'hidden', height: 520, boxShadow: '0 32px 80px rgba(0,0,0,0.22)', background: 'white' }}>
-                            {/* 오늘 선택한 코디의 합성 이미지가 있으면 그것을, 없으면 기존 사진을 보여줌.
-                                합성 이미지는 흰 배경 4:5 비율이라 잘리지 않게 contain으로 표시. */}
-                            <img
-                                src={todayOutfit?.compositeImageUrl || '/img/danijela-prijovic-P05TTnXwaWE-unsplash.jpg'}
-                                alt="오늘의 패션"
-                                style={{
-                                    width: '100%', height: '100%',
-                                    objectFit: todayOutfit?.compositeImageUrl ? 'contain' : 'cover',
-                                }}
-                            />
-                        </div>
-                        {weather && (
-                            <div style={{
-                                position: 'absolute', bottom: 24, left: -28,
-                                background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)',
-                                borderRadius: 18, padding: '14px 22px',
-                                boxShadow: '0 8px 28px rgba(0,0,0,0.12)',
-                                display: 'flex', alignItems: 'center', gap: 14,
-                            }}>
-                                <WeatherIcon desc={weather.desc} size={34} />
-                                <div>
-                                    <p style={{ fontWeight: 700, fontSize: 24, color: '#1a1a2e', margin: 0 }}>
-                                        {Math.round(weather.temp)}℃
-                                    </p>
-                                    <p style={{ fontSize: 12, color: '#888', margin: '2px 0 0' }}>
-                                        {weather.city}
-                                    </p>
+                    {/* Right: Outfit Carousel */}
+                    {(() => {
+                        const CW = 300, CH = 420, GAP = 14, VP = 500;
+                        const center = (VP - CW) / 2;
+                        const tx = -(carouselIdx * (CW + GAP)) + center;
+                        const cards: (WeekOutfit | null)[] = [...recentOutfits, null];
+                        const goPrev = () => setCarouselIdx(i => Math.max(0, i - 1));
+                        const goNext = () => setCarouselIdx(i => Math.min(cards.length - 1, i + 1));
+                        const canPrev = carouselIdx > 0;
+                        const canNext = carouselIdx < cards.length - 1;
+
+                        return (
+                            <div>
+                                <p style={{
+                                    fontWeight: 700, fontSize: 11, color: heroSubColor,
+                                    letterSpacing: '0.1em', textTransform: 'uppercase',
+                                    margin: '0 0 18px',
+                                }}>
+                                    이번 주 코디
+                                </p>
+                                <div style={{ position: 'relative', width: VP }}>
+                                    {/* Viewport */}
+                                    <div style={{ overflow: 'hidden', width: VP }}>
+                                        <div style={{
+                                            display: 'flex',
+                                            gap: GAP,
+                                            transform: `translateX(${tx}px)`,
+                                            transition: 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                                            willChange: 'transform',
+                                        }}>
+                                            {cards.map((outfit, i) => {
+                                                const isActive = i === carouselIdx;
+                                                const dist = Math.abs(i - carouselIdx);
+                                                const scale = isActive ? 1 : 0.88;
+                                                const opacity = dist > 1 ? 0 : isActive ? 1 : 0.62;
+
+                                                /* ── 더 많은 코디 보기 카드 ── */
+                                                if (outfit === null) {
+                                                    return (
+                                                        <div
+                                                            key="more"
+                                                            onClick={() => navigate('/calendar')}
+                                                            style={{
+                                                                flexShrink: 0, width: CW, height: CH,
+                                                                borderRadius: 22,
+                                                                background: 'rgba(113,179,229,0.82)',
+                                                                backdropFilter: 'blur(10px)',
+                                                                border: '1.5px solid rgba(255,255,255,0.5)',
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                cursor: 'pointer',
+                                                                transform: `scale(${scale}) translateY(${isActive ? 0 : 14}px)`,
+                                                                opacity,
+                                                                transition: 'transform 0.4s ease, opacity 0.4s ease',
+                                                                transformOrigin: 'center top',
+                                                            }}
+                                                        >
+                                                            <div style={{ textAlign: 'center', color: 'white', padding: 20 }}>
+                                                                <CalendarIcon color="white" size={38} />
+                                                                <p style={{ fontWeight: 700, fontSize: 16, margin: '14px 0 6px', lineHeight: 1.4 }}>
+                                                                    더 많은<br />코디 보기
+                                                                </p>
+                                                                <p style={{ fontSize: 14, opacity: 0.85, margin: 0 }}>→</p>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+
+                                                /* ── 코디 카드 ── */
+                                                const [yy, mm, dd] = outfit.outfitDate.split('-').map(Number);
+                                                const isToday = outfit.outfitDate === toDateStr(today);
+                                                const composite = outfit.compositeStatus === 'DONE' ? outfit.compositeImageUrl : null;
+                                                const items = outfit.matchedItems || [];
+
+                                                return (
+                                                    <div
+                                                        key={i}
+                                                        onClick={() => navigate('/calendar')}
+                                                        style={{
+                                                            flexShrink: 0, width: CW,
+                                                            borderRadius: 22,
+                                                            background: 'rgba(255,255,255,0.88)',
+                                                            backdropFilter: 'blur(10px)',
+                                                            border: '1.5px solid rgba(255,255,255,0.5)',
+                                                            transform: `scale(${scale}) translateY(${isActive ? 0 : 14}px)`,
+                                                            opacity,
+                                                            filter: isActive ? 'none' : 'grayscale(25%) brightness(0.9)',
+                                                            transition: 'transform 0.4s ease, opacity 0.4s ease',
+                                                            overflow: 'hidden',
+                                                            cursor: 'pointer',
+                                                            transformOrigin: 'center top',
+                                                        }}
+                                                    >
+                                                        {/* 의류 아이템 */}
+                                                        <div style={{ height: CH * 0.75, background: 'rgba(240,245,250,0.6)', position: 'relative', overflow: 'hidden' }}>
+                                                            {composite ? (
+                                                                <img src={composite} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                                            ) : items.length > 0 ? (
+                                                                <>
+                                                                    {items[0]?.imageUrl && (
+                                                                        <img src={items[0].imageUrl} alt="" style={{
+                                                                            position: 'absolute', left: '4%', top: '6%',
+                                                                            width: '54%', height: '82%', objectFit: 'contain',
+                                                                        }} />
+                                                                    )}
+                                                                    {items[1]?.imageUrl && (
+                                                                        <img src={items[1].imageUrl} alt="" style={{
+                                                                            position: 'absolute', right: '4%', top: '4%',
+                                                                            width: '38%', height: '46%', objectFit: 'contain',
+                                                                        }} />
+                                                                    )}
+                                                                    {items[2]?.imageUrl && (
+                                                                        <img src={items[2].imageUrl} alt="" style={{
+                                                                            position: 'absolute', right: '4%', bottom: '4%',
+                                                                            width: '38%', height: '46%', objectFit: 'contain',
+                                                                        }} />
+                                                                    )}
+                                                                </>
+                                                            ) : (
+                                                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                                    <WardrobeIcon color="#c8ddef" size={52} />
+                                                                </div>
+                                                            )}
+                                                            {isToday && (
+                                                                <div style={{
+                                                                    position: 'absolute', top: 12, left: 12,
+                                                                    background: '#71b3e5', color: 'white',
+                                                                    fontSize: 13, fontWeight: 700,
+                                                                    padding: '5px 14px', borderRadius: 20,
+                                                                }}>오늘</div>
+                                                            )}
+                                                        </div>
+
+                                                        {/* 텍스트 영역 */}
+                                                        <div style={{ padding: '14px 18px 18px' }}>
+                                                            <p style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', margin: '0 0 6px' }}>
+                                                                {mm}월 {dd}일 코디
+                                                            </p>
+                                                            {(outfit.description || outfit.style) && (
+                                                                <p style={{
+                                                                    fontSize: 12, color: '#666', lineHeight: 1.55, margin: 0,
+                                                                    overflow: 'hidden',
+                                                                    display: '-webkit-box',
+                                                                    WebkitLineClamp: 2,
+                                                                    WebkitBoxOrient: 'vertical',
+                                                                } as React.CSSProperties}>
+                                                                    "{outfit.description || outfit.style}"
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* ← 왼쪽 화살표 */}
+                                    <button
+                                        onClick={goPrev}
+                                        style={{
+                                            position: 'absolute', left: 8, top: '44%',
+                                            transform: 'translateY(-50%)',
+                                            zIndex: 10, width: 36, height: 36, borderRadius: '50%',
+                                            background: 'rgba(255,255,255,0.92)',
+                                            border: 'none', cursor: 'pointer',
+                                            fontSize: 18, color: '#1a1a2e',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
+                                            opacity: canPrev ? 1 : 0,
+                                            pointerEvents: canPrev ? 'auto' : 'none',
+                                            transition: 'opacity 0.2s',
+                                        }}
+                                    >‹</button>
+
+                                    {/* → 오른쪽 화살표 */}
+                                    <button
+                                        onClick={goNext}
+                                        style={{
+                                            position: 'absolute', right: 8, top: '44%',
+                                            transform: 'translateY(-50%)',
+                                            zIndex: 10, width: 36, height: 36, borderRadius: '50%',
+                                            background: 'rgba(255,255,255,0.92)',
+                                            border: 'none', cursor: 'pointer',
+                                            fontSize: 18, color: '#1a1a2e',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
+                                            opacity: canNext ? 1 : 0,
+                                            pointerEvents: canNext ? 'auto' : 'none',
+                                            transition: 'opacity 0.2s',
+                                        }}
+                                    >›</button>
                                 </div>
                             </div>
-                        )}
-                    </div>
+                        );
+                    })()}
                 </div>
             </section>
 
@@ -872,63 +1060,31 @@ function Home() {
                         날짜별 코디를 기록하고 언제든 꺼내볼 수 있어요.
                     </p>
 
-                    {recentOutfits.length > 0 ? (
-                        <div data-animate style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20, marginBottom: 48 }}>
-                            {recentOutfits.map((outfit, i) => {
-                                const [y, m, d] = outfit.outfitDate.split('-').map(Number);
-                                const dt    = new Date(y, m - 1, d);
-                                const label = `${m}월 ${d}일 (${WEEKDAYS[dt.getDay()]})`;
-                                // 합성 이미지가 있으면 그것을, 없으면(생성 중/실패 포함) 기존 첫 번째 아이템 썸네일 사용.
-                                const composite = outfit.compositeImageUrl || undefined;
-                                const thumb     = composite || outfit.matchedItems?.[0]?.imageUrl;
-                                return (
-                                    <div key={i} className="wardrobe-card" style={{
-                                        background: 'white', borderRadius: 20, overflow: 'hidden',
-                                        border: '1px solid #eaedf2', cursor: 'pointer',
-                                    }} onClick={() => navigate('/calendar')}>
-                                        <div style={{ height: 160, overflow: 'hidden', background: composite ? 'white' : 'linear-gradient(135deg, #d4eaf9, #e8f4fd)' }}>
-                                            {thumb
-                                                ? <img src={thumb} alt="코디" className="wardrobe-card-img" style={{ width: '100%', height: '100%', objectFit: composite ? 'contain' : 'cover', display: 'block' }} />
-                                                : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><WardrobeIcon color="#71b3e5" size={40} /></div>
-                                            }
-                                        </div>
-                                        <div style={{ padding: '16px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                                                <CalendarIcon color="#71b3e5" size={14} />
-                                                <span style={{  fontWeight: 600, fontSize: 12, color: '#71b3e5' }}>{label}</span>
-                                            </div>
-                                            {outfit.description && (
-                                                <p style={{
-                                                    fontSize: 13, color: '#555',
-                                                    margin: 0, lineHeight: 1.5,
-                                                    overflow: 'hidden', display: '-webkit-box',
-                                                    WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                                                }}>{outfit.description}</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ) : (
-                        <div data-animate style={{ background: 'white', borderRadius: 24, padding: '56px', textAlign: 'center', border: '2px dashed #eaedf2', marginBottom: 48 }}>
-                            <CalendarIcon color="#ddd" size={56} />
-                            <p style={{  fontSize: 16, color: '#ccc', margin: '16px 0 0' }}>
-                                아직 기록된 코디가 없어요
-                            </p>
-                        </div>
-                    )}
-
-                    <button data-animate onClick={() => navigate('/calendar')} style={{
-                        background: 'white', border: '2px solid #71b3e5', borderRadius: 999,
-                        padding: '16px 36px', cursor: 'pointer',
-                        fontWeight: 700, fontSize: 15, color: '#71b3e5',
-                        transition: 'background 0.2s, color 0.2s',
-                    }}
+                    <div data-animate style={{ display: 'flex', gap: 16, marginBottom: 48, flexWrap: 'wrap' }}>
+                        <button data-animate onClick={() => navigate('/calendar')} style={{
+                            background: 'white', border: '2px solid #71b3e5', borderRadius: 999,
+                            padding: '16px 36px', cursor: 'pointer',
+                            fontWeight: 700, fontSize: 15, color: '#71b3e5',
+                            transition: 'background 0.2s, color 0.2s',
+                        }}
                             onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = '#71b3e5'; b.style.color = 'white'; }}
                             onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.background = 'white'; b.style.color = '#71b3e5'; }}>
-                        캘린더에서 보기 →
-                    </button>
+                            캘린더에서 전체 보기 →
+                        </button>
+                        {recentOutfits.length === 0 && (
+                            <button onClick={() => scrollTo('tpo')} style={{
+                                background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)',
+                                border: 'none', borderRadius: 999,
+                                padding: '16px 36px', cursor: 'pointer',
+                                fontWeight: 700, fontSize: 15, color: 'white',
+                                display: 'inline-flex', alignItems: 'center', gap: 8,
+                                boxShadow: '0 4px 16px rgba(113,179,229,0.3)',
+                            }}>
+                                <SparkleIcon color="white" size={16} />
+                                AI 추천 받기
+                            </button>
+                        )}
+                    </div>
                 </div>
             </section>
 
