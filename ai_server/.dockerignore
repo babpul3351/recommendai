@@ -1,0 +1,44 @@
+# ─────────────────────────────────────────────
+# ai_server/.dockerignore (AI 서버 이미지 빌드용)
+# ─────────────────────────────────────────────
+
+# 비밀 값
+.env
+.env.*
+
+# 모델 / 데이터: 실행할 때 폴더를 연결(마운트)한다
+models
+checkpoints
+chroma_data
+chroma_db
+*.pt
+*.pth
+*.onnx
+*.safetensors
+
+# 예전 복사본 폴더 (ai_server/ai_server)
+ai_server
+
+# 가상환경, 캐시, 테스트, 기존 requirements
+ai_env
+.venv
+venv
+__pycache__
+**/__pycache__
+*.pyc
+.pytest_cache
+tests
+requirements.txt
+requiremets.txt
+.DS_Store
+.idea
+.vscode
+
+# 서버 실행에 필요 없는 파일 (데이터, 예시, 실험 스크립트, 빌드 파일 자체)
+*.csv
+env.example
+requirements_docker.txt
+try_*.py
+analyze_wear_history.py
+Dockerfile
+.dockerignore

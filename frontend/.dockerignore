@@ -1,0 +1,19 @@
+# ─────────────────────────────────────────────
+# frontend/.dockerignore (프론트 이미지 빌드용)
+# ─────────────────────────────────────────────
+
+# 설치/빌드 결과는 컨테이너 안에서 새로 만든다
+node_modules
+build
+
+# 로컬 개발용 환경 파일 (빌드 값은 Dockerfile의 ARG로 넣는다)
+.env
+.env.*
+
+# 기타
+.DS_Store
+.idea
+.vscode
+npm-debug.log*
+Dockerfile
+.dockerignore

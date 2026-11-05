@@ -32,10 +32,12 @@ import pymysql
 from datetime import datetime, date, timedelta
 from collections import defaultdict
 
-DB_HOST = "localhost"
-DB_PORT = 3306
-DB_NAME = "recommendai"
-DB_USER = "root"
+# DB 접속 정보: 환경변수가 있으면 그 값을, 없으면 로컬 개발 기본값을 쓴다.
+# (Docker compose에서는 DB_HOST=db 처럼 컨테이너 이름이 들어온다. 로컬 실행은 기존과 동일.)
+DB_HOST = os.environ.get("DB_HOST", "localhost")
+DB_PORT = int(os.environ.get("DB_PORT", "3306"))
+DB_NAME = os.environ.get("DB_NAME", "recommendai")
+DB_USER = os.environ.get("DB_USER", "root")
 
 SLOT_KEYS = ["top", "bottom", "outer", "onepiece"]
 

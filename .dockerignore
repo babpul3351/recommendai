@@ -1,0 +1,29 @@
+# ─────────────────────────────────────────────
+# 저장소 루트의 .dockerignore (Spring 이미지 빌드용)
+# 이미지에 들어가면 안 되는 것(비밀 값, 개인 데이터)과
+# Spring 빌드에 필요 없는 것(프론트, AI 서버)을 제외한다.
+# ─────────────────────────────────────────────
+
+# 비밀 값 / 개인 설정
+src/main/resources/application.properties
+src/main/resources/application-*.properties
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+*.sql
+
+# Spring 빌드와 무관한 폴더
+frontend
+ai_server
+ai_env
+
+# 빌드 결과, 캐시, 도구 설정
+build
+.gradle
+out
+.idea
+.vscode
+*.iml
+.DS_Store
+.git
