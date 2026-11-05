@@ -1,0 +1,85 @@
+# ─────────────────────────────────────────────
+# Look at Life - 로컬 전체 실행 (MySQL + Spring + AI + nginx)
+# 실행:  docker compose up -d --build     접속: http://localhost:8081
+# 중지:  docker compose down              (데이터는 볼륨에 남음)
+# 주의:  docker compose down -v 는 DB 데이터까지 지운다. 쓰지 않는다.
+#
+# 비밀 값은 이 파일에 쓰지 않는다:
+#   - ./.env                              : MYSQL_* 비밀번호 (git 제외)
+#   - ./ai_server/.env                    : Gemini 키 등 (git 제외)
+#   - ./docker/backend/application.properties : Spring 설정 (git 제외)
+# ─────────────────────────────────────────────
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: recommendai
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      TZ: Asia/Seoul
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - db_data:/var/lib/mysql
+      # 처음 시작할 때(볼륨이 비어 있을 때) 한 번만 실행되는 초기 데이터
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+    restart: unless-stopped
+    # 외부 포트 없음: Spring과 AI 서버만 내부 네트워크로 접속
+
+  ai:
+    build: ./ai_server
+    image: lal-ai
+    env_file: ./ai_server/.env
+    environment:
+      # ai_server/.env 값보다 여기 값이 우선한다 (컨테이너용 DB 접속 정보)
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_NAME: recommendai
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      YOLO_DEVICE: cpu
+      TZ: Asia/Seoul
+    volumes:
+      - ./ai_server/models:/app/models:ro
+      - ./ai_server/chroma_data:/app/chroma_data
+      - hf_cache:/app/.cache/huggingface
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    # 외부 포트 없음: Spring만 내부 네트워크로 접속 (http://ai:8000)
+
+  backend:
+    build: .
+    image: lal-backend
+    volumes:
+      - ./docker/backend/application.properties:/app/config/application.properties:ro
+    environment:
+      TZ: Asia/Seoul
+    depends_on:
+      db:
+        condition: service_healthy
+      ai:
+        condition: service_started
+    restart: unless-stopped
+    # 외부 포트 없음: nginx가 /api/ 요청을 전달 (http://backend:8080)
+
+  web:
+    build: ./frontend
+    image: lal-web
+    ports:
+      # 내 맥에서만 접속 (127.0.0.1). 로컬 개발 서버(3000, 8080, 8000)와 겹치지 않게 8081 사용
+      - "127.0.0.1:8081:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  hf_cache:

@@ -67,3 +67,7 @@ ai_server/wear_history.csv
 *.pth
 ai_server/models/
 ai_server/checkpoints/
+
+# Docker 로컬 실행용 비밀 설정 / 초기 데이터 (git 제외)
+docker/backend/application.properties
+docker/mysql-init/

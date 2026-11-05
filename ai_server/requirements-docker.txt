@@ -1,0 +1,31 @@
+# ─────────────────────────────────────────────
+# AI 서버(FastAPI) Docker 이미지 전용 의존성
+# - 서버 코드가 실제로 import하는 패키지만 넣었다.
+# - 버전은 로컬 ai_env(2026-11-02 기준 pip list)와 맞췄다.
+# - requirements.txt(기존)는 다른 환경의 pip freeze라 맥 전용 패키지가 섞여 있어 Docker에서 쓰지 않는다.
+# ─────────────────────────────────────────────
+
+# 웹 서버
+fastapi==0.136.1
+uvicorn==0.46.0
+pydantic==2.12.5
+
+# 모델 / 추론
+# torch==2.11.0, torchvision==0.26.0 은 Dockerfile에서 CPU 전용 저장소로 따로 설치한다 (여기 넣지 않음)
+transformers==5.5.0
+ultralytics==8.4.138
+segment-anything==1.0
+scipy==1.15.3
+
+# 벡터 DB
+chromadb==1.5.9
+
+# 이미지 / 수치
+pillow==12.2.0
+numpy==1.26.4
+
+# 외부 연동
+google-genai==1.70.0
+requests==2.33.1
+PyMySQL==1.2.0
+python-dotenv==1.2.2
