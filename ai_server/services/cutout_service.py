@@ -17,8 +17,16 @@ cutout_service.py
      한 사진에 상의/하의가 같이 있어도, 옷장에 "상의"로 저장된 아이템이면 상의만 추출.
   2. hand / arm_upper / arm_lower / leg_thigh / leg_calf 는 의류가 아니라
      "마스크에서 제외할 영역"으로만 사용. (의류 마스크에서 이 영역을 제외.)
-  3. 해당 카테고리 의류를 못 찾으면 그 아이템은 누끼 없이 원본 그대로 배치.
-     (엉뚱한 마스크가 생기는 것보다 낫다고 판단. method="original" 로 표시됨)
+  3. 해당 카테고리 의류를 못 찾으면 아래 순서로 대체 시도 후, 모두 실패하면 원본 그대로 배치.
+     (YOLO가 옷 이름을 틀려도 옷장 카테고리는 사용자가 정했으므로, 옷의 "위치"만 맞으면 누끼 가능)
+       a. 비슷한 카테고리 클래스 사용 (상의<->아우터/원피스, 하의->원피스, 원피스->아우터)   method="yolo_sam_related"
+       b. 사람(손/팔/다리)이 없고 검출된 옷이 모두 한 벌을 가리킬 때, 가장 확실한 옷 검출 사용   method="yolo_sam_any"
+       c. 사람도 옷도 검출되지 않으면(옷만 찍은 상품 사진 가정) 사진 거의 전체 박스로 SAM 실행   method="sam_full_box"
+       d. 위가 모두 안 되면 원본 사용                                                      method="original"
+  4. SAM에 준 박스가 사진의 대부분(60% 이상)을 덮는데, 마스크가 그 박스 테두리 세 변 이상에 넓게 닿으면
+     옷이 아니라 배경(벽/문 등)을 잡은 것으로 판단. SAM의 다른 후보 마스크 중 배경이 아닌 것을 쓰고, 없으면 원본 사용.
+     (YOLO가 사진 전체에 가까운 박스를 낸 밝은 옷 + 밝은 배경 사진에서 누끼가 반대로 따지는 문제 대응.
+      몸에 맞는 작은 박스는 정상 마스크도 박스 네 변에 닿을 수 있어 검사하지 않음)
 
 모델 교체
   - YOLO 가중치 경로/임계값은 환경변수로만 지정. (코드 수정 없이 best.pt 교체 가능)
@@ -71,6 +79,17 @@ CLOTHING_CLASSES_BY_SLOT: Dict[str, Tuple[str, ...]] = {
     "onepiece": ("onepiece",),
 }
 BODY_CLASSES: Tuple[str, ...] = ("hand", "arm_upper", "arm_lower", "leg_thigh", "leg_calf")
+ALL_CLOTHING_CLASSES: Tuple[str, ...] = tuple(c for names in CLOTHING_CLASSES_BY_SLOT.values() for c in names)
+
+# 지정 카테고리 클래스가 없을 때 대신 써볼 슬롯 (앞에 있을수록 우선).
+# 새 모델 confusion matrix에서 outer<->top_long_sleeve, pants->onepiece 혼동이 많아 이렇게 묶음.
+# 주의: 사람이 아우터를 입고 찍은 "상의" 사진에서 상의가 검출되지 않으면 아우터를 대신 딸 수 있음.
+RELATED_SLOTS: Dict[str, Tuple[str, ...]] = {
+    "top": ("outer", "onepiece"),
+    "outer": ("top", "onepiece"),
+    "bottom": ("onepiece",),
+    "onepiece": ("outer",),
+}
 
 # 옷장 category(한글/영문/자유 입력) -> 슬롯. frontend normalizeCategory 의 키워드와 같은 기준.
 # 위에서부터 먼저 맞는 슬롯 사용. ("니트 원피스"가 상의로 잡히지 않도록 원피스를 앞에 둠)
@@ -89,6 +108,14 @@ MIN_MASK_AREA_RATIO = 0.05       # 마스크가 검출 박스 면적의 5% 미�
 MAX_BODY_SUBTRACT_RATIO = 0.35   # 신체 마스크가 의류 마스크의 35% 넘게 깎으면 SAM이 옷까지 잡은 것으로 보고 무시
 MIN_ISLAND_RATIO = 0.02          # 가장 큰 덩어리의 2% 미만 조각은 노이즈로 제거
 CROP_PAD_RATIO = 0.02
+SAME_GARMENT_OVERLAP = 0.6       # 두 옷 박스의 겹친 면적이 작은 박스의 60% 이상이면 같은 옷 한 벌로 판단
+FULL_BOX_INSET_RATIO = 0.02      # 사진 전체 박스 대체 시 가장자리에서 2%씩 안쪽으로
+FULL_BOX_MIN_AREA_RATIO = 0.05   # 사진 전체 박스 대체 결과 마스크가 사진의 5% 미만이면 실패
+FULL_BOX_MAX_AREA_RATIO = 0.90   # 90% 초과면 배경까지 잡은 것으로 보고 실패
+LARGE_BOX_AREA_RATIO = 0.6      # 박스가 사진의 60% 이상이면 배경을 잡았을 위험이 있는 "큰 박스"로 보고 검사
+EDGE_BAND_RATIO = 0.02           # 박스 테두리 검사 두께 (박스 짧은 변의 2%, 최소 2px, 테두리에서 안쪽으로)
+EDGE_COVER_RATIO = 0.5           # 한 변의 테두리를 50% 넘게 덮으면 "그 변에 닿음"
+BACKGROUND_MIN_SIDES = 3         # 세 변 이상에 닿으면 배경 마스크로 판단
 CANVAS_SIZE = (1080, 1350)       # 4:5
 CANVAS_BG = (255, 255, 255)
 MAX_UPSCALE = 2.0                # 작은 누끼를 칸에 맞추려고 너무 키우면 흐려지므로 제한
@@ -109,7 +136,7 @@ class Detection:
 @dataclass
 class ItemCutout:
     image: Image.Image            # RGBA
-    method: str                   # "yolo_sam" | "original"
+    method: str                   # "yolo_sam" | "yolo_sam_related" | "yolo_sam_any" | "sam_full_box" | "original"
     detected_class: Optional[str] = None
     confidence: Optional[float] = None
     note: Optional[str] = None
@@ -136,6 +163,73 @@ def select_target_detection(detections: Iterable[Detection], slot: str) -> Optio
     if not candidates:
         return None
     return max(candidates, key=lambda d: d.conf)
+
+
+def select_related_detection(detections: Iterable[Detection], slot: str) -> Optional[Detection]:
+    """지정 슬롯 클래스가 없을 때, RELATED_SLOTS 순서대로 비슷한 슬롯의 검출을 찾음. (각 슬롯 안에서는 confidence 최고)"""
+    detections = list(detections)
+    for related in RELATED_SLOTS.get(slot, ()):
+        found = select_target_detection(detections, related)
+        if found is not None:
+            return found
+    return None
+
+
+def _box_area(b: Sequence[float]) -> float:
+    return max(b[2] - b[0], 0.0) * max(b[3] - b[1], 0.0)
+
+
+def _overlap_of_smaller(a: Sequence[float], b: Sequence[float]) -> float:
+    """겹친 면적 / 두 박스 중 작은 박스 면적. (0~1)"""
+    iw = min(a[2], b[2]) - max(a[0], b[0])
+    ih = min(a[3], b[3]) - max(a[1], b[1])
+    if iw <= 0 or ih <= 0:
+        return 0.0
+    smaller = min(_box_area(a), _box_area(b))
+    return (iw * ih) / smaller if smaller > 0 else 0.0
+
+
+def select_single_garment_detection(detections: Iterable[Detection]) -> Optional[Detection]:
+    """사람(신체 클래스)이 없고, 검출된 옷 박스가 모두 같은 옷 한 벌을 가리킬 때만 가장 확실한 옷 검출을 반환.
+    (옷만 찍은 사진에서 클래스 이름만 틀린 경우용. 여러 벌이 따로 검출되면 어느 옷인지 알 수 없으므로 None)"""
+    detections = list(detections)
+    if any(d.cls_name in BODY_CLASSES for d in detections):
+        return None
+    clothes = [d for d in detections if d.cls_name in ALL_CLOTHING_CLASSES]
+    if not clothes:
+        return None
+    best = max(clothes, key=lambda d: d.conf)
+    if all(_overlap_of_smaller(best.box, d.box) >= SAME_GARMENT_OVERLAP for d in clothes):
+        return best
+    return None
+
+
+def looks_like_background(mask: np.ndarray, box: Optional[Sequence[float]] = None) -> bool:
+    """SAM에 준 박스(없으면 사진 전체)가 사진의 LARGE_BOX_AREA_RATIO 이상일 때,
+    마스크가 그 박스 테두리 BACKGROUND_MIN_SIDES 변 이상을 EDGE_COVER_RATIO 넘게 덮으면 True.
+    SAM 마스크는 박스 안에만 생기므로 사진 테두리가 아니라 박스 테두리를 기준으로 검사.
+    (실패 사례 측정값: 박스 테두리 기준 위 0.92~0.99 / 아래 0.71~0.74 / 왼쪽 0.42~0.64 / 오른쪽 0.67~0.86)"""
+    h, w = mask.shape
+    if box is None:
+        box = (0, 0, w, h)
+    x1 = int(max(0, min(w, round(box[0]))))
+    y1 = int(max(0, min(h, round(box[1]))))
+    x2 = int(max(0, min(w, round(box[2]))))
+    y2 = int(max(0, min(h, round(box[3]))))
+    bw, bh = x2 - x1, y2 - y1
+    if bw <= 0 or bh <= 0 or (bw * bh) < LARGE_BOX_AREA_RATIO * w * h:
+        return False
+    band = max(2, int(round(min(bw, bh) * EDGE_BAND_RATIO)))
+    region = mask[y1:y2, x1:x2]
+    sides = (region[:band, :], region[-band:, :], region[:, :band], region[:, -band:])
+    touched = sum(1 for s in sides if s.size and float(s.mean()) > EDGE_COVER_RATIO)
+    return touched >= BACKGROUND_MIN_SIDES
+
+
+def full_image_box(size: Tuple[int, int], inset: float = FULL_BOX_INSET_RATIO) -> Tuple[float, float, float, float]:
+    """사진 가장자리를 inset 비율만큼 뺀 박스 (x1, y1, x2, y2)."""
+    w, h = size
+    return (w * inset, h * inset, w * (1 - inset), h * (1 - inset))
 
 
 def _boxes_intersect(a: Sequence[float], b: Sequence[float]) -> bool:
@@ -343,6 +437,14 @@ class SamBoxSegmenter:
         )
         return masks[0].astype(bool)
 
+    def masks_for_box(self, box: Sequence[float]) -> List[np.ndarray]:
+        """같은 박스로 SAM 후보 마스크 3개를 받아 점수 높은 순으로 반환. (첫 마스크가 배경일 때 대안으로 사용)"""
+        masks, scores, _ = self._predictor.predict(
+            box=np.array(box, dtype=np.float32)[None, :], multimask_output=True
+        )
+        order = np.argsort(-np.asarray(scores))
+        return [masks[i].astype(bool) for i in order]
+
 
 _default_detector: Optional[YoloDetector] = None
 _detector_lock = threading.Lock()
@@ -361,16 +463,36 @@ def get_default_detector() -> YoloDetector:
 # ─────────────────────────────────────────────
 def cut_out_item(image: Image.Image, slot: str, detector, segmenter) -> ItemCutout:
     """image(RGB)에서 slot에 해당하는 의류만 누끼를 땀. 실패하면 원본을 그대로 return.
-    segmenter는 이미 with 블록 안(= predictor 락을 잡은 상태)이어야 함."""
+    segmenter는 이미 with 블록 안(= predictor 락을 잡은 상태)이어야 함.
+    지정 클래스를 못 찾으면 모듈 설명의 3-a ~ 3-d 순서로 대체 시도."""
     detections = detector.detect(image)
+    found = ", ".join(sorted({d.cls_name for d in detections})) or "없음"
+
+    method, note = "yolo_sam", None
     target = select_target_detection(detections, slot)
     if target is None:
-        found = sorted({d.cls_name for d in detections}) or ["없음"]
-        return _original_as_rgba(image, f"{slot} 의류 검출 없음 (검출된 클래스: {', '.join(found)})")
+        target = select_related_detection(detections, slot)
+        method = "yolo_sam_related"
+        if target is None:
+            target = select_single_garment_detection(detections)
+            method = "yolo_sam_any"
+        if target is not None:
+            note = f"{slot} 클래스 없음 -> {target.cls_name} 검출로 대체 (검출된 클래스: {found})"
+        elif not detections:
+            return _cut_out_with_full_box(image, segmenter)
+        else:
+            return _original_as_rgba(image, f"{slot} 의류 검출 없음 (검출된 클래스: {found})")
 
     image_np = np.asarray(image)
     segmenter.set_image(image_np)
     item_mask = segmenter.mask_for_box(target.box)
+    if looks_like_background(item_mask, target.box):
+        item_mask = _pick_non_background_mask(segmenter, target.box)
+        if item_mask is None:
+            return _original_as_rgba(
+                image, f"SAM이 옷이 아니라 배경을 잡은 것으로 보여 원본 사용 (박스 {target.cls_name} {target.conf:.2f})"
+            )
+        note = (note + " / " if note else "") + "첫 마스크가 배경이라 SAM의 다른 후보 마스크 사용"
 
     body_masks = [
         segmenter.mask_for_box(d.box)
@@ -386,9 +508,49 @@ def cut_out_item(image: Image.Image, slot: str, detector, segmenter) -> ItemCuto
 
     return ItemCutout(
         image=mask_to_rgba(image_np, mask),
-        method="yolo_sam",
+        method=method,
         detected_class=target.cls_name,
         confidence=target.conf,
+        note=note,
+    )
+
+
+def _pick_non_background_mask(segmenter, box: Sequence[float]) -> Optional[np.ndarray]:
+    """SAM 후보 마스크(multimask) 중 배경이 아니고 너무 작지 않은 것을 점수 순으로 하나 고름. 없으면 None.
+    segmenter에 masks_for_box 가 없으면(테스트용 가짜 등) 후보 없이 None."""
+    if not hasattr(segmenter, "masks_for_box"):
+        return None
+    box_area = max(_box_area(box), 1.0)
+    for candidate in segmenter.masks_for_box(box):
+        if looks_like_background(candidate, box):
+            continue
+        if candidate.sum() < MIN_MASK_AREA_RATIO * box_area:
+            continue
+        return candidate
+    return None
+
+
+def _cut_out_with_full_box(image: Image.Image, segmenter) -> ItemCutout:
+    """YOLO가 사람도 옷도 찾지 못했을 때: 옷만 찍은 상품 사진이라고 보고 사진 거의 전체 박스로 SAM 실행.
+    마스크가 너무 작거나(실패) 너무 크면(배경까지 잡음) 원본 사용."""
+    image_np = np.asarray(image)
+    segmenter.set_image(image_np)
+    box = full_image_box(image.size)
+    mask = segmenter.mask_for_box(box)
+    if looks_like_background(mask, box):
+        mask = _pick_non_background_mask(segmenter, box)
+        if mask is None:
+            return _original_as_rgba(image, "검출 없음 -> 사진 전체 박스 시도, SAM이 배경을 잡아 원본 사용")
+    mask = drop_small_islands(mask)
+    ratio = float(mask.sum()) / float(image.size[0] * image.size[1])
+    if ratio < FULL_BOX_MIN_AREA_RATIO:
+        return _original_as_rgba(image, f"검출 없음 -> 사진 전체 박스 시도, 마스크 {ratio:.0%}로 너무 작아 원본 사용")
+    if ratio > FULL_BOX_MAX_AREA_RATIO:
+        return _original_as_rgba(image, f"검출 없음 -> 사진 전체 박스 시도, 마스크 {ratio:.0%}로 배경까지 잡혀 원본 사용")
+    return ItemCutout(
+        image=mask_to_rgba(image_np, mask),
+        method="sam_full_box",
+        note=f"검출 없음 -> 사진 전체 박스로 누끼 (마스크 {ratio:.0%})",
     )
 
 
