@@ -487,10 +487,12 @@ def compute_item_colors(image_b64: str, category: str, detector_factory: Optiona
                 dets = detector.detect(img)
             with segmenter_factory() as seg:
                 cut = cut_out_item(img, slot, _FixedDetections(dets), seg)
-            if cut.method == "yolo_sam":
+            # "original"(누끼 실패, 원본 그대로)만 아니면 누끼 결과 사용.
+            # cutout_service의 대체 방식(yolo_sam_related / yolo_sam_any / sam_full_box)도 옷만 잘라낸 결과이므로 포함.
+            if cut.method != "original":
                 pal = _palette_from_rgba(cut.image, ITEM_K)
                 if pal:
-                    return {"colors": format_item_colors(pal), "method": "yolo_sam", "note": ""}
+                    return {"colors": format_item_colors(pal), "method": cut.method, "note": cut.note or ""}
             note = cut.note or ""
         except Exception as e:
             logger.warning("[item-colors] 누끼 실패, 박스 방식으로 대체: %s", e)
