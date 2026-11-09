@@ -244,8 +244,9 @@ class CutOutItemTest(unittest.TestCase):
         self.assertGreater(res.image.getpixel((100 - ox, 80 - oy))[3], 250)  # 옷 영역은 불투명
 
     def test_no_matching_detection_returns_original(self):
+        # 사람(팔)이 있는 사진에서 상의 계열이 없고 바지만 있으면, 다른 옷을 잘못 딸 수 있으므로 원본 사용
         photo = make_photo()
-        res = cs.cut_out_item(photo, "top", FakeDetector([PANTS]), FakeSegmenter())
+        res = cs.cut_out_item(photo, "top", FakeDetector([PANTS, ARM]), FakeSegmenter())
         self.assertEqual(res.method, "original")
         self.assertEqual(res.image.size, photo.size)
         self.assertIn("검출 없음", res.note)
@@ -259,6 +260,93 @@ class CutOutItemTest(unittest.TestCase):
 
         res = cs.cut_out_item(make_photo(), "top", FakeDetector([TOP]), TinySegmenter())
         self.assertEqual(res.method, "original")
+
+
+class FallbackTest(unittest.TestCase):
+    """지정 클래스를 못 찾았을 때의 대체 순서 (related -> single garment -> full box -> original)"""
+
+    # 옷걸이 아우터 사진에서 실제로 나온 경우: outer 대신 onepiece + top_long_sleeve 로 검출
+    OUTER_AS_TOP = Detection("top_long_sleeve", 0.55, (40, 20, 160, 140))
+    OUTER_AS_ONEPIECE = Detection("onepiece", 0.40, (38, 18, 162, 150))
+
+    def test_outer_uses_related_top_class(self):
+        seg = FakeSegmenter()
+        res = cs.cut_out_item(make_photo(), "outer", FakeDetector([self.OUTER_AS_ONEPIECE, self.OUTER_AS_TOP]), seg)
+        self.assertEqual(res.method, "yolo_sam_related")
+        # RELATED_SLOTS["outer"] = ("top", "onepiece") 이므로 top 계열이 먼저 선택됨 (confidence와 무관)
+        self.assertEqual(res.detected_class, "top_long_sleeve")
+        self.assertEqual(seg.calls, [self.OUTER_AS_TOP.box])
+        self.assertIn("outer 클래스 없음", res.note)
+
+    def test_related_still_subtracts_body(self):
+        seg = FakeSegmenter()
+        res = cs.cut_out_item(make_photo(), "outer", FakeDetector([TOP, ARM]), seg)
+        self.assertEqual(res.method, "yolo_sam_related")
+        self.assertIn(ARM.box, seg.calls)
+
+    def test_bottom_related_onepiece(self):
+        dress = Detection("onepiece", 0.6, (50, 150, 150, 290))
+        res = cs.cut_out_item(make_photo(), "bottom", FakeDetector([dress]), FakeSegmenter())
+        self.assertEqual(res.method, "yolo_sam_related")
+        self.assertEqual(res.detected_class, "onepiece")
+
+    def test_single_garment_any_class_when_no_person(self):
+        # 상의 사진인데 pants 로만 잘못 검출되고 사람이 없으면, 그 박스를 사용
+        res = cs.cut_out_item(make_photo(), "top", FakeDetector([PANTS]), FakeSegmenter())
+        self.assertEqual(res.method, "yolo_sam_any")
+        self.assertEqual(res.detected_class, "pants")
+
+    def test_two_separate_garments_not_used(self):
+        # 서로 떨어진 두 옷이 검출되면 어느 쪽인지 모르므로 사용하지 않음 -> 원본
+        skirt = Detection("skirt", 0.5, (0, 0, 30, 30))
+        res = cs.cut_out_item(make_photo(), "top", FakeDetector([PANTS, skirt]), FakeSegmenter())
+        self.assertEqual(res.method, "original")
+
+    def test_shoe_is_not_a_garment_for_fallback(self):
+        shoe = Detection("shoe", 0.9, (60, 260, 140, 300))
+        res = cs.cut_out_item(make_photo(), "top", FakeDetector([shoe]), FakeSegmenter())
+        self.assertEqual(res.method, "original")
+
+    def test_full_box_when_nothing_detected(self):
+        class CenterSegmenter(FakeSegmenter):
+            def mask_for_box(self, box):
+                self.calls.append(tuple(box))
+                m = np.zeros(self.shape, dtype=bool)
+                m[50:250, 40:160] = True          # 200x120 = 사진(300x200)의 40%
+                return m
+
+        seg = CenterSegmenter()
+        photo = make_photo()
+        res = cs.cut_out_item(photo, "outer", FakeDetector([]), seg)
+        self.assertEqual(res.method, "sam_full_box")
+        self.assertEqual(len(seg.calls), 1)
+        x1, y1, x2, y2 = seg.calls[0]
+        self.assertAlmostEqual(x1, 200 * cs.FULL_BOX_INSET_RATIO)
+        self.assertAlmostEqual(y2, 300 * (1 - cs.FULL_BOX_INSET_RATIO))
+        self.assertLess(res.image.size[0], photo.size[0])   # 잘라낸 결과는 원본보다 작음
+
+    def test_full_box_rejected_when_mask_covers_background(self):
+        # FakeSegmenter는 박스 전체를 마스크로 줌 -> 사진의 약 92% -> 배경까지 잡은 것으로 보고 원본
+        res = cs.cut_out_item(make_photo(), "outer", FakeDetector([]), FakeSegmenter())
+        self.assertEqual(res.method, "original")
+        self.assertIn("배경까지", res.note)
+
+    def test_full_box_rejected_when_mask_too_small(self):
+        class TinySegmenter(FakeSegmenter):
+            def mask_for_box(self, box):
+                m = np.zeros(self.shape, dtype=bool)
+                m[10:20, 10:20] = True
+                return m
+
+        res = cs.cut_out_item(make_photo(), "outer", FakeDetector([]), TinySegmenter())
+        self.assertEqual(res.method, "original")
+        self.assertIn("너무 작아", res.note)
+
+    def test_person_only_photo_does_not_use_full_box(self):
+        seg = FakeSegmenter()
+        res = cs.cut_out_item(make_photo(), "top", FakeDetector([ARM]), seg)
+        self.assertEqual(res.method, "original")
+        self.assertEqual(seg.calls, [])
 
 
 class BuildCompositeTest(unittest.TestCase):
