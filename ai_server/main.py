@@ -1,6 +1,12 @@
 """
 main.py 전체 최종본
 
+[신규 2026-11-09] 색상 보정 뷰어용 엔드포인트 3개 추가 (services/color_moodboard_service.py 호출)
+  /ai/color-moodboard : 업로드 사진 팔레트 + 무드보드
+  /ai/item-colors     : 옷장 아이템 1개의 대표 색 (YOLO+SAM 누끼)
+  /ai/color-match     : 기준 색과 옷장 아이템 색 비교
+그 외 엔드포인트는 변경 없음.
+
 이전 버전(ChromaDB 통합 v2) 대비 변경 사항
 ----------------------------------------
 /ai/daltonize 엔드포인트를 추가. (DaltonizeRequest 모델 포함)
@@ -207,6 +213,65 @@ async def daltonize(req: DaltonizeRequest):
             "corrected": corrected,
         }
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ─────────────────────────────────────────────
+# [신규] 색상 무드보드 + 옷장 색 매칭 (services/color_moodboard_service.py)
+# Spring Boot(ColorMoodboardService / ItemColorService)가 호출.
+# YOLO/SAM 추론과 Gemini 호출이 있어 동기 함수(def)로 둠. (FastAPI가 스레드풀에서 실행)
+# ─────────────────────────────────────────────
+class ColorMoodboardRequest(BaseModel):
+    imageB64: str
+    colorType: Optional[str] = ""
+
+class ItemColorsRequest(BaseModel):
+    imageB64: str
+    category: Optional[str] = ""
+
+class ColorMatchItem(BaseModel):
+    id: str
+    category: Optional[str] = ""
+    dominantColors: Optional[str] = ""
+
+class ColorMatchRequest(BaseModel):
+    baseHex: str
+    colorType: Optional[str] = ""
+    items: List[ColorMatchItem] = []
+
+# 업로드 사진 -> 팔레트(색 설명, 보정 색) + Gemini 무드 + 사진 속 헷갈림 쌍
+@app.post("/ai/color-moodboard")
+def color_moodboard(req: ColorMoodboardRequest):
+    try:
+        from services.color_moodboard_service import build_moodboard
+        return build_moodboard(req.imageB64, req.colorType or "")
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        logger.exception("[color-moodboard] 처리 실패")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# 옷장 아이템 사진 1장 -> 그 옷만 누끼(YOLO+SAM)로 잘라 계산한 대표 색 ("v2|#AABBCC:0.62,...")
+@app.post("/ai/item-colors")
+def item_colors(req: ItemColorsRequest):
+    try:
+        from services.color_moodboard_service import compute_item_colors
+        return compute_item_colors(req.imageB64, req.category or "")
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        logger.exception("[item-colors] 처리 실패")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# 기준 색 1개 + 저장된 아이템 색 -> 같은/비슷한 색, 비슷해 보이지만 다른 색 (이미지 없이 계산만)
+@app.post("/ai/color-match")
+def color_match(req: ColorMatchRequest):
+    try:
+        from services.color_moodboard_service import match_wardrobe
+        return match_wardrobe(req.baseHex, req.colorType or "", [i.dict() for i in req.items])
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        logger.exception("[color-match] 처리 실패")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/ai/remove-background")

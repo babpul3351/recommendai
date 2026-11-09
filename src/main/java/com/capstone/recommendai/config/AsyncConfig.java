@@ -23,4 +23,17 @@ public class AsyncConfig {
         executor.initialize();
         return executor;
     }
+
+    // [신규] 옷장 아이템 대표 색 계산 전용 실행기 (ItemColorService.analyzeMissing).
+    // 아이템마다 YOLO + SAM 누끼를 돌리므로 코디 합성과 같은 이유로 스레드 1개. 작업 단위가 "사용자"라 대기열은 작게.
+    @Bean(name = "itemColorExecutor")
+    public Executor itemColorExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(1);
+        executor.setMaxPoolSize(1);
+        executor.setQueueCapacity(20);
+        executor.setThreadNamePrefix("item-color-");
+        executor.initialize();
+        return executor;
+    }
 }
