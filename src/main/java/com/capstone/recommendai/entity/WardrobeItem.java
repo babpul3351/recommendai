@@ -36,6 +36,11 @@ public class WardrobeItem {
     @Column(length = 10)
     private String season;
 
+    // [신규] 사진에서 계산한 대표 색 (색상 무드보드의 옷장 색 매칭용). 형식: "v2|#AABBCC:0.62,#112233:0.25" (색을 못 찾으면 "v2|none")
+    // ItemColorService가 YOLO + SAM 누끼로 백그라운드에서 계산해 채움. null이거나 "v2|"로 시작하지 않으면 다시 계산 대상.
+    @Column(name = "dominant_colors", length = 100)
+    private String dominantColors;
+
     @Column(name = "image_thumbnail", length = 500)
     private String imageThumbnail;
 
