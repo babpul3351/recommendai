@@ -208,7 +208,7 @@ function Home() {
             const sevenDaysAgo = new Date(today);
             sevenDaysAgo.setDate(today.getDate() - 6);
             const start = toDateStr(sevenDaysAgo);
-            const end   = toDateStr(today);
+            const end = toDateStr(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 6));
             const res   = await recommendationAPI.getWeekOutfits(start, end);
             const all: WeekOutfit[] = res.data || [];
             const sorted = [...all].sort((a, b) => a.outfitDate.localeCompare(b.outfitDate));
