@@ -3,6 +3,7 @@ package com.capstone.recommendai.config;
 import com.capstone.recommendai.security.CustomUserDetailsService;
 import com.capstone.recommendai.security.JwtAuthFilter;
 import com.capstone.recommendai.security.JwtUtil;
+import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -40,6 +41,9 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // 컨트롤러에서 예외가 나면 Spring Boot가 /error로 다시 보내는데(ERROR 디스패치),
+                        // 이 단계까지 인증을 요구하면 실제 500 오류가 401로 바뀌어 프론트가 로그아웃시킨다.
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )

@@ -59,7 +59,7 @@ ai_server/chroma_data/
 
 ### 환경변수 (API 키 — 절대 업로드XX) ###
 .env
-ai_server/.envai_server/wear_history.csv
+ai_server/.env
 ai_server/wear_history.csv
 
 ### 모델 가중치 (용량 큼 — SAM 체크포인트는 GitHub 100MB 제한 초과) ###

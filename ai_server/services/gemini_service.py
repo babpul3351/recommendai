@@ -42,63 +42,131 @@ if not API_KEY:
         "ai_server 폴더에 .env 파일을 만들고 GEMINI_API_KEY=본인의_키 를 추가하세요."
     )
 
+# 모델 이름 (2026-11-26 변경)
+# - gemini-2.5-flash는 새 프로젝트에서 404 "no longer available to new users"를 반환한다
+#   (Google 안내: 2.5는 예전에 쓰던 사용자에게만 제공).
+# - 기본 모델은 .env의 GEMINI_MODEL (없으면 gemini-3.8-flash).
+# - 기본 모델이 503(혼잡) 또는 404(접근 불가)면 GEMINI_FALLBACK_MODELS에 적은 모델로 차례로 넘어간다.
+#   기본 모델이 429(할당량 소진)여도 다음 모델로 넘어간다.
+#   예) GEMINI_FALLBACK_MODELS=모델A,모델B   (비워 두면 대체 없이 기존처럼 동작)
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash").strip()
+GEMINI_FALLBACK_MODELS = [
+    m.strip() for m in os.environ.get("GEMINI_FALLBACK_MODELS", "").split(",") if m.strip()
+]
+MODEL_CHAIN = [GEMINI_MODEL] + [m for m in GEMINI_FALLBACK_MODELS if m != GEMINI_MODEL]
+
+# 시간 제한 (초)
+# - GEMINI_TIMEOUT_SEC: 모델 한 번 호출의 최대 대기 시간. 넘으면 Google이 504 DEADLINE_EXCEEDED를 주고 다음 모델로 넘어간다.
+#   코디 추천은 응답(JSON)이 길어서 25초로는 정상 응답도 잘렸다(2026-11-26 로그). 그래서 60초.
+# - GEMINI_TOTAL_SEC: 모델 전환을 포함한 전체 최대 시간. 색상 보정 뷰어는 Spring이 120초를 넘기면 504를 내므로
+#   그보다 짧은 100초. 남은 시간이 이보다 적으면 다음 호출의 제한도 남은 시간만큼으로 줄인다.
+GEMINI_TIMEOUT_SEC = int(os.environ.get("GEMINI_TIMEOUT_SEC", "60"))
+GEMINI_TOTAL_SEC = int(os.environ.get("GEMINI_TOTAL_SEC", "100"))
+MIN_CALL_SEC = 10   # 남은 시간이 이보다 적으면 새 호출을 시작하지 않는다
+print(f"[Gemini] model 순서={MODEL_CHAIN}, 호출당 최대 {GEMINI_TIMEOUT_SEC}초, 전체 최대 {GEMINI_TOTAL_SEC}초")
+
 gemini_client = None
 
 def get_gemini():
     global gemini_client
     if gemini_client is None:
-        gemini_client = genai.Client(api_key=API_KEY)
+        # SDK 자체 재시도는 끄고(attempts=1) 재시도/모델 전환은 아래 _generate에서만 한다.
+        # SDK 재시도와 겹치면 대기 시간이 몇 배로 늘어난다. 시간 제한은 호출마다 따로 준다.
+        gemini_client = genai.Client(
+            api_key=API_KEY,
+            http_options=types.HttpOptions(
+                retry_options=types.HttpRetryOptions(attempts=1),
+            ),
+        )
     return gemini_client
 
 
-def gemini_text(prompt, max_retries=3):
+def _is_busy(e):
+    msg = str(e)
+    return '503' in msg or 'UNAVAILABLE' in msg
+
+
+def _is_timeout(e):
+    # 시간 제한을 주면 SDK가 X-Server-Timeout 헤더를 보내고, 넘기면 Google이 504 DEADLINE_EXCEEDED를 돌려준다.
+    # 네트워크 쪽에서 끊기면 httpx의 Timeout 예외가 난다. 둘 다 시간 초과로 본다.
+    msg = str(e)
+    low = msg.lower()
+    return ('504' in msg or 'DEADLINE_EXCEEDED' in msg
+            or 'timeout' in type(e).__name__.lower() or 'timed out' in low or 'timeout' in low)
+
+
+def _is_unavailable_model(e):
+    # 404: 이 프로젝트에서 쓸 수 없는 모델 / 429: 이 모델의 할당량 소진 → 둘 다 다른 모델로 넘어간다
+    msg = str(e)
+    return ('404' in msg or 'NOT_FOUND' in msg
+            or '429' in msg or 'RESOURCE_EXHAUSTED' in msg)
+
+
+def _generate(contents, max_retries=3):
+    """MODEL_CHAIN 순서대로 호출한다.
+    - 503: 같은 모델로 재시도. 대체 모델이 있으면 1번만 재시도하고 다음 모델로 넘어간다.
+    - 404(사용 불가), 429(할당량 소진), 시간 초과: 바로 다음 모델로 넘어간다.
+    - 그 밖의 오류(401, 403 등): 키·프로젝트 문제라 다른 모델로도 해결되지 않으므로 그대로 올린다.
+    """
     client = get_gemini()
     last_err = None
-    for attempt in range(max_retries):
-        try:
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt
-            )
-            return response.text.strip()
-        except Exception as e:
-            last_err = e
-            if '503' in str(e) or 'UNAVAILABLE' in str(e):
-                if attempt < max_retries - 1:
-                    wait = (attempt + 1) * 3
-                    print(f"[Gemini] 503 재시도 {attempt+1}/{max_retries} ({wait}초 대기)")
-                    time.sleep(wait)
-                    continue
-            raise e
+    started = time.time()
+    for idx, model in enumerate(MODEL_CHAIN):
+        has_next = idx < len(MODEL_CHAIN) - 1
+        tries = 2 if has_next else max_retries
+        for attempt in range(tries):
+            remaining = GEMINI_TOTAL_SEC - (time.time() - started)
+            if remaining < MIN_CALL_SEC:
+                print(f"[Gemini] 전체 제한 {GEMINI_TOTAL_SEC}초에 가까워 중단")
+                raise last_err or TimeoutError("Gemini 전체 시간 제한 초과")
+            call_sec = int(min(GEMINI_TIMEOUT_SEC, remaining))
+            t0 = time.time()
+            try:
+                response = client.models.generate_content(
+                    model=model,
+                    contents=contents,
+                    config=types.GenerateContentConfig(
+                        http_options=types.HttpOptions(timeout=call_sec * 1000)  # 밀리초
+                    ),
+                )
+                print(f"[Gemini] {model} 성공 ({time.time() - t0:.1f}초)")
+                if idx > 0:
+                    print(f"[Gemini] 대체 모델 {model}로 성공")
+                return response.text.strip()
+            except Exception as e:
+                last_err = e
+                if _is_timeout(e):
+                    print(f"[Gemini] {model} {call_sec}초 제한 초과")
+                    break
+                if _is_unavailable_model(e):
+                    print(f"[Gemini] {model} 사용 불가(404/429): {str(e)[:60]}")
+                    break
+                if _is_busy(e):
+                    if attempt < tries - 1:
+                        wait = (attempt + 1) * 3
+                        print(f"[Gemini] {model} 503 재시도 {attempt+1}/{tries} ({wait}초 대기)")
+                        time.sleep(wait)
+                        continue
+                    print(f"[Gemini] {model} 503 계속됨")
+                    break
+                raise e
+        if has_next:
+            print(f"[Gemini] 다음 모델로 전환: {MODEL_CHAIN[idx + 1]}")
     raise last_err
+
+
+def gemini_text(prompt, max_retries=3):
+    return _generate(prompt, max_retries)
 
 
 def gemini_vision(pil_img, prompt_text, max_retries=3):
-    client = get_gemini()
     buf = BytesIO()
     pil_img.save(buf, format="JPEG", quality=85)
     img_bytes = buf.getvalue()
-    last_err = None
-    for attempt in range(max_retries):
-        try:
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=[
-                    types.Part.from_bytes(data=img_bytes, mime_type="image/jpeg"),
-                    prompt_text
-                ]
-            )
-            return response.text.strip()
-        except Exception as e:
-            last_err = e
-            if '503' in str(e) or 'UNAVAILABLE' in str(e):
-                if attempt < max_retries - 1:
-                    wait = (attempt + 1) * 3
-                    print(f"[Gemini] 503 재시도 {attempt+1}/{max_retries} ({wait}초 대기)")
-                    time.sleep(wait)
-                    continue
-            raise e
-    raise last_err
+    return _generate(
+        [types.Part.from_bytes(data=img_bytes, mime_type="image/jpeg"), prompt_text],
+        max_retries,
+    )
 
 # ─────────────────────────────────────────────
 # 옷 이미지 분석 (변경 없음)
