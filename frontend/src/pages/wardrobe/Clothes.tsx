@@ -270,7 +270,7 @@ function Clothes() {
 
             {loading ? (
                 <div style={{ textAlign: 'center', padding: '80px 0' }}>
-                    <p style={{ color: '#aaa', fontSize: 14 }}>불러오는 중...</p>
+                    <p style={{ color: '#aaa', fontSize: 14 }}>옷장을 불러오는 중이에요...</p>
                 </div>
             ) : filteredItems.length === 0 ? (
                 <div style={{ background: 'white', borderRadius: 20, padding: '80px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
@@ -278,7 +278,7 @@ function Clothes() {
                     <p style={{ fontWeight: 600, fontSize: 16, color: '#1a1a2e', margin: '0 0 8px' }}>
                         {items.length === 0 ? '옷장이 비어있어요' : '조건에 맞는 아이템이 없어요'}
                     </p>
-                    <p style={{ fontSize: 13, color: '#aaa', margin: 0 }}>위 버튼으로 아이템을 추가해보세요</p>
+                    <p style={{ fontSize: 13, color: '#aaa', margin: 0 }}>사진을 올리면 AI가 알아서 분류해줘요</p>
                 </div>
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>

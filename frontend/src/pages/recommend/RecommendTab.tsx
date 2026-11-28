@@ -233,7 +233,7 @@ function RecommendTab({
                             <div style={{ width: 28, height: 28, borderRadius: 8, background: '#f5f7fa', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                 <CalendarIcon color="#ccc" size={14} />
                             </div>
-                            <p style={{ fontSize: 12, color: '#bbb', margin: 0 }}>이 날 등록된 일정이 없어요</p>
+                            <p style={{ fontSize: 12, color: '#bbb', margin: 0 }}>이 날엔 등록된 일정이 없어요</p>
                         </div>
                     )}
                 </div>
@@ -272,7 +272,7 @@ function RecommendTab({
 
                 {/* Free-text TPO input */}
                 <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #f0f0f0' }}>
-                    <p style={{ fontWeight: 600, fontSize: 12, color: '#aaa', margin: '0 0 8px' }}>또는 상황을 자유롭게 적어보세요</p>
+                    <p style={{ fontWeight: 600, fontSize: 12, color: '#aaa', margin: '0 0 8px' }}>직접 적어봐도 돼요</p>
                     <div style={{ position: 'relative' }}>
                         <input
                             value={customTpo}

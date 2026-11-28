@@ -115,13 +115,13 @@ function getHeroTextColor(desc: string): string {
 }
 
 function getWeatherMessage(temp: number, desc: string): string {
-    if (desc.includes('비')) return '비 오는 날엔 방수 아우터가 필수예요.';
-    if (desc.includes('눈')) return '눈 오는 날엔 따뜻하게 챙겨 입어요.';
-    if (temp <= 5)  return '오늘은 두꺼운 코트가 필요한 날이에요.';
-    if (temp <= 12) return '오늘은 따뜻한 재킷이 필요한 날이에요.';
-    if (temp <= 18) return '오늘은 얇은 겉옷이 필요한 날이에요.';
-    if (temp <= 24) return '오늘은 가벼운 옷차림이 좋을 것 같아요.';
-    return '오늘은 시원한 옷차림이 좋을 것 같아요.';
+    if (desc.includes('비')) return '비가 오네요. 방수 아우터 하나 챙겨요!';
+    if (desc.includes('눈')) return '눈이 와요! 따뜻하고 든든하게 입어요.';
+    if (temp <= 5)  return '많이 춥네요. 두꺼운 코트 꼭 챙기세요.';
+    if (temp <= 12) return '쌀쌀한 날이에요. 재킷 하나 걸치면 딱 좋아요.';
+    if (temp <= 18) return '선선해요. 얇은 겉옷이 있으면 편할 거예요.';
+    if (temp <= 24) return '날씨가 좋네요! 가볍게 입기 딱 좋은 날이에요.';
+    return '더운 날이에요. 시원하고 가볍게 입어요.';
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -451,7 +451,7 @@ function Home() {
                         }}>
                             {weather
                                 ? getWeatherMessage(weather.temp, weather.desc)
-                                : '오늘의 날씨와 일정을 분석해 코디를 추천해 드려요.'}
+                                : '오늘 뭐 입을지 고민이에요? 날씨랑 일정 보고 같이 골라봐요.'}
                         </p>
                         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                             {todayEvents[0] && (
@@ -715,13 +715,13 @@ function Home() {
                             </div>
                         </div>
                     ) : (
-                        <p data-animate style={{  fontSize: 16, color: '#aaa' }}>날씨 정보를 불러오는 중이에요...</p>
+                        <p data-animate style={{  fontSize: 16, color: '#aaa' }}>날씨를 확인하고 있어요...</p>
                     )}
                 </div>
             </section>
 
             {/* ── 02 TPO ───────────────────────────────────────────────────── */}
-            <section ref={tpoRef} style={{ padding: '100px 80px 100px 120px', background: '#f5f7fa' }}>
+            <section ref={tpoRef} style={{ padding: '100px 80px 100px 120px', background: '#fdf9f6' }}>
                 <div style={{ maxWidth: 1100, margin: '0 auto' }}>
                     <p data-animate style={{  fontWeight: 700, fontSize: 10, color: '#71b3e5', letterSpacing: '0.15em', textTransform: 'uppercase', margin: '0 0 16px' }}>
                         02 TPO
@@ -783,7 +783,7 @@ function Home() {
                     {/* 코디 수 선택 */}
                     <div data-animate style={{ marginBottom: 40 }}>
                         <p style={{ fontWeight: 600, fontSize: 13, color: '#888', margin: '0 0 10px' }}>
-                            추천받을 코디 수
+                            몇 가지 보여드릴까요?
                         </p>
                         <div style={{ display: 'flex', gap: 10 }}>
                             {[2, 3].map(n => (
@@ -873,7 +873,7 @@ function Home() {
                         }}>
                             <SparkleIcon color="#ccc" size={52} />
                             <p style={{ fontSize: 16, color: '#ccc', margin: '16px 0 0' }}>
-                                위에서 TPO를 선택하고 추천받기를 눌러보세요
+                                위에서 오늘 상황을 골라보세요
                             </p>
                         </div>
                     ) : recommendation ? (
@@ -884,7 +884,7 @@ function Home() {
                                     <SparkleIcon color="white" size={22} />
                                 </div>
                                 <div>
-                                    <p style={{ fontWeight: 700, fontSize: 11, color: '#71b3e5', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>오늘의 추천 코디</p>
+                                    <p style={{ fontWeight: 700, fontSize: 11, color: '#F5956A', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>오늘의 추천 코디</p>
                                     <p style={{ fontWeight: 700, fontSize: 22, color: '#1a1a2e', margin: '4px 0 0' }}>{selectedTpo} 스타일 · {(recommendation.outfits || []).length}가지</p>
                                 </div>
                             </div>
@@ -1006,7 +1006,7 @@ function Home() {
                         새 옷을 사지 않아도<br />내 옷장 안에서<br />오늘의 답을 찾을 수 있어요.
                     </h2>
                     <p data-animate style={{  fontSize: 16, color: 'rgba(255,255,255,0.55)', margin: '0 0 48px', lineHeight: 1.7 }}>
-                        AI가 내 옷장 속 아이템을 분석해 최적의 조합을 찾아드려요.
+                        사진만 올리면 AI가 분류하고 직접 코디를 추천해드려요.
                     </p>
 
                     {wardrobeItems.length > 0 ? (
@@ -1034,7 +1034,7 @@ function Home() {
                         <div data-animate style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 20, padding: '48px', textAlign: 'center', marginBottom: 48, border: '1px dashed rgba(255,255,255,0.15)' }}>
                             <WardrobeIcon color="rgba(255,255,255,0.2)" size={56} />
                             <p style={{  fontSize: 15, color: 'rgba(255,255,255,0.35)', margin: '16px 0 0' }}>
-                                아직 등록된 옷이 없어요
+                                아직 추가한 옷이 없네요. 첫 아이템을 올려볼까요?
                             </p>
                         </div>
                     )}
@@ -1060,7 +1060,7 @@ function Home() {
                         좋았던 코디는<br />다시 꺼내 입을 수 있도록<br />기록해요.
                     </h2>
                     <p data-animate style={{  fontSize: 16, color: '#888', margin: '0 0 56px', lineHeight: 1.7 }}>
-                        날짜별 코디를 기록하고 언제든 꺼내볼 수 있어요.
+                        날씨가 좋았던 날, 칭찬받은 날 코디를 기억해두세요.
                     </p>
 
                     <div data-animate style={{ display: 'flex', gap: 16, marginBottom: 48, flexWrap: 'wrap' }}>
@@ -1103,10 +1103,10 @@ function Home() {
                     textAlign: 'center', padding: '0 40px',
                 }}>
                     <h2 style={{  fontWeight: 700, fontSize: 44, color: 'white', margin: '0 0 20px', lineHeight: 1.2 }}>
-                        오늘의 완벽한 코디,<br />AI와 함께 찾아보세요
+                        오늘 뭐 입지?<br />같이 골라봐요
                     </h2>
                     <p style={{  fontSize: 18, color: 'rgba(255,255,255,0.72)', margin: '0 0 40px' }}>
-                        날씨와 일정을 분석해 오늘 최고의 코디를 찾아드릴게요.
+                        날씨도 보고, 일정도 보고 딱 맞는 코디를 골라드릴게요.
                     </p>
                     <div style={{ display: 'flex', gap: 16 }}>
                         <button onClick={() => navigate('/recommend')} style={{
