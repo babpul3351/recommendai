@@ -90,6 +90,12 @@ const AI_STEPS = [
     '오늘의 코디를 완성했어요',
 ];
 
+const COMPOSITE_STEPS = [
+    '옷의 윤곽선을 감지하고 있어요',
+    '배경을 분리하고 있어요',
+    '코디를 한 장으로 조합하고 있어요',
+];
+
 const SECTION_DEFS = [
     { id: 'weather',        label: '01 WEATHER' },
     { id: 'tpo',            label: '02 TPO' },
@@ -156,6 +162,15 @@ function Home() {
     const [activeSection, setActiveSection] = useState<string>('hero');
     const [carouselIdx, setCarouselIdx] = useState(0);
     const carouselInitRef = useRef(false);
+
+    // 누끼 합성 단계
+    const [compositePhase, setCompositePhase] = useState<'idle' | 'animating' | 'done' | 'failed'>('idle');
+    const [compositeStep, setCompositeStep]   = useState<number>(0);
+    const [compositeImageUrl, setCompositeImageUrl] = useState<string | null>(null);
+    const compositeTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+    const compositeResultRef = useRef<{ url: string; status: 'done' } | { status: 'failed' } | null>(null);
+    // 현재 선택에서 PENDING 상태를 한 번이라도 목격했는지 — DONE이 이전 선택의 stale 데이터인지 판별
+    const compositeSeenPendingRef = useRef(false);
 
     // Section refs
     const heroRef           = useRef<HTMLElement>(null);
@@ -236,7 +251,9 @@ function Home() {
 
     // 합성 이미지가 아직 생성 중(PENDING)이면 일정 간격으로 다시 조회.
     // PENDING이 없으면 조회하지 않고, 최대 횟수를 넘으면 stop. (서버가 중간에 재시작돼 PENDING이 남은 경우 대비)
+    // animating 중에는 PENDING 여부와 무관하게 계속 폴링 (stale DONE을 무시한 뒤 새 상태를 받아야 하므로)
     const hasPendingComposite =
+        compositePhase === 'animating' ||
         todayOutfit?.compositeStatus === 'PENDING' ||
         recentOutfits.some(o => o.compositeStatus === 'PENDING');
 
@@ -267,12 +284,82 @@ function Home() {
                 description: outfit?.description || '',
             });
             setAcceptedOutfitIdx(idx);
-            pollTriesRef.current = 0;      // 새로 선택했으니 조회 횟수 초기화
-            await fetchRecentOutfits();    // PENDING 상태를 받아오면 위 effect가 자동 조회 이어감.
+            compositeResultRef.current = null;
+            compositeSeenPendingRef.current = false;
+            setCompositeImageUrl(null);
+            setCompositeStep(0);
+            setCompositePhase('animating');
+            pollTriesRef.current = 0;
+            await fetchRecentOutfits();
         } catch {
             alert('코디 선택에 실패했어요. 잠시 후 다시 시도해 주세요.');
         }
     }, [recommendation, fetchRecentOutfits]);
+
+    // ── 누끼 합성: 단계 자동 진행 (7s → 14s) ─────────────────────────────────
+    useEffect(() => {
+        if (compositePhase !== 'animating') return;
+        compositeTimersRef.current.forEach(clearTimeout);
+        const t1 = setTimeout(() => setCompositeStep(s => Math.max(s, 1)), 7000);
+        const t2 = setTimeout(() => setCompositeStep(s => Math.max(s, 2)), 14000);
+        compositeTimersRef.current = [t1, t2];
+        return () => compositeTimersRef.current.forEach(clearTimeout);
+    }, [compositePhase]);
+
+    // ── 누끼 합성: recentOutfits에서 완료 여부 감지 ──────────────────────────
+    useEffect(() => {
+        if (compositePhase !== 'animating') return;
+        const todayStr = toDateStr(today);
+        const outfit = recentOutfits.find(o => o.outfitDate === todayStr);
+        if (!outfit) return;
+
+        if (outfit.compositeStatus === 'PENDING') {
+            // PENDING 목격 → 이후의 DONE은 현재 선택에 대한 것임을 보장
+            compositeSeenPendingRef.current = true;
+        } else if (outfit.compositeStatus === 'DONE' && outfit.compositeImageUrl) {
+            // PENDING을 한 번도 못 봤으면 이전 선택의 stale DONE일 수 있으므로 무시
+            if (!compositeSeenPendingRef.current) return;
+            compositeResultRef.current = { url: outfit.compositeImageUrl, status: 'done' };
+            if (compositeStep >= 2) {
+                compositeTimersRef.current.forEach(clearTimeout);
+                const url = outfit.compositeImageUrl;
+                setTimeout(() => { setCompositeImageUrl(url); setCompositePhase('done'); }, 600);
+            }
+        } else if (outfit.compositeStatus === 'FAILED' || outfit.compositeStatus === 'SKIPPED') {
+            compositeResultRef.current = { status: 'failed' };
+            if (compositeStep >= 2) {
+                compositeTimersRef.current.forEach(clearTimeout);
+                setCompositePhase('failed');
+            }
+        }
+    }, [recentOutfits, compositePhase, compositeStep, today]);
+
+    // ── 누끼 합성: 3단계 도달 시 대기 중이던 결과 처리 ───────────────────────
+    useEffect(() => {
+        if (compositePhase !== 'animating' || compositeStep < 2) return;
+        const result = compositeResultRef.current;
+        if (!result) return;
+        compositeTimersRef.current.forEach(clearTimeout);
+        if (result.status === 'done') {
+            const url = result.url;
+            setTimeout(() => { setCompositeImageUrl(url); setCompositePhase('done'); }, 600);
+        } else {
+            setCompositePhase('failed');
+        }
+    }, [compositeStep, compositePhase]);
+
+    // ── 추천 초기화 ───────────────────────────────────────────────────────────
+    const handleResetRecommendation = useCallback(() => {
+        compositeTimersRef.current.forEach(clearTimeout);
+        compositeResultRef.current = null;
+        compositeSeenPendingRef.current = false;
+        setRecommendation(null);
+        setAcceptedOutfitIdx(null);
+        setCompositePhase('idle');
+        setCompositeStep(0);
+        setCompositeImageUrl(null);
+        setAiStep(-1);
+    }, []);
 
     // ── Section indicator tracking ─────────────────────────────────────────────
 
@@ -485,7 +572,7 @@ function Home() {
 
                     {/* Right: Outfit Carousel */}
                     {(() => {
-                        const CW = 300, CH = 420, GAP = 14, VP = 500;
+                        const CW = 460, CH = 640, GAP = 14, VP = 560;
                         const center = (VP - CW) / 2;
                         const tx = -(carouselIdx * (CW + GAP)) + center;
                         const cards: (WeekOutfit | null)[] = [...recentOutfits, null];
@@ -642,12 +729,12 @@ function Home() {
                                     <button
                                         onClick={goPrev}
                                         style={{
-                                            position: 'absolute', left: 8, top: '44%',
+                                            position: 'absolute', left: (center - 38) / 2, top: '44%',
                                             transform: 'translateY(-50%)',
-                                            zIndex: 10, width: 36, height: 36, borderRadius: '50%',
+                                            zIndex: 10, width: 38, height: 38, borderRadius: '50%',
                                             background: 'rgba(255,255,255,0.92)',
                                             border: 'none', cursor: 'pointer',
-                                            fontSize: 18, color: '#1a1a2e',
+                                            fontSize: 20, color: '#1a1a2e',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                                             boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
                                             opacity: canPrev ? 1 : 0,
@@ -660,12 +747,12 @@ function Home() {
                                     <button
                                         onClick={goNext}
                                         style={{
-                                            position: 'absolute', right: 8, top: '44%',
+                                            position: 'absolute', right: (center - 38) / 2, top: '44%',
                                             transform: 'translateY(-50%)',
-                                            zIndex: 10, width: 36, height: 36, borderRadius: '50%',
+                                            zIndex: 10, width: 38, height: 38, borderRadius: '50%',
                                             background: 'rgba(255,255,255,0.92)',
                                             border: 'none', cursor: 'pointer',
-                                            fontSize: 18, color: '#1a1a2e',
+                                            fontSize: 20, color: '#1a1a2e',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                                             boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
                                             opacity: canNext ? 1 : 0,
@@ -878,115 +965,232 @@ function Home() {
                         </div>
                     ) : recommendation ? (
                         <div data-animate>
-                            {/* 헤더 */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 32 }}>
-                                <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <SparkleIcon color="white" size={22} />
-                                </div>
-                                <div>
-                                    <p style={{ fontWeight: 700, fontSize: 11, color: '#F5956A', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>오늘의 추천 코디</p>
-                                    <p style={{ fontWeight: 700, fontSize: 22, color: '#1a1a2e', margin: '4px 0 0' }}>{selectedTpo} 스타일 · {(recommendation.outfits || []).length}가지</p>
-                                </div>
-                            </div>
 
-                            {/* 코디 카드 목록 */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                                {(recommendation.outfits || []).map((outfit, idx) => {
-                                    const matchedList = recommendation.matched_items_per_outfit?.[idx] || [];
-                                    const byCategory: Record<string, MatchedItem> = {};
-                                    matchedList.forEach(m => { if (m.category) byCategory[m.category] = m; });
-                                    const slots = ([
-                                        { label: '상의',   item: outfit.top },
-                                        { label: '하의',   item: outfit.bottom },
-                                        { label: '아우터', item: outfit.outer },
-                                    ] as { label: string; item: OutfitItem | undefined }[]).filter(s => s.item);
-                                    const isAccepted = acceptedOutfitIdx === idx;
-                                    const isOther    = acceptedOutfitIdx !== null && !isAccepted;
-                                    return (
-                                        <div key={idx} style={{
-                                            background: isAccepted
-                                                ? 'linear-gradient(135deg, #d4eaf9 0%, #e8f4ff 100%)'
-                                                : 'linear-gradient(135deg, #f4f7fb 0%, #edf1f7 100%)',
-                                            borderRadius: 24, overflow: 'hidden',
-                                            border: `2px solid ${isAccepted ? '#71b3e5' : '#dde3ea'}`,
-                                            opacity: isOther ? 0.55 : 1,
-                                            transition: 'opacity 0.3s, border-color 0.3s',
-                                            boxShadow: isAccepted ? '0 4px 20px rgba(113,179,229,0.18)' : '0 2px 10px rgba(0,0,0,0.05)',
-                                        }}>
-                                            {/* 카드 헤더 */}
-                                            <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                <div style={{
-                                                    width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                                                    background: isAccepted ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : '#dde3ea',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    fontWeight: 900, fontSize: 15, color: 'white',
-                                                }}>
-                                                    {idx + 1}
-                                                </div>
-                                                {outfit.style && (
-                                                    <span style={{ fontWeight: 700, fontSize: 16, color: isAccepted ? '#1a1a2e' : '#555' }}>{outfit.style}</span>
-                                                )}
-                                                {isAccepted && (
-                                                    <span style={{ marginLeft: 'auto', fontWeight: 700, fontSize: 11, color: '#71b3e5', background: 'white', border: '1.5px solid #71b3e5', padding: '3px 10px', borderRadius: 20, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                                        <CheckIcon color="#71b3e5" size={11} /> 선택됨
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            {/* 아이템 이미지 그리드 */}
-                                            {slots.length > 0 && (
-                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, padding: '16px 24px' }}>
-                                                    {slots.map(({ label, item }) => {
-                                                        const matched = byCategory[label];
-                                                        const imgSrc  = matched?.imageUrl || matched?.imageB64;
-                                                        return (
-                                                            <div key={label} style={{ background: 'white', borderRadius: 16, padding: '16px', textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                                                                <div style={{ aspectRatio: '1', borderRadius: 12, overflow: 'hidden', marginBottom: 10, background: 'rgba(113,179,229,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                                    {imgSrc
-                                                                        ? <img src={imgSrc} alt={matched?.type || item?.type} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                                        : <WardrobeIcon color="#71b3e5" size={32} />
-                                                                    }
-                                                                </div>
-                                                                <p style={{ fontWeight: 700, fontSize: 9, color: '#71b3e5', margin: '0 0 3px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</p>
-                                                                <p style={{ fontWeight: 600, fontSize: 13, color: '#1a1a2e', margin: 0 }}>{matched?.type || item?.type}</p>
-                                                                {(matched?.color || item?.color) && <p style={{ fontSize: 11, color: '#aaa', margin: '3px 0 0' }}>{matched?.color || item?.color}</p>}
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
-
-                                            {/* 설명 */}
-                                            {outfit.description && (
-                                                <div style={{ margin: '0 24px 16px', background: 'white', borderRadius: 12, padding: '14px 16px', borderLeft: '3px solid #71b3e5', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                                                    <p style={{ fontSize: 13, color: '#555', lineHeight: 1.7, margin: 0 }}>"{outfit.description}"</p>
-                                                </div>
-                                            )}
-
-                                            {/* 선택 버튼 */}
-                                            <div style={{ padding: '0 24px 20px' }}>
-                                                {!isAccepted ? (
-                                                    <button onClick={() => handleAcceptOutfit(idx)} style={{
-                                                        width: '100%', padding: '13px',
-                                                        background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)',
-                                                        color: 'white', border: 'none', borderRadius: 12,
-                                                        fontWeight: 700, fontSize: 14, cursor: 'pointer',
-                                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-                                                    }}>
-                                                        <CheckIcon color="white" size={15} /> 이 코디 선택
-                                                    </button>
-                                                ) : (
-                                                    <div style={{ padding: '13px', background: 'rgba(113,179,229,0.12)', borderRadius: 12, textAlign: 'center' }}>
-                                                        <span style={{ fontWeight: 700, fontSize: 14, color: '#71b3e5', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                                                            선택한 코디예요 <CheckIcon color="#71b3e5" size={15} />
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </div>
+                            {/* ── 선택 전: 코디 카드 목록 ────────────────────────── */}
+                            {compositePhase === 'idle' && (
+                                <>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 32 }}>
+                                        <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <SparkleIcon color="white" size={22} />
                                         </div>
-                                    );
-                                })}
-                            </div>
+                                        <div>
+                                            <p style={{ fontWeight: 700, fontSize: 11, color: '#F5956A', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>오늘의 추천 코디</p>
+                                            <p style={{ fontWeight: 700, fontSize: 22, color: '#1a1a2e', margin: '4px 0 0' }}>{selectedTpo} 스타일 · {(recommendation.outfits || []).length}가지</p>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                                        {(recommendation.outfits || []).map((outfit, idx) => {
+                                            const matchedList = recommendation.matched_items_per_outfit?.[idx] || [];
+                                            const byCategory: Record<string, MatchedItem> = {};
+                                            matchedList.forEach(m => { if (m.category) byCategory[m.category] = m; });
+                                            const slots = ([
+                                                { label: '상의',   item: outfit.top },
+                                                { label: '하의',   item: outfit.bottom },
+                                                { label: '아우터', item: outfit.outer },
+                                            ] as { label: string; item: OutfitItem | undefined }[]).filter(s => s.item);
+                                            return (
+                                                <div key={idx} style={{
+                                                    background: 'linear-gradient(135deg, #f4f7fb 0%, #edf1f7 100%)',
+                                                    borderRadius: 24, overflow: 'hidden',
+                                                    border: '1.5px solid #dde3ea',
+                                                    boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+                                                }}>
+                                                    <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                        <div style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0, background: '#dde3ea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 15, color: 'white' }}>
+                                                            {idx + 1}
+                                                        </div>
+                                                        {outfit.style && <span style={{ fontWeight: 700, fontSize: 16, color: '#555' }}>{outfit.style}</span>}
+                                                    </div>
+                                                    {slots.length > 0 && (
+                                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, padding: '16px 24px' }}>
+                                                            {slots.map(({ label, item }) => {
+                                                                const matched = byCategory[label];
+                                                                const imgSrc = matched?.imageUrl || matched?.imageB64;
+                                                                return (
+                                                                    <div key={label} style={{ background: 'white', borderRadius: 16, padding: '16px', textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                                                                        <div style={{ aspectRatio: '1', borderRadius: 12, overflow: 'hidden', marginBottom: 10, background: 'rgba(113,179,229,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                                            {imgSrc ? <img src={imgSrc} alt={matched?.type || item?.type} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <WardrobeIcon color="#71b3e5" size={32} />}
+                                                                        </div>
+                                                                        <p style={{ fontWeight: 700, fontSize: 9, color: '#71b3e5', margin: '0 0 3px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</p>
+                                                                        <p style={{ fontWeight: 600, fontSize: 13, color: '#1a1a2e', margin: 0 }}>{matched?.type || item?.type}</p>
+                                                                        {(matched?.color || item?.color) && <p style={{ fontSize: 11, color: '#aaa', margin: '3px 0 0' }}>{matched?.color || item?.color}</p>}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                    {outfit.description && (
+                                                        <div style={{ margin: '0 24px 16px', background: 'white', borderRadius: 12, padding: '14px 16px', borderLeft: '3px solid #71b3e5', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                                                            <p style={{ fontSize: 13, color: '#555', lineHeight: 1.7, margin: 0 }}>"{outfit.description}"</p>
+                                                        </div>
+                                                    )}
+                                                    <div style={{ padding: '0 24px 20px' }}>
+                                                        <button onClick={() => handleAcceptOutfit(idx)} style={{
+                                                            width: '100%', padding: '13px',
+                                                            background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)',
+                                                            color: 'white', border: 'none', borderRadius: 12,
+                                                            fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                                                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                                                        }}>
+                                                            <CheckIcon color="white" size={15} /> 이 코디 선택
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </>
+                            )}
+
+                            {/* ── 선택 후: 누끼 애니메이션 ───────────────────────── */}
+                            {compositePhase === 'animating' && (
+                                <>
+                                    {/* 선택된 코디 요약 */}
+                                    <div style={{
+                                        background: 'linear-gradient(135deg, #d4eaf9, #e8f4ff)',
+                                        borderRadius: 20, padding: '18px 24px', marginBottom: 36,
+                                        border: '2px solid #71b3e5',
+                                        display: 'flex', alignItems: 'center', gap: 16,
+                                    }}>
+                                        <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                            <CheckIcon color="white" size={18} />
+                                        </div>
+                                        <div>
+                                            <p style={{ fontWeight: 700, fontSize: 11, color: '#71b3e5', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>선택한 코디</p>
+                                            <p style={{ fontWeight: 700, fontSize: 16, color: '#1a1a2e', margin: '2px 0 0' }}>
+                                                {recommendation.outfits?.[acceptedOutfitIdx ?? 0]?.style} 스타일
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* 합성 단계 애니메이션 */}
+                                    <div style={{ maxWidth: 540 }}>
+                                        <p style={{ fontWeight: 700, fontSize: 17, color: '#1a1a2e', margin: '0 0 28px' }}>코디 이미지를 완성하고 있어요</p>
+                                        {COMPOSITE_STEPS.map((step, i) => {
+                                            const stepDone   = compositeStep > i;
+                                            const stepActive = compositeStep === i;
+                                            return (
+                                                <div key={i} style={{
+                                                    display: 'flex', alignItems: 'center', gap: 20,
+                                                    padding: '20px 0',
+                                                    borderBottom: i < COMPOSITE_STEPS.length - 1 ? '1px solid #f2f2f2' : 'none',
+                                                    opacity: stepDone || stepActive ? 1 : 0.3,
+                                                    transition: 'opacity 0.4s ease',
+                                                }}>
+                                                    <div style={{
+                                                        width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+                                                        background: stepDone
+                                                            ? 'linear-gradient(135deg, #F5956A, #f07a4a)'
+                                                            : stepActive
+                                                                ? 'linear-gradient(135deg, #F5956A, #f07a4a)'
+                                                                : '#f0f0f0',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        transition: 'background 0.3s ease',
+                                                    }}>
+                                                        {stepDone
+                                                            ? <CheckIcon color="white" size={18} />
+                                                            : <span style={{ fontWeight: 700, fontSize: 14, color: stepActive ? 'white' : '#bbb' }}>{i + 1}</span>
+                                                        }
+                                                    </div>
+                                                    <span style={{
+                                                        fontWeight: stepDone || stepActive ? 600 : 400, fontSize: 17,
+                                                        color: stepDone || stepActive ? '#1a1a2e' : '#bbb',
+                                                        transition: 'color 0.3s ease',
+                                                    }}>
+                                                        {step}
+                                                        {stepActive && <span style={{ marginLeft: 8, fontSize: 13, color: '#F5956A' }}>...</span>}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </>
+                            )}
+
+                            {/* ── 완성: 합성 이미지 공개 ──────────────────────────── */}
+                            {compositePhase === 'done' && compositeImageUrl && (
+                                <>
+                                    <div style={{ borderRadius: 24, overflow: 'hidden', background: 'white', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', marginBottom: 28, maxWidth: 420 }}>
+                                        <div style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 360, padding: 24 }}>
+                                            <img src={compositeImageUrl} alt="오늘의 코디" style={{ maxWidth: '100%', maxHeight: 360, objectFit: 'contain', display: 'block' }} />
+                                        </div>
+                                        <div style={{ padding: '20px 24px' }}>
+                                            <p style={{ fontWeight: 700, fontSize: 11, color: '#F5956A', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>오늘의 코디</p>
+                                            <p style={{ fontWeight: 700, fontSize: 18, color: '#1a1a2e', margin: 0 }}>
+                                                {recommendation.outfits?.[acceptedOutfitIdx ?? 0]?.style} 스타일
+                                            </p>
+                                            {recommendation.outfits?.[acceptedOutfitIdx ?? 0]?.description && (
+                                                <p style={{ fontSize: 13, color: '#666', lineHeight: 1.7, margin: '8px 0 0' }}>
+                                                    "{recommendation.outfits[acceptedOutfitIdx ?? 0].description}"
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                                        <button onClick={() => navigate('/calendar')} style={{
+                                            background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)', border: 'none', borderRadius: 999,
+                                            padding: '14px 32px', cursor: 'pointer', fontWeight: 700, fontSize: 15, color: 'white',
+                                            boxShadow: '0 4px 16px rgba(113,179,229,0.35)',
+                                        }}>
+                                            캘린더에서 자세히 보기 →
+                                        </button>
+                                        <button onClick={handleResetRecommendation} style={{
+                                            background: 'white', border: '1.5px solid #dde3ea', borderRadius: 999,
+                                            padding: '14px 32px', cursor: 'pointer', fontWeight: 600, fontSize: 15, color: '#666',
+                                        }}>
+                                            다시 추천받기
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+
+                            {/* ── 실패 폴백: 아이템 그리드 ────────────────────────── */}
+                            {compositePhase === 'failed' && acceptedOutfitIdx !== null && (() => {
+                                const outfit = recommendation.outfits?.[acceptedOutfitIdx];
+                                const matchedList = recommendation.matched_items_per_outfit?.[acceptedOutfitIdx] || [];
+                                const byCategory: Record<string, MatchedItem> = {};
+                                matchedList.forEach(m => { if (m.category) byCategory[m.category] = m; });
+                                const slots = ([
+                                    { label: '상의',   item: outfit?.top },
+                                    { label: '하의',   item: outfit?.bottom },
+                                    { label: '아우터', item: outfit?.outer },
+                                ] as { label: string; item: OutfitItem | undefined }[]).filter(s => s.item);
+                                return (
+                                    <>
+                                        <p style={{ fontSize: 14, color: '#aaa', margin: '0 0 20px' }}>이미지 합성이 어려워서 아이템으로 보여드릴게요.</p>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, marginBottom: 28, maxWidth: 540 }}>
+                                            {slots.map(({ label, item }) => {
+                                                const matched = byCategory[label];
+                                                const imgSrc = matched?.imageUrl || matched?.imageB64;
+                                                return (
+                                                    <div key={label} style={{ background: 'white', borderRadius: 16, padding: '16px', textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                                                        <div style={{ aspectRatio: '1', borderRadius: 12, overflow: 'hidden', marginBottom: 10, background: 'rgba(113,179,229,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                            {imgSrc ? <img src={imgSrc} alt={matched?.type || item?.type} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <WardrobeIcon color="#71b3e5" size={32} />}
+                                                        </div>
+                                                        <p style={{ fontWeight: 700, fontSize: 9, color: '#71b3e5', margin: '0 0 3px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</p>
+                                                        <p style={{ fontWeight: 600, fontSize: 13, color: '#1a1a2e', margin: 0 }}>{matched?.type || item?.type}</p>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                                            <button onClick={() => navigate('/calendar')} style={{
+                                                background: 'linear-gradient(135deg, #71b3e5, #5a9fd4)', border: 'none', borderRadius: 999,
+                                                padding: '14px 32px', cursor: 'pointer', fontWeight: 700, fontSize: 15, color: 'white',
+                                                boxShadow: '0 4px 16px rgba(113,179,229,0.35)',
+                                            }}>
+                                                캘린더에서 보기 →
+                                            </button>
+                                            <button onClick={handleResetRecommendation} style={{
+                                                background: 'white', border: '1.5px solid #dde3ea', borderRadius: 999,
+                                                padding: '14px 32px', cursor: 'pointer', fontWeight: 600, fontSize: 15, color: '#666',
+                                            }}>
+                                                다시 추천받기
+                                            </button>
+                                        </div>
+                                    </>
+                                );
+                            })()}
 
                         </div>
                     ) : null}
