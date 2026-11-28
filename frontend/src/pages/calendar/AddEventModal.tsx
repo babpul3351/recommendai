@@ -113,12 +113,16 @@ function AddEventModal({ form, onFormChange, onClose, onSubmit }: Props) {
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                             {TPO_OPTIONS.map(t => (
                                 <button key={t} onClick={() => onFormChange({ ...form, tpoKeyword: t })} style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 4,
                                     padding: '6px 14px', borderRadius: 999, cursor: 'pointer', transition: 'all 0.15s', fontSize: 12,
                                     border: form.tpoKeyword === t ? `2px solid ${TPO_COLORS[t] || '#71b3e5'}` : '1.5px solid #eaedf2',
                                     background: form.tpoKeyword === t ? `${TPO_COLORS[t] || '#71b3e5'}18` : '#f8f9fc',
                                     color: form.tpoKeyword === t ? (TPO_COLORS[t] || '#71b3e5') : '#555',
                                     fontWeight: form.tpoKeyword === t ? 700 : 400,
-                                }}>{t}</button>
+                                }}>
+                                    {form.tpoKeyword === t && <span style={{ fontSize: 11, lineHeight: 1 }}>✓</span>}
+                                    {t}
+                                </button>
                             ))}
                         </div>
                     </div>

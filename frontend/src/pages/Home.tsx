@@ -750,6 +750,7 @@ function Home() {
                                         fontWeight: active ? 700 : 500, fontSize: 15,
                                         color: active ? color : '#666',
                                     }}>{key}</span>
+                                    {active && <CheckIcon color={color} size={14} />}
                                 </button>
                             );
                         })}
@@ -787,6 +788,7 @@ function Home() {
                         <div style={{ display: 'flex', gap: 10 }}>
                             {[2, 3].map(n => (
                                 <button key={n} onClick={() => setNumOutfits(n)} style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 6,
                                     padding: '10px 28px', borderRadius: 999, cursor: 'pointer',
                                     border: numOutfits === n ? '2px solid #71b3e5' : '1.5px solid #e0e4ea',
                                     background: numOutfits === n ? 'rgba(113,179,229,0.1)' : 'white',
@@ -794,6 +796,7 @@ function Home() {
                                     color: numOutfits === n ? '#71b3e5' : '#666',
                                     transition: 'all 0.2s',
                                 }}>
+                                    {numOutfits === n && <CheckIcon color="#71b3e5" size={13} />}
                                     {n}가지
                                 </button>
                             ))}

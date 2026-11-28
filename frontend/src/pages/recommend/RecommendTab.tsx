@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { WeatherIcon, TpoIcon, CalendarIcon, SparkleIcon, ClockIcon, RefreshIcon } from '../../components/Icons';
+import { WeatherIcon, TpoIcon, CalendarIcon, SparkleIcon, ClockIcon, RefreshIcon, CheckIcon } from '../../components/Icons';
 import { Weather, CalendarEvent, PoolEntry } from './types';
 import { TPO_LIST, WEEKDAYS, TPO_COLORS } from './constants';
 import StepAnimation from './StepAnimation';
@@ -264,6 +264,7 @@ function RecommendTab({
                             >
                                 <TpoIcon tpo={t.key} color={active ? t.color : '#aaa'} size={16} />
                                 <span style={{ fontWeight: active ? 700 : 500, fontSize: 13, color: active ? t.color : '#555' }}>{t.key}</span>
+                                {active && <CheckIcon color={t.color} size={12} />}
                             </button>
                         );
                     })}
@@ -309,12 +310,14 @@ function RecommendTab({
                                     key={n}
                                     onClick={() => setNumOutfits(n)}
                                     style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: 5,
                                         padding: '9px 28px', borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: 'pointer',
                                         border: numOutfits === n ? 'none' : '1.5px solid #e8ecf0',
                                         background: numOutfits === n ? 'linear-gradient(135deg, #71b3e5, #5a9fd4)' : '#f5f7fa',
                                         color: numOutfits === n ? 'white' : '#888',
                                     }}
                                 >
+                                    {numOutfits === n && <CheckIcon color="white" size={12} />}
                                     {n}가지
                                 </button>
                             ))}
